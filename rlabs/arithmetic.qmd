@@ -1,0 +1,55 @@
+---
+title: "Lab: Arithmetic in R"
+date: 2026-05-24
+description: '<a href="rlab-downloads/arithmetic.qmd" download="arithmetic.qmd">Download .qmd</a>'
+format: html
+---
+
+## Purpose
+
+R can be used like a calculator. This lab walks through the four basic arithmetic operations — addition, subtraction, multiplication, and division — so you can confirm your R environment is working and get comfortable running code chunks.
+
+## Addition
+
+Use `+` to add two numbers:
+
+```{r}
+2 + 3
+```
+
+## Subtraction
+
+Use `-` to subtract:
+
+```{r}
+10 - 4
+```
+
+## Multiplication
+
+Use `*` to multiply:
+
+```{r}
+6 * 7
+```
+
+## Division
+
+Use `/` to divide:
+
+```{r}
+20 / 5
+```
+
+## Try it yourself
+
+In a new code chunk (or directly in the R console), compute the following:
+
+- Add 15 and 27
+- Subtract 9 from 50
+- Multiply 8 by 12
+- Divide 144 by 12
+
+```{r}
+# your code here
+```

@@ -1,0 +1,69 @@
+---
+title: "Syllabus"
+format:
+  html:
+    toc: true
+  typst:
+    margin:
+      x: 1in
+      y: 1in
+---
+
+
+::: {.content-visible when-format="html"}
+[Download PDF](syllabus.pdf){.btn .btn-primary download="syllabus.pdf" role="button"}
+:::
+
+## Course Description
+
+[Describe the course here: scope, themes, the substantive questions it addresses, and how it fits into the broader program of study.]
+
+## Learning Objectives
+
+By the end of this course, students will be able to:
+
+- [Learning objective 1]
+- [Learning objective 2]
+- [Learning objective 3]
+
+## Required Materials
+
+- [Required textbook(s)]
+- [Required software / tools]
+- [Other materials]
+
+## Grading
+
+| Component | Weight |
+|---|---|
+| [Assignment 1] | [%] |
+| [Assignment 2] | [%] |
+| [Final project] | [%] |
+| [Participation] | [%] |
+
+## Course Policies
+
+### Attendance
+
+[Attendance policy.]
+
+### Late work
+
+[Late work policy.]
+
+### Academic integrity
+
+[Academic integrity statement.]
+
+### Accommodations
+
+[Accessibility / accommodations statement.]
+
+## Class Schedule
+
+```{r}
+#| echo: false
+#| message: false
+source("R/schedule.R")
+knitr::kable(class_schedule_df)
+```

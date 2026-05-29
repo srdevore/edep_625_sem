@@ -1,0 +1,12 @@
+---
+title: "Assignments"
+listing:
+  contents:
+    - research-connections.qmd
+  type: table
+  fields: [title, description]
+  field-display-names:
+    description: "Download"
+  sort-ui: false
+  filter-ui: false
+---

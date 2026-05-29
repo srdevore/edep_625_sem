@@ -1,0 +1,17 @@
+{
+  "name": "EDEP 625 SEM",
+  "image": "ghcr.io/rocker-org/devcontainer/tidyverse:4.4",
+  "features": {
+    "ghcr.io/rocker-org/devcontainer-features/quarto-cli:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "quarto.quarto",
+        "REditorSupport.r"
+      ]
+    }
+  },
+  "postCreateCommand": "Rscript -e 'install.packages(\"lavaan\")'",
+  "remoteUser": "rstudio"
+}

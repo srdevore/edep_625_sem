@@ -1,0 +1,17 @@
+---
+title: "Pre-registered Report"
+description: '<a href="final-project/pre-registered-report.pdf" download>Download PDF</a>'
+format:
+  html:
+    toc: true
+  typst:
+    margin:
+      x: 1in
+      y: 1in
+---
+
+::: {.content-visible when-format="html"}
+[Download PDF](pre-registered-report.pdf){.btn .btn-primary download="pre-registered-report.pdf" role="button"}
+:::
+
+Instructions for final project pre-registered report

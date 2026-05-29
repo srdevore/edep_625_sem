@@ -1,0 +1,17 @@
+---
+title: "Final Paper"
+description: '<a href="final-project/paper.pdf" download>Download PDF</a>'
+format:
+  html:
+    toc: true
+  typst:
+    margin:
+      x: 1in
+      y: 1in
+---
+
+::: {.content-visible when-format="html"}
+[Download PDF](paper.pdf){.btn .btn-primary download="paper.pdf" role="button"}
+:::
+
+Instructions for final project paper

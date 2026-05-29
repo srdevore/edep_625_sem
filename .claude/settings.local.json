@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//home/codespace/.claude/plans/**)",
+      "Read(//home/codespace/.claude/**)",
+      "Bash(git -C /workspaces/edep_625_SEM mv edep_625_plans.md _edep_625_plans.md)",
+      "Bash(git -C /workspaces/edep_625_SEM status)",
+      "WebFetch(domain:manoa.hawaii.edu)",
+      "Bash(quarto render *)",
+      "Bash(Rscript pre-render.R)",
+      "Bash(QUARTO_PROFILE=teacher Rscript pre-render.R)",
+      "Bash(curl -sI \"https://srdevore.github.io/edep_625_SEM/lectures/test_lecture_delay_show.html\")",
+      "Bash(curl -s \"https://srdevore.github.io/edep_625_SEM/lectures.html\")"
+    ]
+  }
+}

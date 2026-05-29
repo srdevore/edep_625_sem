@@ -1,0 +1,30 @@
+project:
+  type: website
+  output-dir: _site
+  pre-render: pre-render.R
+  post-render: post-render.R
+
+profile:
+  default: student
+
+website:
+  title: "Course Name"
+  navbar:
+    left:
+      - href: syllabus.qmd
+        text: Syllabus
+      - href: lectures.qmd
+        text: Lectures
+      - href: labs.qmd
+        text: R Labs
+      - href: research-connections.qmd
+        text: Research Connections
+      - href: fin_proj.qmd
+        text: Final Project
+  
+
+format:
+  html:
+    theme: darkly
+    toc: true
+    code-tools: true

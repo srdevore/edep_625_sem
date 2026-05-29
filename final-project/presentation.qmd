@@ -1,0 +1,17 @@
+---
+title: "Presentation"
+description: '<a href="final-project/presentation.pdf" download>Download PDF</a>'
+format:
+  html:
+    toc: true
+  typst:
+    margin:
+      x: 1in
+      y: 1in
+---
+
+::: {.content-visible when-format="html"}
+[Download PDF](presentation.pdf){.btn .btn-primary download="presentation.pdf" role="button"}
+:::
+
+Instructions for final project presentation

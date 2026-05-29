@@ -1,0 +1,17 @@
+---
+title: "Research Connections"
+description: '<a href="research-connections.pdf" download>Download PDF</a>'
+format:
+  html:
+    toc: true
+  typst:
+    margin:
+      x: 1in
+      y: 1in
+---
+
+::: {.content-visible when-format="html"}
+[Download PDF](research-connections.pdf){.btn .btn-primary download="research-connections.pdf" role="button"}
+:::
+
+Instructions for Research Connections Presentation

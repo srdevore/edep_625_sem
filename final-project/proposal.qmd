@@ -1,0 +1,17 @@
+---
+title: "Proposal"
+description: '<a href="final-project/proposal.pdf" download>Download PDF</a>'
+format:
+  html:
+    toc: true
+  typst:
+    margin:
+      x: 1in
+      y: 1in
+---
+
+::: {.content-visible when-format="html"}
+[Download PDF](proposal.pdf){.btn .btn-primary download="proposal.pdf" role="button"}
+:::
+
+Instructions for final project proposal

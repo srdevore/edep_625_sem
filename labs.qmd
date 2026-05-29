@@ -1,0 +1,12 @@
+---
+title: "R Labs"
+listing:
+  contents: rlabs/*.qmd
+  type: table
+  fields: [title, date, description]
+  field-display-names:
+    description: "Download"
+  sort: "date desc"
+  sort-ui: false
+  filter-ui: false
+---
