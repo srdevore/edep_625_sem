@@ -11,3 +11,4 @@ lectures/_metadata.yml
 
 /.quarto/
 **/*.quarto_ipynb
+.env

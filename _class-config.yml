@@ -14,8 +14,8 @@ course_office_hours: "Mondays 1:30-2:30; By appointment"
 
 # Semester schedule
 class_start: 2026-08-24      # First day of the semester (any day in week 1)
+class_end: 2026-12-18         # Last day of the semester (any day in the final week)
 class_days: [Thursday]        # Days of the week the class meets
-weeks: 17                     # Number of weeks in the semester
 class_start_time: "16:30"     # 24-hour HH:MM — when class actually starts
 timezone: "Pacific/Honolulu"  # IANA timezone — used by release-date gating
 

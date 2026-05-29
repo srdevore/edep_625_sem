@@ -4,6 +4,7 @@
 #   class_config        - list of course config
 #   class_start_date    - Date of semester start
 #   class_end_date      - Date of semester end
+#   class_weeks         - Number of weeks in the semester (derived)
 #   class_schedule_df   - data.frame with Week, Date, Topic, Prep, Turn in
 
 suppressPackageStartupMessages(library(yaml))
@@ -15,7 +16,12 @@ class_config   <- read_yaml("_class-config.yml")
   c("Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday")) - 1
 
 class_start_date <- as.Date(class_config$class_start)
-class_end_date   <- class_start_date + (class_config$weeks * 7 - 1)
+class_end_date   <- as.Date(class_config$class_end)
+
+# Number of weeks, counting from the Monday of the start week through the
+# week containing class_end_date (matches the Week column numbering below).
+.start_monday <- class_start_date - (as.integer(format(class_start_date, "%u")) - 1)
+class_weeks   <- as.integer(floor(as.numeric(class_end_date - .start_monday) / 7) + 1)
 
 .all_dates     <- seq(class_start_date, class_end_date, by = "day")
 .meeting_dates <- .all_dates[as.POSIXlt(.all_dates)$wday %in% .day_nums]
