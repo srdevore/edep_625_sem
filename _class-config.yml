@@ -6,16 +6,16 @@
 # the first time, because the navbar title in _quarto.yml is read before
 # pre-render updates it. The second render picks up the new value.
 
-course_name: "Course Name"
-course_instructor: "Instructor Name"
-course_instructor_email: "instructor@example.edu"
+course_name: "EDEP 625 Structural Equation Modeling"
+course_instructor: "Susanne DeVore, PhD"
+course_instructor_email: "sdevore@hawaii.edu"
 course_meeting_time: "Thursdays, 4:30–7:00pm"
 course_office_hours: "Mondays 1:30-2:30; By appointment"
 
 # Semester schedule
-class_start: 2026-05-18      # First day of the semester (any day in week 1)
-class_days: [Monday]        # Days of the week the class meets
-weeks: 10                     # Number of weeks in the semester
+class_start: 2026-08-24      # First day of the semester (any day in week 1)
+class_days: [Thursday]        # Days of the week the class meets
+weeks: 17                     # Number of weeks in the semester
 class_start_time: "16:30"     # 24-hour HH:MM — when class actually starts
 timezone: "Pacific/Honolulu"  # IANA timezone — used by release-date gating
 
