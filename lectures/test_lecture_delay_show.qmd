@@ -9,7 +9,6 @@ format:
     embed-resources: true
 release: week 3
 
-draft: true
 ---
 
 ## Welcome to SEM

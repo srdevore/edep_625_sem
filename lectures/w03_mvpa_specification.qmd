@@ -9,7 +9,6 @@ format:
     embed-resources: true
     self-contained-math: true
 release: week 3
-draft: true
 ---
 
 # Model specification
@@ -41,7 +40,7 @@ draft: true
 
 **Measured** (**observed**) variables are recorded directly in the data.
 
-- Our variables: **reading score**, **books at home**, **parent education**.
+- Ex: **reading score**, **books at home**, **parent education**.
 
 ::: {.fragment}
 **Latent** variables are *not* observed directly 
@@ -49,7 +48,7 @@ draft: true
   - they are inferred from patterns among measured variables
   - typically not easily captured by a single variable
 
-- Examples: **academic performance**, **intelligence**, **problem-solving ability**.
+- Ex: **academic performance**, **intelligence**, **problem-solving ability**.
 :::
 
 
@@ -79,10 +78,12 @@ $$\text{Reading} = b_0 + b_1(\text{Books}) + \zeta_R$$
 
 ## Review
 
-Residuals: 
+Residuals:
 
+::: {.content-visible when-profile="teacher"}
 ::: {.fragment}
-difference between an observed value and the value your model predicts 
+difference between an observed value and the value your model predicts
+:::
 :::
 
 ## Disturbance
@@ -111,21 +112,27 @@ As in Week 2, we assume the disturbance is uncorrelated with the predictors: cov
 
 * What parameters do we estimate in a regression model? 
 
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+slope, intercept, error
+:::
+:::
+
 ## SEM Parameters
 
 **Parameters** are the quantities the model estimates: 
 
 * path coefficients, 
 * variances of exogenous variables, 
-* disturbance variances, 
+* disturbance of endogenous variables, 
 * Covariances among exogenous variables
 
-## Parameters p2a
+## SEM Parameters p2
 
-In our example, the **coefficients** are parameters the model estimates:
+In our example, the **path coefficients** are parameters the model estimates:
 
-$$\text{Books} = \color{#C81E7A}{a_0} + \color{#C81E7A}{a_1}(\text{ParentEd}) + \zeta_B$$
-$$\text{Reading} = \color{#C81E7A}{b_0} + \color{#C81E7A}{b_1}(\text{Books}) + \zeta_R$$
+$$\text{Books} = \color{#C81E7A}{a_0} + \color{#C81E7A}{a_1}(\text{ParentEd}) + \color{#C81E7A}{\zeta_B}$$
+$$\text{Reading} = \color{#C81E7A}{b_0} + \color{#C81E7A}{b_1}(\text{Books}) + \color{#C81E7A}{\zeta_R}$$
 
 ## Pause & Recap
 
@@ -136,8 +143,8 @@ Contrast these terms from regression and their counterparts in SEM
 
 ## Pause & Recap 2
 
-1. What are parameters we esitmate in regression? 
-2. What additional ones do we have in SEM?
+1. What are parameters we estimate in regression? 
+2. What about in SEM?
 
 ## Systems of Equations as Diagrams
 
@@ -162,6 +169,7 @@ library(ggplot2)
 
 oNG <- "#E07B1A"; BLU <- "#2C6FB5"; MAG <- "#C81E7A"; LIM <- "#6FA80F"; dk <- "#3A3A3A"
 ar <- grid::arrow(length = grid::unit(0.22, "cm"), type = "closed")
+ar2 <- grid::arrow(length = grid::unit(0.18, "cm"), ends = "both", type = "closed")
 
 circle <- function(x, y, r = 0.5) {
   t <- seq(0, 2 * pi, length.out = 60)
@@ -179,14 +187,16 @@ ggplot() +
   # path b1: Books -> Reading (blue)
   annotate("segment", x = 5.15, xend = 6.85, y = 0, yend = 0, colour = BLU, linewidth = 1.3, arrow = ar) +
   annotate("text", x = 6, y = 0.45, label = "b[1]", parse = TRUE, colour = BLU, size = 6, fontface = "italic") +
+  # variance of exogenous Parent education (self-loop)
+  annotate("curve", x = -0.55, y = 0.6, xend = 0.55, yend = 0.6,
+           colour = dk, linewidth = 0.9, curvature = -1.4, arrow = ar2) +
+  annotate("text", x = 0, y = 1.85, label = "Var", colour = dk, size = 4.6, fontface = "italic") +
   # disturbance zeta_B on Books (magenta)
-  annotate("segment", x = 4, xend = 4, y = 1.8, yend = 0.6, colour = MAG, arrow = ar) +
-  geom_path(data = circle(4, 2.3), aes(x, y), colour = MAG, linewidth = 1) +
-  annotate("text", x = 4, y = 2.3, label = "zeta[B]", parse = TRUE, colour = MAG, size = 4.6) +
+  annotate("segment", x = 4, xend = 4, y = 1.85, yend = 0.6, colour = MAG, arrow = ar) +
+  annotate("text", x = 4, y = 2.25, label = "zeta[B]", parse = TRUE, colour = MAG, size = 4.6) +
   # disturbance zeta_R on Reading (lime)
-  annotate("segment", x = 8, xend = 8, y = 1.8, yend = 0.6, colour = LIM, arrow = ar) +
-  geom_path(data = circle(8, 2.3), aes(x, y), colour = LIM, linewidth = 1) +
-  annotate("text", x = 8, y = 2.3, label = "zeta[R]", parse = TRUE, colour = LIM, size = 4.6) +
+  annotate("segment", x = 8, xend = 8, y = 1.85, yend = 0.6, colour = LIM, arrow = ar) +
+  annotate("text", x = 8, y = 2.25, label = "zeta[R]", parse = TRUE, colour = LIM, size = 4.6) +
   # measured variables
   box(0, "Parent\neducation") + box(4, "Books at\nhome") + box(8, "Reading\nscore") +
   coord_equal(clip = "off") +
@@ -233,10 +243,11 @@ node <- function(x, y, label, w = 2.6, h = 1.1) list(
 )
 path <- function(x1, y1, x2, y2) annotate("segment", x = x1, y = y1, xend = x2, yend = y2,
                                           colour = MAG, linewidth = 1.2, arrow = AR)
+plab <- function(x, y, label) annotate("text", x = x, y = y, label = label, parse = TRUE,
+                                       colour = MAG, size = 4.6, fontface = "italic")
 dist <- function(x, ycirc, ytarget, label) list(
-  geom_path(data = ecirc(x, ycirc), aes(x, y), colour = GRY, linewidth = 0.9),
   annotate("segment", x = x, y = ycirc - 0.45, xend = x, yend = ytarget, colour = GRY, arrow = AR),
-  annotate("text", x = x, y = ycirc, label = label, parse = TRUE, colour = GRY, size = 3.8)
+  annotate("text", x = x, y = ycirc + 0.05, label = label, parse = TRUE, colour = GRY, size = 3.8)
 )
 canvas <- list(coord_equal(clip = "off"), theme_void())
 ```
@@ -255,6 +266,8 @@ $$\text{Grades} = b_0 + b_1(\text{Motivation}) + \zeta_G$$
 ggplot() +
   path(1.3, 0, 2.7, 0) +
   path(5.3, 0, 6.7, 0) +
+  plab(2, 0.4, "a[1]") +
+  plab(6, 0.4, "b[1]") +
   dist(4, 2.0, 0.6, "zeta[M]") +
   dist(8, 2.0, 0.6, "zeta[G]") +
   node(0, 0, "Teacher\nsupport") +
@@ -292,6 +305,10 @@ ggplot() +
   path(1.4, -1.35, 2.4, -0.35) +
   path(5.2, 0, 6.2, 0) +
   path(9.0, 0, 10.0, 0) +
+  plab(2.05, 1.05, "a[1]") +
+  plab(2.05, -1.05, "a[2]") +
+  plab(5.7, 0.4, "b[1]") +
+  plab(9.5, 0.4, "c[1]") +
   dist(3.8, 2.0, 0.6, "zeta[E]") +
   dist(7.6, 2.0, 0.6, "zeta[H]") +
   dist(11.4, 2.0, 0.6, "zeta[G]") +
@@ -314,41 +331,10 @@ arrow). Endogenous: engagement, homework completion, final grade. Parameters:
 
 ## Example 3
 
-::: {style="font-size: 0.8em"}
-$$\text{Home resources} = a_0 + a_1(\text{SES}) + \zeta_H$$
-$$\text{Reading skill} = b_0 + b_1(\text{Home resources}) + \zeta_R$$
-$$\text{GPA} = c_0 + c_1(\text{Reading skill}) + \zeta_G$$
-:::
-
-```{r}
-#| echo: false
-#| fig-width: 9.5
-#| fig-height: 2.2
-ggplot() +
-  path(1.3, 0, 2.7, 0) +
-  path(5.3, 0, 6.7, 0) +
-  path(9.3, 0, 10.7, 0) +
-  dist(4, 2.0, 0.6, "zeta[H]") +
-  dist(8, 2.0, 0.6, "zeta[R]") +
-  dist(12, 2.0, 0.6, "zeta[G]") +
-  node(0, 0, "SES") +
-  node(4, 0, "Home\nresources") +
-  node(8, 0, "Reading\nskill") +
-  node(12, 0, "GPA") +
-  canvas +
-  expand_limits(x = c(-1.5, 13.5), y = c(-0.7, 2.6))
-```
-
-::: {.content-visible when-profile="teacher"}
-::: {.notes}
-Exogenous: SES. Endogenous: home resources, reading skill, GPA. Parameters: 3
-paths, var(SES), 3 disturbance variances.
-:::
-:::
+![Pfeuffer et al. (2025), Figure 2: path model for STEM choice intentions](images/pfeuffer_fig2_pathmodel.png)
 
 # Model Implied Covariance
 
-.
 
 ## Model-implied covariance matrix
 
@@ -421,8 +407,6 @@ base_model <- function() list(
   annotate("text", x = 6, y = 0.4, label = "b[1]", parse = TRUE, colour = BASE, size = 4.2),
   annotate("segment", x = 4, xend = 4, y = 1.8, yend = 0.6, colour = BASE, arrow = AR),
   annotate("segment", x = 8, xend = 8, y = 1.8, yend = 0.6, colour = BASE, arrow = AR),
-  geom_path(data = ecirc(4, 2.3), aes(x, y), colour = BASE, linewidth = 0.8),
-  geom_path(data = ecirc(8, 2.3), aes(x, y), colour = BASE, linewidth = 0.8),
   annotate("text", x = 4, y = 2.3, label = "zeta[B]", parse = TRUE, colour = BASE, size = 3.6),
   annotate("text", x = 8, y = 2.3, label = "zeta[R]", parse = TRUE, colour = BASE, size = 3.6),
   p_varloop(BASE, "solid", 0.9),
@@ -439,7 +423,8 @@ node_hi <- function(key, col) {
     annotate("rect", xmin = p[1] - 1.28, xmax = p[1] + 1.28, ymin = -0.68, ymax = 0.68,
              fill = NA, colour = col, linewidth = 1.3, linetype = "dotted")
   } else {
-    geom_path(data = ecirc(p[1], p[2], 0.62), aes(x, y), colour = col, linewidth = 1.3, linetype = "dotted")
+    # disturbance node: its arrow is already highlighted via trace_edge, no ring (no circles on disturbances)
+    NULL
   }
 }
 
@@ -634,16 +619,248 @@ covmat(6)
 
 **Var(R):** up-and-back through B → b₁²·Var(B); plus its own disturbance → Var(ζ_R). Sum.
 
-## Practice with model-implied covariance matrix
+## Practice 
 
+$$\text{Motivation} = a_0 + a_1\,\text{Support} + \zeta_M \qquad \text{Grades} = b_0 + b_1\,\text{Motivation} + \zeta_G$$
 
+*S = Support · M = Motivation · G = Grades*
 
+```{r}
+#| include: false
+## Practice model: Support -> Motivation -> Grades (reuses helpers from the Books trace chunk)
+base_model2 <- function(col = BASE) list(
+  annotate("segment", x = 1.15, xend = 2.85, y = 0, yend = 0, colour = col, linewidth = 1, arrow = AR),
+  annotate("segment", x = 5.15, xend = 6.85, y = 0, yend = 0, colour = col, linewidth = 1, arrow = AR),
+  annotate("text", x = 2, y = 0.4, label = "a[1]", parse = TRUE, colour = col, size = 4.2),
+  annotate("text", x = 6, y = 0.4, label = "b[1]", parse = TRUE, colour = col, size = 4.2),
+  annotate("segment", x = 4, xend = 4, y = 1.8, yend = 0.6, colour = col, arrow = AR),
+  annotate("segment", x = 8, xend = 8, y = 1.8, yend = 0.6, colour = col, arrow = AR),
+  annotate("text", x = 4, y = 2.3, label = "zeta[M]", parse = TRUE, colour = col, size = 3.6),
+  annotate("text", x = 8, y = 2.3, label = "zeta[G]", parse = TRUE, colour = col, size = 3.6),
+  p_varloop(col, "solid", 0.9),
+  annotate("text", x = 0, y = -1.5, label = "Var(S)", colour = col, size = 3.4),
+  nodebox(0, "Teacher\nsupport"), nodebox(4, "Academic\nmotivation"), nodebox(8, "Course\ngrades")
+)
+
+STEPS2 <- list(
+  list(cells = list(c(1,1)), expr = "Var(S)", col = c_pp, edges = list(), hi = c("P")),
+  list(cells = list(c(1,2), c(2,1)), expr = "a[1] %.% Var(S)", col = c_pb,
+       edges = list(c(1.15,0,2.85,0)), hi = c("P")),
+  list(cells = list(c(2,2)), expr = "atop(a[1]^2 %.% Var(S), +~Var(zeta[M]))", col = c_bb,
+       edges = list(c(1.15,0,2.85,0), c(4,1.8,4,0.6)), hi = c("P","zB")),
+  list(cells = list(c(1,3), c(3,1)), expr = "a[1] %.% b[1] %.% Var(S)", col = c_pr,
+       edges = list(c(1.15,0,2.85,0), c(5.15,0,6.85,0)), hi = c("P")),
+  list(cells = list(c(2,3), c(3,2)), expr = "b[1] %.% Var(M)", col = c_br,
+       edges = list(c(5.15,0,6.85,0)), hi = c("B")),
+  list(cells = list(c(3,3)), expr = "atop(b[1]^2 %.% Var(M), +~Var(zeta[G]))", col = c_rr,
+       edges = list(c(5.15,0,6.85,0), c(8,1.8,8,0.6)), hi = c("B","zR"))
+)
+
+diagram2 <- function(i) {
+  g <- ggplot() + base_model2(if (i == 0) DK else BASE)
+  if (i >= 1) {
+    st <- STEPS2[[i]]
+    for (e in st$edges) g <- g + trace_edge(e, st$col)
+    for (h in st$hi) g <- g + node_hi(h, st$col)
+  }
+  g + coord_equal(clip = "off") + theme_void() +
+    expand_limits(x = c(-1.5, 9.5), y = c(-1.7, 3.1))
+}
+
+covmat2 <- function(i) {
+  labs <- c("S", "M", "G")
+  g <- ggplot()
+  for (r in 1:3) for (cc in 1:3) {
+    g <- g + annotate("rect", xmin = cc - 0.48, xmax = cc + 0.48,
+                      ymin = (4 - r) - 0.48, ymax = (4 - r) + 0.48,
+                      fill = "grey95", colour = "grey80")
+  }
+  for (s in seq_len(i)) {
+    st <- STEPS2[[s]]; emph <- (s == i)
+    for (cell in st$cells) {
+      rr <- cell[1]; ccx <- cell[2]
+      g <- g +
+        annotate("rect", xmin = ccx - 0.48, xmax = ccx + 0.48,
+                 ymin = (4 - rr) - 0.48, ymax = (4 - rr) + 0.48,
+                 fill = st$col, alpha = if (emph) 0.92 else 0.32,
+                 colour = if (emph) "black" else NA, linewidth = if (emph) 1 else 0) +
+        annotate("text", x = ccx, y = (4 - rr), label = st$expr, parse = TRUE,
+                 colour = if (emph) "white" else "grey25", size = 3.1, lineheight = 0.9)
+    }
+  }
+  for (k in 1:3) {
+    g <- g + annotate("text", x = k, y = 3.72, label = labs[k], fontface = "bold", size = 4.2) +
+      annotate("text", x = 0.32, y = 4 - k, label = labs[k], fontface = "bold", size = 4.2)
+  }
+  g + coord_equal(clip = "off") + theme_void() +
+    expand_limits(x = c(0.1, 3.6), y = c(0.4, 4.0))
+}
+```
+
+:::: {.columns}
+::: {.column width="56%"}
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3.4
+diagram2(0)
+```
+:::
+::: {.column width="44%"}
+```{r}
+#| echo: false
+#| fig-width: 4.4
+#| fig-height: 4.4
+covmat2(0)
+```
+:::
+::::
+
+Fill in all six cells, then we'll check them together.
+
+## Practice Trace 1 — Var(Support)
+
+:::: {.columns}
+::: {.column width="56%"}
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3.4
+diagram2(1)
+```
+:::
+::: {.column width="44%"}
+```{r}
+#| echo: false
+#| fig-width: 4.4
+#| fig-height: 4.4
+covmat2(1)
+```
+:::
+::::
+
+**Var(S):** Support is exogenous — its variance is a free parameter. Nothing to trace.
+
+## Practice Trace 2 — Cov(Support, Motivation)
+
+:::: {.columns}
+::: {.column width="56%"}
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3.4
+diagram2(2)
+```
+:::
+::: {.column width="44%"}
+```{r}
+#| echo: false
+#| fig-width: 4.4
+#| fig-height: 4.4
+covmat2(2)
+```
+:::
+::::
+
+**Cov(S, M):** one route S→M (rule 1). Multiply the coefficient a₁ (rule 5), then × the variance at the top, Var(S).
+
+## Practice Trace 3 — Var(Motivation)
+
+:::: {.columns}
+::: {.column width="56%"}
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3.4
+diagram2(3)
+```
+:::
+::: {.column width="44%"}
+```{r}
+#| echo: false
+#| fig-width: 4.4
+#| fig-height: 4.4
+covmat2(3)
+```
+:::
+::::
+
+**Var(M):** trace M to itself. Up-and-back through the common cause S → a₁²·Var(S); plus its own disturbance → Var(ζ_M). Sum the routes (rule 6).
+
+## Practice Trace 4 — Cov(Support, Grades)
+
+:::: {.columns}
+::: {.column width="56%"}
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3.4
+diagram2(4)
+```
+:::
+::: {.column width="44%"}
+```{r}
+#| echo: false
+#| fig-width: 4.4
+#| fig-height: 4.4
+covmat2(4)
+```
+:::
+::::
+
+**Cov(S, G):** one route S→M→G. Multiply a₁·b₁, then × Var(S).
+
+## Practice Trace 5 — Cov(Motivation, Grades)
+
+:::: {.columns}
+::: {.column width="56%"}
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3.4
+diagram2(5)
+```
+:::
+::: {.column width="44%"}
+```{r}
+#| echo: false
+#| fig-width: 4.4
+#| fig-height: 4.4
+covmat2(5)
+```
+:::
+::::
+
+**Cov(M, G):** route M→G (b₁) × the variance of M we already found → b₁·Var(M).
+
+## Practice Trace 6 — Var(Grades)
+
+:::: {.columns}
+::: {.column width="56%"}
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3.4
+diagram2(6)
+```
+:::
+::: {.column width="44%"}
+```{r}
+#| echo: false
+#| fig-width: 4.4
+#| fig-height: 4.4
+covmat2(6)
+```
+:::
+::::
+
+**Var(G):** up-and-back through M → b₁²·Var(M); plus its own disturbance → Var(ζ_G). Sum.
 
 # Mini-project 1
 
 # Lavaan GUI
 
-- Specifying a model in the GUI
+- Specifying a model in the (GUI)[https://solo-fsw.shinyapps.io/lavaangui/]
 
 # Rlab 
 
@@ -658,3 +875,7 @@ Brainstorm for Mini-project 1
 ## Up Next
 
 Identification & Fit Indices
+
+- Prep: Read Parry 2024 (2 pg summary if fit indices)
+- In 3 weeks: Methods walk-through: Alana, Mia, Alex, Bocar
+- In 4 weeks: Mini-project 1
