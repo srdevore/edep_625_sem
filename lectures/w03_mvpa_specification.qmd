@@ -716,7 +716,7 @@ covmat2(0)
 :::
 ::::
 
-Fill in all six cells, then we'll check them together.
+::::: {.content-visible when-profile="teacher"}
 
 ## Practice Trace 1 — Var(Support)
 
@@ -855,6 +855,8 @@ covmat2(6)
 ::::
 
 **Var(G):** up-and-back through M → b₁²·Var(M); plus its own disturbance → Var(ζ_G). Sum.
+
+:::::
 
 # Mini-project 1
 
