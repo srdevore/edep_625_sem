@@ -127,13 +127,6 @@ slope, intercept, error
 * disturbance of endogenous variables, 
 * Covariances among exogenous variables
 
-## SEM Parameters p2
-
-In our example, the **path coefficients** are parameters the model estimates:
-
-$$\text{Books} = \color{#C81E7A}{a_0} + \color{#C81E7A}{a_1}(\text{ParentEd}) + \color{#C81E7A}{\zeta_B}$$
-$$\text{Reading} = \color{#C81E7A}{b_0} + \color{#C81E7A}{b_1}(\text{Books}) + \color{#C81E7A}{\zeta_R}$$
-
 ## Pause & Recap
 
 Contrast these terms from regression and their counterparts in SEM
