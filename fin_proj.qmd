@@ -1,13 +1,13 @@
 ---
-title: "Assignments"
-draft: true
+title: "Mini Projects"
 listing:
   contents:
-    - mini-projects/*.qmd
+    - mini_projects/*.qmd
   type: table
   fields: [title, description]
   field-display-names:
-    description: "Download"
+    title: "Mini Project"
+    description: "Assignment"
   sort-ui: false
   filter-ui: false
 ---

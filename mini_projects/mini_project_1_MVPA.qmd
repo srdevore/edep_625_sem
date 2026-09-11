@@ -1,0 +1,99 @@
+---
+title: "Mini Project 1: MVPA"
+description: '<a href="mini_projects/mini_project_1_MVPA.pdf" download>Download PDF</a>'
+format:
+  html:
+    toc: true
+  typst:
+    margin:
+      x: 1in
+      y: 1in
+---
+
+::: {.content-visible when-format="html"}
+[Download PDF](mini_project_1_MVPA.pdf){.btn .btn-primary download="mini_project_1_MVPA.pdf" role="button"}
+:::
+
+## Purpose of this assignment:
+
+Related to the second & fourth course objectives (from syllabus):
+
+- Build measured variable path analysis ... models with academic rigor,
+- Build understanding of SEM research in your field and datasets available to answer questions.
+
+Your goal for this assignment:
+
+- Demonstrate your ability to specify a MVPA model based on theory & RQ in your field.
+- Demonstrate your ability to independently run the analysis by adapting code provided in labs
+- Demonstrate your ability to curate the relevant outputs to answer your RQ
+- Demonstrate your ability to interpret results
+- Demonstrate your ability to connect your results to theoretical implications for your field
+
+Out of scope:
+
+- Publication-ready research paper
+
+Submit: Link to a goolge Doc that contains the sections described below. Make sure that you have granted sdevore@hawaii.edu commenter or editor access.
+
+## 1. Theoretical Background
+
+* Bullet points of the key theoretical background.
+* Not a full literature review. Focus on the core theory in your field that drives your RQ.
+* 300 word max
+
+## 2. Research Question
+
+* One (1) question only
+* Based on above background
+* 100 word max
+
+## 3. Data
+
+* A brief explanation of the data. Only information relevant to answering your RQ. Not a full description.
+* How will you use the data to answer your RQ?
+* 300 word max
+
+## 4. Model Specification
+
+This is a narrowed-down version of the methods section. Note that this should follow from step 1 Theoretical Background.
+
+1. One diagram of the model(s) you will run in this project. If your RQ involves model comparison, then you should submit one diagram per model.
+2. The system of equations that the model represents
+3. The model-implied covariance matrix representation, developed using the tracing rules
+
+Diagrams & tables only, so no words.
+
+## 5. Full R code & Outputs
+
+* Generate these in a .qmd or .rmd file, in which you explain what the code is doing. Render as HTML, and submit the output as a separate supplementary file.
+* This can contain some EDA and other explorations of the data and doesn't need to be curated.
+* No word limit
+
+## 6. Results
+
+* Only the key outputs necessary to answer the RQ. This will be curated from the the full R code.
+* Focus on explaining what the results mean
+* Assume no limitations in this section (this section should not include comments like "these resutls are probably due to small sample size, [or any other research design/data/etc problem]"
+* Demonstrate that you can identify the key pieces of information needed to answer the RQ and support any claims in the discussion.
+* 300 words max, not counting tables/outputs.
+
+## 7. Discussion
+
+* Answer your RQ based on the outputs.
+* Assume there are no limitations when writing this section
+* Demonstrate that you can interpret the outputs *as they are*.
+* 500 word max
+
+## 8. Limitations
+
+* This is the only place where you can point out any shortcomings in data/design/etc that make the results & discussion unreliable.
+* Bullet points are fine
+
+## 9. Uncertainties
+
+* As researchers, we often face situations that don't have a difinitive or obvious "correct" approach. What uncertainties did you face? What decision did you make? How did you justify it?
+* Bullet points or a table are fine
+
+## 10. AI use
+
+* Describe if/how you used AI to aid this research. Bullet points are fine.

@@ -5,7 +5,6 @@ description: '<a href="rlab-downloads/w02_rlab_review_SEM_FUNdamentals.qmd" down
 data: '<a href="rlab-downloads/w01_data_pisa22_USA_cln.csv" download="w01_data_pisa22_USA_cln.csv">w01_data_pisa22_USA_cln.csv</a>'
 format: html
 release: week 2
-draft: true
 ---
 
 ## Purpose

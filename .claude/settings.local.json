@@ -25,7 +25,8 @@
       "Read(//usr/local/lib/R/etc/**)",
       "Bash(Rscript *)",
       "Bash(pdftotext _site/index.pdf -)",
-      "Bash(grep -o \"Solving for.\\\\{0,40\\\\}\\\\|a_1 = \\\\\\\\\\\\\\\\frac{[^}]*}{[^}]*} = [0-9.]*\\\\|a_0 = [^<]\\\\{0,60\\\\}\" _teacher/lectures/w02_regression_review.html)"
+      "Bash(grep -o \"Solving for.\\\\{0,40\\\\}\\\\|a_1 = \\\\\\\\\\\\\\\\frac{[^}]*}{[^}]*} = [0-9.]*\\\\|a_0 = [^<]\\\\{0,60\\\\}\" _teacher/lectures/w02_regression_review.html)",
+      "Bash(ls images *)"
     ]
   }
 }
