@@ -8,7 +8,6 @@ format:
     slide-number: true
     embed-resources: true
     self-contained-math: true
-release: week 3
 ---
 
 # Model specification
@@ -27,11 +26,15 @@ release: week 3
 - Mini Project 1 
 - R/lavaan gui
 
+# Paper Discussion 
 
-# Paper Discussion
+Go to Lamaku > quizes > W3 Reading Summary
+
+Individually do the quiz
+
+## Paper Discussion
 
 - Theoretical motivation for the variables in the model? 
-- Theoretical motivation for the relationships between variables in the model?
 - Were any variables left out? 
 
 # Terminology
