@@ -142,6 +142,46 @@ statistically equivalent instead of nested). After fitting we check the residual
 covariances and modification indices for any hint that a disturbance covariance
 was wrongly omitted.
 
+## Model 0: The original chain
+
+Before adding technology, start with the original model: parent education relates
+to reading achievement *only* through books at home.
+
+$$\text{PAREDINT} \;\rightarrow\; \text{BOOKSHOME} \;\rightarrow\; \text{READ\_AVG}$$
+
+```{r}
+#| warning: false
+model0 <- "
+  BOOKSHOME ~ PAREDINT
+  READ_AVG  ~ BOOKSHOME
+"
+
+fit0 <- sem(model0, data = pisa, auto.cov.y = FALSE)
+summary(fit0, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
+```
+
+```{r}
+lavaanPlot(model = fit0, coefs = TRUE, stand = TRUE, stars = "regress")
+```
+
+### How well does Model 0 fit?
+
+```{r}
+knitr::kable(fit_table(fit0))
+```
+
+::: {.content-visible when-profile="teacher"}
+**Sample answer.** Model 0 is over-identified (df =
+`r as.integer(fitMeasures(fit0, "df"))`), so its fit is testable. The chi-square
+is `r fmt(fitMeasures(fit0, "chisq"), 1)` with $p$ =
+`r fmt(fitMeasures(fit0, "pvalue"), 3)` (CFI =
+`r fmt(fitMeasures(fit0, "cfi"), 3)`, RMSEA =
+`r fmt(fitMeasures(fit0, "rmsea"), 3)`, SRMR =
+`r fmt(fitMeasures(fit0, "srmr"), 3)`). This three-variable chain is the baseline
+we build on -- next we bring technology into the model so the richer models stay
+comparable on the same variables.
+:::
+
 ## Model 1: Books-only mediation
 
 ```{r}
