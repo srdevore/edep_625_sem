@@ -1,0 +1,244 @@
+---
+title: "Lab: Model Fit & Comparison"
+date: today
+description: '<a href="rlab-downloads/w04_rlab_model_fit.qmd" download="w04_rlab_model_fit.qmd">Download .qmd</a>'
+data: '<a href="rlab-downloads/w01_data_pisa22_USA_cln.csv" download="w01_data_pisa22_USA_cln.csv">w01_data_pisa22_USA_cln.csv</a>'
+format: html
+release: week 4
+---
+
+## Purpose
+
+Goal: Fit two competing path models, check the assumptions behind them, judge
+how well each fits, and compare them.
+
+Question: Is the relationship between parental education (`PAREDINT`) and
+children's reading scores (`READ_AVG`) *fully* mediated by books at home
+(`BOOKSHOME`), or does parent education also have a *direct* effect on reading?
+
+* **Model 1 (fully mediated):** parent education -> books -> reading, with no
+  direct path. This leaves one covariance unaccounted for, so it is
+  *over-identified* (df = 1) and its fit is testable.
+* **Model 2 (partially mediated):** adds the direct parent education -> reading
+  path. Every covariance now has a parameter, so it is *just-identified*
+  (df = 0) and fits perfectly by construction.
+
+## Setup
+
+```{r}
+#| message: false
+library(tidyverse)
+library(lavaan)
+library(lavaanPlot)
+
+pisa <- read_csv("w01_data_pisa22_USA_cln.csv", show_col_types = FALSE)
+```
+
+```{r}
+#| include: false
+fmt <- function(x, d = 2) formatC(x, format = "f", digits = d, big.mark = ",")
+```
+
+## Assumptions
+
+Path models estimated with maximum likelihood carry a handful of assumptions.
+We check them *before* trusting the fit statistics.
+
+### Multivariate normality
+
+ML assumes the endogenous variables are multivariate normal. A quick screen is
+the univariate skewness and kurtosis of each variable -- values near 0
+(skew) and 3 (kurtosis) are consistent with normality.
+
+```{r}
+skew <- function(x) {
+  x <- x[!is.na(x)]; n <- length(x)
+  mean((x - mean(x))^3) / (mean((x - mean(x))^2))^(3 / 2)
+}
+kurt <- function(x) {
+  x <- x[!is.na(x)]; n <- length(x)
+  mean((x - mean(x))^4) / (mean((x - mean(x))^2))^2
+}
+
+tibble(
+  Variable = c("PAREDINT", "BOOKSHOME", "READ_AVG"),
+  Skewness = c(skew(pisa$PAREDINT), skew(pisa$BOOKSHOME), skew(pisa$READ_AVG)),
+  Kurtosis = c(kurt(pisa$PAREDINT), kurt(pisa$BOOKSHOME), kurt(pisa$READ_AVG))
+)
+```
+
+If normality is in doubt, refit with a robust estimator, `estimator = "MLR"`,
+which corrects the standard errors and the chi-square for non-normality.
+
+::: {.content-visible when-profile="teacher"}
+**Sample answer.** With a large PISA sample, mild departures from normality are
+common and rarely fatal. If skew/kurtosis are moderate, ML point estimates stay
+trustworthy but the chi-square and standard errors can be off -- that is exactly
+what `MLR` fixes, so reporting the robust (scaled) statistics is the safe habit.
+:::
+
+### Linearity
+
+The `~` paths assume each relationship is linear. Scatterplots with a straight
+(`lm`) fit overlaid let us eyeball that.
+
+```{r}
+#| warning: false
+#| fig-width: 8
+#| fig-height: 3
+pisa |>
+  select(PAREDINT, BOOKSHOME, READ_AVG) |>
+  pivot_longer(-READ_AVG, names_to = "predictor", values_to = "x") |>
+  ggplot(aes(x, READ_AVG)) +
+  geom_point(alpha = 0.15) +
+  geom_smooth(method = "lm", se = FALSE, colour = "#C81E7A") +
+  facet_wrap(~predictor, scales = "free_x") +
+  theme_minimal()
+```
+
+### Multicollinearity
+
+Exogenous predictors should not be near-perfectly correlated. Here the only
+predictor pair that appears together in an equation is parent education and
+books at home.
+
+```{r}
+cor(pisa[, c("PAREDINT", "BOOKSHOME", "READ_AVG")], use = "pairwise.complete.obs")
+
+# Variance inflation factor for the PAREDINT / BOOKSHOME pair
+r2 <- summary(lm(BOOKSHOME ~ PAREDINT, data = pisa))$r.squared
+vif <- 1 / (1 - r2)
+vif
+```
+
+::: {.content-visible when-profile="teacher"}
+**Sample answer.** Correlation between parent education and books at home is
+`r fmt(cor(pisa$PAREDINT, pisa$BOOKSHOME, use = "pairwise.complete.obs"), 2)`,
+well below any collinearity threshold, and VIF = `r fmt(vif, 2)` (rule of thumb:
+concern above ~5-10). No collinearity problem.
+:::
+
+### Uncorrelated disturbances
+
+Recursive path models assume the disturbances (residual errors) of the
+endogenous variables are uncorrelated. After fitting, we check the residual
+covariances and modification indices for a hint that a disturbance covariance
+was wrongly omitted. (We run this check on the fitted models below.)
+
+## Model 1: Fully mediated
+
+```{r}
+#| warning: false
+model1 <- "
+  BOOKSHOME ~ PAREDINT
+  READ_AVG  ~ BOOKSHOME
+"
+
+fit1 <- sem(model1, data = pisa)
+summary(fit1, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
+```
+
+```{r}
+lavaanPlot(model = fit1, coefs = TRUE, stand = TRUE, stars = "regress")
+```
+
+Residual check for the uncorrelated-disturbance assumption:
+
+```{r}
+residuals(fit1, type = "cor")
+modificationIndices(fit1, sort. = TRUE)
+```
+
+### How well does Model 1 fit?
+
+```{r}
+fitMeasures(fit1, c("chisq", "df", "pvalue", "cfi", "tli", "rmsea",
+                    "srmr", "aic", "bic"))
+```
+
+::: {.content-visible when-profile="teacher"}
+**Sample answer.** Model 1 is over-identified (df =
+`r as.integer(fitMeasures(fit1, "df"))`), so its fit is testable. The
+chi-square is `r fmt(fitMeasures(fit1, "chisq"), 1)` with $p$ =
+`r fmt(fitMeasures(fit1, "pvalue"), 3)`. A significant chi-square says the
+model-implied covariances differ from the observed ones -- the omitted direct
+path is missing something. The approximate-fit indices (CFI =
+`r fmt(fitMeasures(fit1, "cfi"), 3)`, RMSEA =
+`r fmt(fitMeasures(fit1, "rmsea"), 3)`, SRMR =
+`r fmt(fitMeasures(fit1, "srmr"), 3)`) tell the same story. The largest
+modification index points straight at the `READ_AVG ~ PAREDINT` direct path --
+i.e., Model 2.
+:::
+
+## Model 2: Partially mediated
+
+```{r}
+#| warning: false
+model2 <- "
+  BOOKSHOME ~ PAREDINT
+  READ_AVG  ~ BOOKSHOME + PAREDINT
+"
+
+fit2 <- sem(model2, data = pisa)
+summary(fit2, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
+```
+
+```{r}
+lavaanPlot(model = fit2, coefs = TRUE, stand = TRUE, stars = "regress")
+```
+
+### How well does Model 2 fit?
+
+```{r}
+fitMeasures(fit2, c("chisq", "df", "pvalue", "cfi", "tli", "rmsea",
+                    "srmr", "aic", "bic"))
+```
+
+::: {.content-visible when-profile="teacher"}
+**Sample answer.** Model 2 is just-identified (df =
+`r as.integer(fitMeasures(fit2, "df"))`): it has exactly as many parameters as
+pieces of information, so it reproduces the observed covariances perfectly.
+Chi-square is ~0, CFI = 1, RMSEA = 0 -- these are guaranteed, not evidence of a
+good model, so they are *not* meaningful here. What *is* meaningful is whether
+the added direct path is significant and whether AIC/BIC improve over Model 1.
+:::
+
+## Is Model 1 better than Model 2?
+
+Because Model 1 is nested in Model 2 (Model 1 = Model 2 with the direct path
+fixed to 0), we can compare them with a chi-square difference test, and also
+weigh parsimony with AIC/BIC.
+
+```{r}
+anova(fit1, fit2)
+```
+
+```{r}
+tibble(
+  Model  = c("Model 1: fully mediated", "Model 2: partially mediated"),
+  df     = c(fitMeasures(fit1, "df"),    fitMeasures(fit2, "df")),
+  chisq  = c(fitMeasures(fit1, "chisq"), fitMeasures(fit2, "chisq")),
+  CFI    = c(fitMeasures(fit1, "cfi"),   fitMeasures(fit2, "cfi")),
+  RMSEA  = c(fitMeasures(fit1, "rmsea"), fitMeasures(fit2, "rmsea")),
+  AIC    = c(fitMeasures(fit1, "aic"),   fitMeasures(fit2, "aic")),
+  BIC    = c(fitMeasures(fit1, "bic"),   fitMeasures(fit2, "bic"))
+)
+```
+
+::: {.content-visible when-profile="teacher"}
+**Sample answer.** The chi-square difference test is significant, so freeing the
+direct path improves fit beyond chance: Model 2 is preferred. AIC and BIC are
+both lower for Model 2, agreeing even after penalizing the extra parameter.
+Substantively, parent education has a direct effect on reading over and above
+what runs through books at home -- the relationship is only *partially*
+mediated. (Model 2 being just-identified means it can't be rejected on its own;
+the comparison to the nested Model 1 is what makes the direct path defensible.)
+:::
+
+## Wrap-up
+
+1. Why can we test the fit of Model 1 but not Model 2?
+2. Which single statistic in the comparison most directly answers the research
+   question, and what does its value tell you?
+3. If multivariate normality had been badly violated, what would you change
+   about how you fit and compared these models?

@@ -537,45 +537,133 @@ No new information is provided by the second observation
 - Linearity: Ways to handle non-linear relationships
 - Uncorrelated disturnances: Applies only to recursive models
 
+## Pause & Recap
+
+What assumptions should be met or adjusted for for MVPA?
+
 # Model Fit
 
-Q: Is the relationship between parental education and children's reading scores fully mediated by the number of books in the home or does parent education also have a direct effect on students' scores? 
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+library(tidyverse)
+library(lavaan)
 
-1. Develop 2 models, one fully mediated, one partially mediated by number of books
-2. Compare the two models
-3. Determine which is the best fit to the data
+pisa <- read_csv("../rlabs/w01_data_pisa22_USA_cln.csv", show_col_types = FALSE)
 
-## Model 1: Fully mediated
+fmt <- function(x, d = 2) formatC(x, format = "f", digits = d, big.mark = ",")
 
-add a diagram: Parent education > books > reading score
+# Model 1: fully mediated (ParentEd -> Books -> Reading)
+model1 <- "
+  BOOKSHOME ~ PAREDINT
+  READ_AVG  ~ BOOKSHOME
+"
+fit1 <- sem(model1, data = pisa)
 
-> What theoretical claims does this make?
-> How many degrees of freedom? 
-> How to describe its identification? 
+# Model 2: partially mediated (adds direct ParentEd -> Reading)
+model2 <- "
+  BOOKSHOME ~ PAREDINT
+  READ_AVG  ~ BOOKSHOME + PAREDINT
+"
+fit2 <- sem(model2, data = pisa)
+```
 
-## How well does model 1 fit the data? 
+Q: to what extent is the relationship between parental education and children's reading scores mediated by the number of books in the home?
 
-Run the model. Add fit indices here. Discuss what each tells us. 
+Develop a models and determine how well it fits the data
 
-## Model 2: Partially mediated
 
-add diagram: Parent Education > books > reading score & parent education > reading score
+## Model
 
-> What theoretical claims does this make?
-> How many degrees of freedom? 
-> How to describe its identification? 
+```{r}
+#| echo: false
+#| fig-width: 6.5
+#| fig-height: 4.8
+library(ggplot2)
 
-## How well does model 2 fit the data? 
+oNG <- "#E07B1A"; BLU <- "#2C6FB5"; MAG <- "#C81E7A"; LIM <- "#6FA80F"; dk <- "#3A3A3A"
+ar <- grid::arrow(length = grid::unit(0.22, "cm"), type = "closed")
+ar2 <- grid::arrow(length = grid::unit(0.18, "cm"), ends = "both", type = "closed")
 
-Add fit indices here. Discuss what each tells us. It is just-identified, so many are perfect. the meanignful ones. 
+circle <- function(x, y, r = 0.5) {
+  t <- seq(0, 2 * pi, length.out = 60)
+  data.frame(x = x + r * cos(t), y = y + r * sin(t))
+}
+box <- function(x, label) list(
+  annotate("rect", xmin = x - 1.15, xmax = x + 1.15, ymin = -0.55, ymax = 0.55, fill = dk),
+  annotate("text", x = x, y = 0, label = label, colour = "white", size = 5, lineheight = 0.9)
+)
 
-## Is model 1 better than model 2? 
+ggplot() +
+  # path a1: ParentEd -> Books (orange)
+  annotate("segment", x = 1.15, xend = 2.85, y = 0, yend = 0, colour = oNG, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 2, y = 0.45, label = "a[1]", parse = TRUE, colour = oNG, size = 6, fontface = "italic") +
+  # path b1: Books -> Reading (blue)
+  annotate("segment", x = 5.15, xend = 6.85, y = 0, yend = 0, colour = BLU, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 6, y = 0.45, label = "b[1]", parse = TRUE, colour = BLU, size = 6, fontface = "italic") +
+  # variance of exogenous Parent education (self-loop)
+  annotate("curve", x = -0.55, y = 0.6, xend = 0.55, yend = 0.6,
+           colour = dk, linewidth = 0.9, curvature = -1.4, arrow = ar2) +
+  annotate("text", x = 0, y = 1.85, label = "Var", colour = dk, size = 4.6, fontface = "italic") +
+  # disturbance zeta_B on Books (magenta)
+  annotate("segment", x = 4, xend = 4, y = 1.85, yend = 0.6, colour = MAG, arrow = ar) +
+  annotate("text", x = 4, y = 2.25, label = "zeta[B]", parse = TRUE, colour = MAG, size = 4.6) +
+  # disturbance zeta_R on Reading (lime)
+  annotate("segment", x = 8, xend = 8, y = 1.85, yend = 0.6, colour = LIM, arrow = ar) +
+  annotate("text", x = 8, y = 2.25, label = "zeta[R]", parse = TRUE, colour = LIM, size = 4.6) +
+  # measured variables
+  box(0, "Parent\neducation") + box(4, "Books at\nhome") + box(8, "Reading\nscore") +
+  coord_equal(clip = "off") +
+  expand_limits(x = c(-1.3, 9.3), y = c(-0.9, 3)) +
+  theme_void()
+```
 
-Compare the two. X2 test + bic/aic
+- What theoretical claims does this model make?
+- How many degrees of freedom? 
+- How to describe its identification? 
+
+## How well does the model fit the data?
+
+```{r}
+#| echo: false
+round(fitMeasures(fit1, c("chisq", "df", "pvalue", "cfi", "tli",
+                          "rmsea", "srmr", "aic", "bic")), 3)
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+Over-identified (df = `r as.integer(fitMeasures(fit1, "df"))`), so fit is
+testable. $\chi^2$ = `r fmt(fitMeasures(fit1, "chisq"), 1)`, $p$ =
+`r fmt(fitMeasures(fit1, "pvalue"), 3)` -- the omitted direct path leaves
+covariance unexplained (CFI = `r fmt(fitMeasures(fit1, "cfi"), 3)`, RMSEA =
+`r fmt(fitMeasures(fit1, "rmsea"), 3)`, SRMR =
+`r fmt(fitMeasures(fit1, "srmr"), 3)`).
+:::
+:::
+
+## Model 2
+
+Q: To what extent is the relationship between parental education and children's reading scores mediated by technology (ICTRES) and books in the home?
+
+
+
+
+- What theoretical claims does this make?
+-  How many degrees of freedom? 
+-  How to describe its identification? 
+
+## How well does model 2 fit the data?
+
+## Model comparison: 
+
+Does adding the additional variable actually improve the model
+
+
 
 # R Lab p1: 
 
-Q: Is the relationship between parental education and children's reading scores fully mediated by socio-economic status (SES) or does parent education also have a direct effect on students' scores? 
+Run the code
 
 Use code from this analysis > change 
 
