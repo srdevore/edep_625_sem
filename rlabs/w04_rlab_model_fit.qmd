@@ -2,26 +2,28 @@
 title: "Lab: Model Fit & Comparison"
 date: today
 description: '<a href="rlab-downloads/w04_rlab_model_fit.qmd" download="w04_rlab_model_fit.qmd">Download .qmd</a>'
-data: '<a href="rlab-downloads/w01_data_pisa22_USA_cln.csv" download="w01_data_pisa22_USA_cln.csv">w01_data_pisa22_USA_cln.csv</a>'
+data: '<a href="rlab-downloads/w04_data_pisa22_USA_cln.csv" download="w04_data_pisa22_USA_cln.csv">w04_data_pisa22_USA_cln.csv</a>'
 format: html
 release: week 4
 ---
 
 ## Purpose
 
-Goal: Fit two competing path models, check the assumptions behind them, judge
-how well each fits, and compare them.
+Goal: Fit two *nested* path models, check the assumptions behind them, judge how
+well each fits, and compare them.
 
 Question: Is the relationship between parental education (`PAREDINT`) and
-children's reading scores (`READ_AVG`) *fully* mediated by books at home
-(`BOOKSHOME`), or does parent education also have a *direct* effect on reading?
+children's reading scores (`READ_AVG`) mediated by books at home (`BOOKSHOME`)
+alone, or does technology (`TECH`) *also* carry part of the effect?
 
-* **Model 1 (fully mediated):** parent education -> books -> reading, with no
-  direct path. This leaves one covariance unaccounted for, so it is
-  *over-identified* (df = 1) and its fit is testable.
-* **Model 2 (partially mediated):** adds the direct parent education -> reading
-  path. Every covariance now has a parameter, so it is *just-identified*
-  (df = 0) and fits perfectly by construction.
+* **Model 1 (books-only mediation):** parent education -> books -> reading.
+  Technology is in the model (predicted by parent education) but has **no** path
+  to reading. Keeping `TECH` in the model is what puts both models on the same
+  four variables so they are comparable.
+* **Model 2 (books + tech mediation):** adds the `TECH -> READ_AVG` path.
+
+Model 1 is Model 2 with that one path fixed to 0, so the two are **nested** and
+can be compared with a chi-square difference test and with AIC/BIC.
 
 ## Setup
 
@@ -31,12 +33,24 @@ library(tidyverse)
 library(lavaan)
 library(lavaanPlot)
 
-pisa <- read_csv("w01_data_pisa22_USA_cln.csv", show_col_types = FALSE)
+pisa <- read_csv("w04_data_pisa22_USA_cln.csv", show_col_types = FALSE)
 ```
 
 ```{r}
 #| include: false
 fmt <- function(x, d = 2) formatC(x, format = "f", digits = d, big.mark = ",")
+
+# Focused fit table: the headline indices with conventional good-fit cutoffs.
+fit_table <- function(fit) {
+  m <- fitMeasures(fit, c("chisq", "df", "pvalue", "cfi", "rmsea", "srmr"))
+  p <- if (m[["pvalue"]] < 0.001) "< .001" else paste0("= ", fmt(m[["pvalue"]], 3))
+  tibble(
+    Index      = c("χ² (df)", "CFI", "RMSEA", "SRMR"),
+    Value      = c(sprintf("%s (%d), p %s", fmt(m[["chisq"]], 1), as.integer(m[["df"]]), p),
+                   fmt(m[["cfi"]], 3), fmt(m[["rmsea"]], 3), fmt(m[["srmr"]], 3)),
+    `Good fit` = c("p > .05", "≥ .95", "≤ .06", "≤ .08")
+  )
+}
 ```
 
 ## Assumptions
@@ -52,18 +66,19 @@ the univariate skewness and kurtosis of each variable -- values near 0
 
 ```{r}
 skew <- function(x) {
-  x <- x[!is.na(x)]; n <- length(x)
+  x <- x[!is.na(x)]
   mean((x - mean(x))^3) / (mean((x - mean(x))^2))^(3 / 2)
 }
 kurt <- function(x) {
-  x <- x[!is.na(x)]; n <- length(x)
+  x <- x[!is.na(x)]
   mean((x - mean(x))^4) / (mean((x - mean(x))^2))^2
 }
 
+vars <- c("PAREDINT", "BOOKSHOME", "TECH", "READ_AVG")
 tibble(
-  Variable = c("PAREDINT", "BOOKSHOME", "READ_AVG"),
-  Skewness = c(skew(pisa$PAREDINT), skew(pisa$BOOKSHOME), skew(pisa$READ_AVG)),
-  Kurtosis = c(kurt(pisa$PAREDINT), kurt(pisa$BOOKSHOME), kurt(pisa$READ_AVG))
+  Variable = vars,
+  Skewness = map_dbl(vars, ~ skew(pisa[[.x]])),
+  Kurtosis = map_dbl(vars, ~ kurt(pisa[[.x]]))
 )
 ```
 
@@ -80,14 +95,14 @@ what `MLR` fixes, so reporting the robust (scaled) statistics is the safe habit.
 ### Linearity
 
 The `~` paths assume each relationship is linear. Scatterplots with a straight
-(`lm`) fit overlaid let us eyeball that.
+(`lm`) fit overlaid let us eyeball the two paths into reading.
 
 ```{r}
 #| warning: false
 #| fig-width: 8
 #| fig-height: 3
 pisa |>
-  select(PAREDINT, BOOKSHOME, READ_AVG) |>
+  select(BOOKSHOME, TECH, READ_AVG) |>
   pivot_longer(-READ_AVG, names_to = "predictor", values_to = "x") |>
   ggplot(aes(x, READ_AVG)) +
   geom_point(alpha = 0.15) +
@@ -98,43 +113,46 @@ pisa |>
 
 ### Multicollinearity
 
-Exogenous predictors should not be near-perfectly correlated. Here the only
-predictor pair that appears together in an equation is parent education and
-books at home.
+The two predictors that appear together in the reading equation are books at
+home and technology. They should not be near-perfectly correlated.
 
 ```{r}
-cor(pisa[, c("PAREDINT", "BOOKSHOME", "READ_AVG")], use = "pairwise.complete.obs")
+cor(pisa[, vars], use = "pairwise.complete.obs")
 
-# Variance inflation factor for the PAREDINT / BOOKSHOME pair
-r2 <- summary(lm(BOOKSHOME ~ PAREDINT, data = pisa))$r.squared
+# Variance inflation factor for the BOOKSHOME / TECH pair
+r2  <- summary(lm(BOOKSHOME ~ TECH, data = pisa))$r.squared
 vif <- 1 / (1 - r2)
 vif
 ```
 
 ::: {.content-visible when-profile="teacher"}
-**Sample answer.** Correlation between parent education and books at home is
-`r fmt(cor(pisa$PAREDINT, pisa$BOOKSHOME, use = "pairwise.complete.obs"), 2)`,
-well below any collinearity threshold, and VIF = `r fmt(vif, 2)` (rule of thumb:
-concern above ~5-10). No collinearity problem.
+**Sample answer.** Correlation between books at home and technology is
+`r fmt(cor(pisa$BOOKSHOME, pisa$TECH, use = "pairwise.complete.obs"), 2)`, and
+VIF = `r fmt(vif, 2)` (rule of thumb: concern above ~5-10). No collinearity
+problem -- the two mediators carry distinct information.
 :::
 
 ### Uncorrelated disturbances
 
 Recursive path models assume the disturbances (residual errors) of the
-endogenous variables are uncorrelated. After fitting, we check the residual
-covariances and modification indices for a hint that a disturbance covariance
-was wrongly omitted. (We run this check on the fitted models below.)
+endogenous variables are uncorrelated. We enforce this when fitting with
+`auto.cov.y = FALSE` (otherwise lavaan would freely correlate the residuals of
+`BOOKSHOME`, `TECH`, and `READ_AVG`, which would also make the two models
+statistically equivalent instead of nested). After fitting we check the residual
+covariances and modification indices for any hint that a disturbance covariance
+was wrongly omitted.
 
-## Model 1: Fully mediated
+## Model 1: Books-only mediation
 
 ```{r}
 #| warning: false
 model1 <- "
   BOOKSHOME ~ PAREDINT
+  TECH      ~ PAREDINT
   READ_AVG  ~ BOOKSHOME
 "
 
-fit1 <- sem(model1, data = pisa)
+fit1 <- sem(model1, data = pisa, auto.cov.y = FALSE)
 summary(fit1, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
 ```
 
@@ -152,34 +170,32 @@ modificationIndices(fit1, sort. = TRUE)
 ### How well does Model 1 fit?
 
 ```{r}
-fitMeasures(fit1, c("chisq", "df", "pvalue", "cfi", "tli", "rmsea",
-                    "srmr", "aic", "bic"))
+knitr::kable(fit_table(fit1))
 ```
 
 ::: {.content-visible when-profile="teacher"}
 **Sample answer.** Model 1 is over-identified (df =
 `r as.integer(fitMeasures(fit1, "df"))`), so its fit is testable. The
 chi-square is `r fmt(fitMeasures(fit1, "chisq"), 1)` with $p$ =
-`r fmt(fitMeasures(fit1, "pvalue"), 3)`. A significant chi-square says the
-model-implied covariances differ from the observed ones -- the omitted direct
-path is missing something. The approximate-fit indices (CFI =
+`r fmt(fitMeasures(fit1, "pvalue"), 3)`, and the approximate-fit indices (CFI =
 `r fmt(fitMeasures(fit1, "cfi"), 3)`, RMSEA =
 `r fmt(fitMeasures(fit1, "rmsea"), 3)`, SRMR =
-`r fmt(fitMeasures(fit1, "srmr"), 3)`) tell the same story. The largest
-modification index points straight at the `READ_AVG ~ PAREDINT` direct path --
-i.e., Model 2.
+`r fmt(fitMeasures(fit1, "srmr"), 3)`) are mediocre -- this simple structure
+does not fully reproduce the four-variable covariance matrix. The question is
+whether *adding the technology path* fixes that.
 :::
 
-## Model 2: Partially mediated
+## Model 2: Books + tech mediation
 
 ```{r}
 #| warning: false
 model2 <- "
   BOOKSHOME ~ PAREDINT
-  READ_AVG  ~ BOOKSHOME + PAREDINT
+  TECH      ~ PAREDINT
+  READ_AVG  ~ BOOKSHOME + TECH
 "
 
-fit2 <- sem(model2, data = pisa)
+fit2 <- sem(model2, data = pisa, auto.cov.y = FALSE)
 summary(fit2, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
 ```
 
@@ -190,24 +206,22 @@ lavaanPlot(model = fit2, coefs = TRUE, stand = TRUE, stars = "regress")
 ### How well does Model 2 fit?
 
 ```{r}
-fitMeasures(fit2, c("chisq", "df", "pvalue", "cfi", "tli", "rmsea",
-                    "srmr", "aic", "bic"))
+knitr::kable(fit_table(fit2))
 ```
 
 ::: {.content-visible when-profile="teacher"}
-**Sample answer.** Model 2 is just-identified (df =
-`r as.integer(fitMeasures(fit2, "df"))`): it has exactly as many parameters as
-pieces of information, so it reproduces the observed covariances perfectly.
-Chi-square is ~0, CFI = 1, RMSEA = 0 -- these are guaranteed, not evidence of a
-good model, so they are *not* meaningful here. What *is* meaningful is whether
-the added direct path is significant and whether AIC/BIC improve over Model 1.
+**Sample answer.** Model 2 frees one more path (`READ_AVG ~ TECH`), so df =
+`r as.integer(fitMeasures(fit2, "df"))`. Its fit is essentially unchanged from
+Model 1 (CFI = `r fmt(fitMeasures(fit2, "cfi"), 3)`, RMSEA =
+`r fmt(fitMeasures(fit2, "rmsea"), 3)`), and the `TECH -> READ_AVG` coefficient
+itself is not significant. That is the first sign the extra path buys us little.
 :::
 
-## Is Model 1 better than Model 2?
+## Is Model 2 better than Model 1?
 
-Because Model 1 is nested in Model 2 (Model 1 = Model 2 with the direct path
-fixed to 0), we can compare them with a chi-square difference test, and also
-weigh parsimony with AIC/BIC.
+Because Model 1 is nested in Model 2 (Model 1 = Model 2 with the
+`TECH -> READ_AVG` path fixed to 0), we can compare them with a chi-square
+difference test, and also weigh parsimony with AIC/BIC.
 
 ```{r}
 anova(fit1, fit2)
@@ -215,7 +229,7 @@ anova(fit1, fit2)
 
 ```{r}
 tibble(
-  Model  = c("Model 1: fully mediated", "Model 2: partially mediated"),
+  Model  = c("Model 1: books-only", "Model 2: books + tech"),
   df     = c(fitMeasures(fit1, "df"),    fitMeasures(fit2, "df")),
   chisq  = c(fitMeasures(fit1, "chisq"), fitMeasures(fit2, "chisq")),
   CFI    = c(fitMeasures(fit1, "cfi"),   fitMeasures(fit2, "cfi")),
@@ -226,18 +240,20 @@ tibble(
 ```
 
 ::: {.content-visible when-profile="teacher"}
-**Sample answer.** The chi-square difference test is significant, so freeing the
-direct path improves fit beyond chance: Model 2 is preferred. AIC and BIC are
-both lower for Model 2, agreeing even after penalizing the extra parameter.
-Substantively, parent education has a direct effect on reading over and above
-what runs through books at home -- the relationship is only *partially*
-mediated. (Model 2 being just-identified means it can't be rejected on its own;
-the comparison to the nested Model 1 is what makes the direct path defensible.)
+**Sample answer.** The chi-square difference is
+`r fmt(anova(fit1, fit2)[2, "Chisq diff"], 2)` on 1 df, $p$ =
+`r fmt(anova(fit1, fit2)[2, "Pr(>Chisq)"], 3)` -- **not** significant. AIC and
+BIC are both **lower for Model 1**, agreeing that the extra parameter is not
+worth it. So freeing the `TECH -> READ_AVG` path does *not* improve the model:
+we keep the simpler Model 1. Substantively, once books at home is accounted for,
+technology does not add explanatory power for reading in these data. (Note both
+models fit the covariance matrix only moderately -- the comparison tells us the
+tech path isn't the missing piece, not that Model 1 is a great model.)
 :::
 
 ## Wrap-up
 
-1. Why can we test the fit of Model 1 but not Model 2?
+1. Why did we have to keep `TECH` in Model 1 instead of just dropping it?
 2. Which single statistic in the comparison most directly answers the research
    question, and what does its value tell you?
 3. If multivariate normality had been badly violated, what would you change

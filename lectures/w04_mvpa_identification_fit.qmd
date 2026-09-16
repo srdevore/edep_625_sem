@@ -496,8 +496,8 @@ $$df = 0$$
 
 ## Pause & Recap
 
-How do degrees of freedom differ between Regression & SEM? 
-How are degrees of freedom used to determine how a model is identified? 
+- How do degrees of freedom differ between Regression & SEM? 
+- How are degrees of freedom used to determine how a model is identified? 
 
 
 # MVPA Assumptions
@@ -539,9 +539,14 @@ No new information is provided by the second observation
 
 ## Pause & Recap
 
-What assumptions should be met or adjusted for for MVPA?
+- What assumptions should be met or adjusted for for MVPA?
 
 # Model Fit
+
+## Key fit indices
+
+- X2
+R
 
 ```{r}
 #| echo: false
@@ -550,120 +555,240 @@ What assumptions should be met or adjusted for for MVPA?
 library(tidyverse)
 library(lavaan)
 
-pisa <- read_csv("../rlabs/w01_data_pisa22_USA_cln.csv", show_col_types = FALSE)
+pisa <- read_csv("../rlabs/w04_data_pisa22_USA_cln.csv", show_col_types = FALSE)
 
 fmt <- function(x, d = 2) formatC(x, format = "f", digits = d, big.mark = ",")
 
-# Model 1: fully mediated (ParentEd -> Books -> Reading)
+# Focused fit table: the headline indices with conventional good-fit cutoffs.
+fit_table <- function(fit) {
+  m <- fitMeasures(fit, c("chisq", "df", "pvalue", "cfi", "rmsea", "srmr"))
+  p <- if (m[["pvalue"]] < 0.001) "< .001" else paste0("= ", fmt(m[["pvalue"]], 3))
+  tibble::tibble(
+    Index      = c("χ² (df)", "CFI", "RMSEA", "SRMR"),
+    Value      = c(sprintf("%s (%d), p %s", fmt(m[["chisq"]], 1), as.integer(m[["df"]]), p),
+                   fmt(m[["cfi"]], 3), fmt(m[["rmsea"]], 3), fmt(m[["srmr"]], 3)),
+    `Good fit` = c("p > .05", "≥ .95", "≤ .06", "≤ .08")
+  )
+}
+
+# Model 1: reading mediated by books only. Technology is in the model
+# (predicted by parent education) but has no path to reading. This keeps
+# both models on the same four variables so they are nested and comparable.
+# auto.cov.y = FALSE keeps the disturbances uncorrelated (recursive model).
 model1 <- "
   BOOKSHOME ~ PAREDINT
+  TECH      ~ PAREDINT
   READ_AVG  ~ BOOKSHOME
 "
-fit1 <- sem(model1, data = pisa)
+fit1 <- sem(model1, data = pisa, auto.cov.y = FALSE)
 
-# Model 2: partially mediated (adds direct ParentEd -> Reading)
+# Model 2: adds the TECH -> Reading path (books AND tech mediate).
+# Model 1 is Model 2 with that one path fixed to 0 -> nested.
 model2 <- "
   BOOKSHOME ~ PAREDINT
-  READ_AVG  ~ BOOKSHOME + PAREDINT
+  TECH      ~ PAREDINT
+  READ_AVG  ~ BOOKSHOME + TECH
 "
-fit2 <- sem(model2, data = pisa)
+fit2 <- sem(model2, data = pisa, auto.cov.y = FALSE)
 ```
 
-Q: to what extent is the relationship between parental education and children's reading scores mediated by the number of books in the home?
+Q: Does parent education relate to students' reading achievement only through the number of books in the home or does access to technology serve as an additional mediating pathway? 
 
-Develop a models and determine how well it fits the data
+1. Develop a model with only books as a mediator
+2. Develop a model with both books and technology as a mediator
+3. Compare the two models.
 
 
 ## Model
 
 ```{r}
 #| echo: false
-#| fig-width: 6.5
-#| fig-height: 4.8
+#| fig-width: 7.5
+#| fig-height: 5
 library(ggplot2)
 
-oNG <- "#E07B1A"; BLU <- "#2C6FB5"; MAG <- "#C81E7A"; LIM <- "#6FA80F"; dk <- "#3A3A3A"
+oNG <- "#E07B1A"; BLU <- "#2C6FB5"; MAG <- "#C81E7A"; LIM <- "#6FA80F"
+PUR <- "#7A3FA0"; TEA <- "#0E8F8F"; GLD <- "#C89A2B"; dk <- "#3A3A3A"
 ar <- grid::arrow(length = grid::unit(0.22, "cm"), type = "closed")
 ar2 <- grid::arrow(length = grid::unit(0.18, "cm"), ends = "both", type = "closed")
 
-circle <- function(x, y, r = 0.5) {
-  t <- seq(0, 2 * pi, length.out = 60)
-  data.frame(x = x + r * cos(t), y = y + r * sin(t))
-}
-box <- function(x, label) list(
-  annotate("rect", xmin = x - 1.15, xmax = x + 1.15, ymin = -0.55, ymax = 0.55, fill = dk),
-  annotate("text", x = x, y = 0, label = label, colour = "white", size = 5, lineheight = 0.9)
+box <- function(x, y, label) list(
+  annotate("rect", xmin = x - 1.15, xmax = x + 1.15, ymin = y - 0.55, ymax = y + 0.55, fill = dk),
+  annotate("text", x = x, y = y, label = label, colour = "white", size = 4.6, lineheight = 0.9)
 )
 
 ggplot() +
-  # path a1: ParentEd -> Books (orange)
-  annotate("segment", x = 1.15, xend = 2.85, y = 0, yend = 0, colour = oNG, linewidth = 1.3, arrow = ar) +
-  annotate("text", x = 2, y = 0.45, label = "a[1]", parse = TRUE, colour = oNG, size = 6, fontface = "italic") +
-  # path b1: Books -> Reading (blue)
-  annotate("segment", x = 5.15, xend = 6.85, y = 0, yend = 0, colour = BLU, linewidth = 1.3, arrow = ar) +
-  annotate("text", x = 6, y = 0.45, label = "b[1]", parse = TRUE, colour = BLU, size = 6, fontface = "italic") +
+  # a1: ParentEd -> Books (orange)
+  annotate("segment", x = 1.0, y = 0.45, xend = 3.85, yend = 1.35, colour = oNG, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 2.0, y = 1.2, label = "a[1]", parse = TRUE, colour = oNG, size = 6, fontface = "italic") +
+  # a2: ParentEd -> Tech (purple)
+  annotate("segment", x = 1.0, y = -0.45, xend = 3.85, yend = -1.35, colour = PUR, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 2.0, y = -1.2, label = "a[2]", parse = TRUE, colour = PUR, size = 6, fontface = "italic") +
+  # b1: Books -> Reading (blue)
+  annotate("segment", x = 6.15, y = 1.35, xend = 9.0, yend = 0.45, colour = BLU, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 8.0, y = 1.2, label = "b[1]", parse = TRUE, colour = BLU, size = 6, fontface = "italic") +
   # variance of exogenous Parent education (self-loop)
   annotate("curve", x = -0.55, y = 0.6, xend = 0.55, yend = 0.6,
            colour = dk, linewidth = 0.9, curvature = -1.4, arrow = ar2) +
-  annotate("text", x = 0, y = 1.85, label = "Var", colour = dk, size = 4.6, fontface = "italic") +
+  annotate("text", x = 0, y = 1.5, label = "Var", colour = dk, size = 4.4, fontface = "italic") +
   # disturbance zeta_B on Books (magenta)
-  annotate("segment", x = 4, xend = 4, y = 1.85, yend = 0.6, colour = MAG, arrow = ar) +
-  annotate("text", x = 4, y = 2.25, label = "zeta[B]", parse = TRUE, colour = MAG, size = 4.6) +
+  annotate("segment", x = 5, xend = 5, y = 3.05, yend = 2.2, colour = MAG, arrow = ar) +
+  annotate("text", x = 5, y = 3.35, label = "zeta[B]", parse = TRUE, colour = MAG, size = 4.4) +
+  # disturbance zeta_T on Tech (gold)
+  annotate("segment", x = 5, xend = 5, y = -3.05, yend = -2.2, colour = GLD, arrow = ar) +
+  annotate("text", x = 5, y = -3.35, label = "zeta[T]", parse = TRUE, colour = GLD, size = 4.4) +
   # disturbance zeta_R on Reading (lime)
-  annotate("segment", x = 8, xend = 8, y = 1.85, yend = 0.6, colour = LIM, arrow = ar) +
-  annotate("text", x = 8, y = 2.25, label = "zeta[R]", parse = TRUE, colour = LIM, size = 4.6) +
+  annotate("segment", x = 11.7, xend = 11.15, y = 0.9, yend = 0.35, colour = LIM, arrow = ar) +
+  annotate("text", x = 12.1, y = 1.2, label = "zeta[R]", parse = TRUE, colour = LIM, size = 4.4) +
   # measured variables
-  box(0, "Parent\neducation") + box(4, "Books at\nhome") + box(8, "Reading\nscore") +
+  box(0, 0, "Parent\neducation") + box(5, 1.6, "Books at\nhome") +
+  box(5, -1.6, "Technology") + box(10, 0, "Reading\nscore") +
   coord_equal(clip = "off") +
-  expand_limits(x = c(-1.3, 9.3), y = c(-0.9, 3)) +
+  expand_limits(x = c(-1.3, 12.6), y = c(-3.7, 3.7)) +
   theme_void()
 ```
 
 - What theoretical claims does this model make?
-- How many degrees of freedom? 
-- How to describe its identification? 
+- How many degrees of freedom?
+- How to describe its identification?
 
 ## How well does the model fit the data?
 
 ```{r}
 #| echo: false
-round(fitMeasures(fit1, c("chisq", "df", "pvalue", "cfi", "tli",
-                          "rmsea", "srmr", "aic", "bic")), 3)
+knitr::kable(fit_table(fit1))
 ```
 
 ::: {.content-visible when-profile="teacher"}
 ::: {.fragment}
 Over-identified (df = `r as.integer(fitMeasures(fit1, "df"))`), so fit is
 testable. $\chi^2$ = `r fmt(fitMeasures(fit1, "chisq"), 1)`, $p$ =
-`r fmt(fitMeasures(fit1, "pvalue"), 3)` -- the omitted direct path leaves
-covariance unexplained (CFI = `r fmt(fitMeasures(fit1, "cfi"), 3)`, RMSEA =
+`r fmt(fitMeasures(fit1, "pvalue"), 3)` (CFI =
+`r fmt(fitMeasures(fit1, "cfi"), 3)`, RMSEA =
 `r fmt(fitMeasures(fit1, "rmsea"), 3)`, SRMR =
-`r fmt(fitMeasures(fit1, "srmr"), 3)`).
+`r fmt(fitMeasures(fit1, "srmr"), 3)`) -- reading is modeled through books
+only; technology is in the model but not yet allowed to predict reading.
 :::
 :::
 
 ## Model 2
 
-Q: To what extent is the relationship between parental education and children's reading scores mediated by technology (ICTRES) and books in the home?
+Q: To what extent is the relationship between parental education and children's reading scores mediated by technology (TECH) and books in the home?
 
+```{r}
+#| echo: false
+#| fig-width: 7.5
+#| fig-height: 5
+library(ggplot2)
 
+oNG <- "#E07B1A"; BLU <- "#2C6FB5"; MAG <- "#C81E7A"; LIM <- "#6FA80F"
+PUR <- "#7A3FA0"; TEA <- "#0E8F8F"; GLD <- "#C89A2B"; dk <- "#3A3A3A"
+ar <- grid::arrow(length = grid::unit(0.22, "cm"), type = "closed")
+ar2 <- grid::arrow(length = grid::unit(0.18, "cm"), ends = "both", type = "closed")
 
+box <- function(x, y, label) list(
+  annotate("rect", xmin = x - 1.15, xmax = x + 1.15, ymin = y - 0.55, ymax = y + 0.55, fill = dk),
+  annotate("text", x = x, y = y, label = label, colour = "white", size = 4.6, lineheight = 0.9)
+)
+
+ggplot() +
+  # a1: ParentEd -> Books (orange)
+  annotate("segment", x = 1.0, y = 0.45, xend = 3.85, yend = 1.35, colour = oNG, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 2.0, y = 1.2, label = "a[1]", parse = TRUE, colour = oNG, size = 6, fontface = "italic") +
+  # a2: ParentEd -> Tech (purple)
+  annotate("segment", x = 1.0, y = -0.45, xend = 3.85, yend = -1.35, colour = PUR, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 2.0, y = -1.2, label = "a[2]", parse = TRUE, colour = PUR, size = 6, fontface = "italic") +
+  # b1: Books -> Reading (blue)
+  annotate("segment", x = 6.15, y = 1.35, xend = 9.0, yend = 0.45, colour = BLU, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 8.0, y = 1.2, label = "b[1]", parse = TRUE, colour = BLU, size = 6, fontface = "italic") +
+  # b2: Tech -> Reading (teal)
+  annotate("segment", x = 6.15, y = -1.35, xend = 9.0, yend = -0.45, colour = TEA, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 8.0, y = -1.2, label = "b[2]", parse = TRUE, colour = TEA, size = 6, fontface = "italic") +
+  # variance of exogenous Parent education (self-loop)
+  annotate("curve", x = -0.55, y = 0.6, xend = 0.55, yend = 0.6,
+           colour = dk, linewidth = 0.9, curvature = -1.4, arrow = ar2) +
+  annotate("text", x = 0, y = 1.5, label = "Var", colour = dk, size = 4.4, fontface = "italic") +
+  # disturbance zeta_B on Books (magenta)
+  annotate("segment", x = 5, xend = 5, y = 3.05, yend = 2.2, colour = MAG, arrow = ar) +
+  annotate("text", x = 5, y = 3.35, label = "zeta[B]", parse = TRUE, colour = MAG, size = 4.4) +
+  # disturbance zeta_T on Tech (gold)
+  annotate("segment", x = 5, xend = 5, y = -3.05, yend = -2.2, colour = GLD, arrow = ar) +
+  annotate("text", x = 5, y = -3.35, label = "zeta[T]", parse = TRUE, colour = GLD, size = 4.4) +
+  # disturbance zeta_R on Reading (lime)
+  annotate("segment", x = 11.7, xend = 11.15, y = 0.9, yend = 0.35, colour = LIM, arrow = ar) +
+  annotate("text", x = 12.1, y = 1.2, label = "zeta[R]", parse = TRUE, colour = LIM, size = 4.4) +
+  # measured variables
+  box(0, 0, "Parent\neducation") + box(5, 1.6, "Books at\nhome") +
+  box(5, -1.6, "Technology") + box(10, 0, "Reading\nscore") +
+  coord_equal(clip = "off") +
+  expand_limits(x = c(-1.3, 12.6), y = c(-3.7, 3.7)) +
+  theme_void()
+```
 
 - What theoretical claims does this make?
--  How many degrees of freedom? 
--  How to describe its identification? 
+-  How many degrees of freedom?
+-  How to describe its identification?
 
 ## How well does model 2 fit the data?
 
-## Model comparison: 
+```{r}
+#| echo: false
+knitr::kable(fit_table(fit2))
+```
 
-Does adding the additional variable actually improve the model
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+Over-identified (df = `r as.integer(fitMeasures(fit2, "df"))`). Adding the
+technology -> reading path barely moves fit (CFI =
+`r fmt(fitMeasures(fit2, "cfi"), 3)`, RMSEA =
+`r fmt(fitMeasures(fit2, "rmsea"), 3)`), and that path itself is not
+significant. The question is whether it improves on Model 1 -- next slide.
+:::
+:::
+
+## Model comparison:
+
+Does adding the technology -> reading path actually improve the model?
+
+```{r}
+#| echo: false
+anova(fit1, fit2)
+```
+
+```{r}
+#| echo: false
+tibble::tibble(
+  Model = c("M1: books-only", "M2: books + tech"),
+  df    = c(fitMeasures(fit1, "df"),  fitMeasures(fit2, "df")),
+  AIC   = c(fitMeasures(fit1, "aic"), fitMeasures(fit2, "aic")),
+  BIC   = c(fitMeasures(fit1, "bic"), fitMeasures(fit2, "bic"))
+)
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+Nested models (M1 = M2 with the tech -> reading path fixed to 0). The
+$\chi^2$ difference is `r fmt(anova(fit1, fit2)[2, "Chisq diff"], 2)` on 1 df,
+$p$ = `r fmt(anova(fit1, fit2)[2, "Pr(>Chisq)"], 3)` -- **not** significant.
+AIC and BIC are both **lower for Model 1**. Adding the technology pathway does
+*not* improve the model: keep the simpler Model 1.
+:::
+:::
 
 
 
-# R Lab p1: 
 
-Run the code
+
+# R Lab: 
+
+1. File X is the code used to run today's models. 
+
+- make sure you can run it.
+
+2. Continue to Specify your model in the Lavaan (or other) GUI.
+
+- Start your own qmd or rmd file for your mini project
+- use the code provided & the code from Lavaan GUI to start building your model
 
 Use code from this analysis > change 
 
@@ -671,6 +796,10 @@ Use code from this analysis > change
 
 The Lavaan Package
 
+# Up Next: 
+
+Interpreting the models
+Homework: Work on Mini Project 1: You should be able to run at least a very simple version of your own model. 
 
 
 
