@@ -10,6 +10,9 @@ draft: true
 
 ## Purpose
 
+Ensure that you can independently run the MVPA models. 
+
+You can adapt these for your own mini-project.
 
 ## Setup
 
@@ -64,9 +67,7 @@ MVPA models estimated with maximum likelihood carry a handful of assumptions.
 
 ### Multivariate normality
 
-ML assumes the endogenous variables are multivariate normal. A quick screen is
-the univariate skewness and kurtosis of each variable -- values near 0
-(skew) and 3 (kurtosis) are consistent with normality.
+ML assumes the endogenous variables are multivariate normal.
 
 ```{r}
 
@@ -131,17 +132,13 @@ Recursive path models assume the disturbances of the
 endogenous variables are uncorrelated. We enforce this when fitting with
 `auto.cov.y = FALSE`. 
 
-After fitting we check the residual
-covariances and modification indices for any hint that a disturbance covariance
-was wrongly omitted.
+After fitting we check the residual covariances.
 
 # MVPA Models
 
 One research decision note: 
 
-Although we have two variables with ordinal variables, we follow conventions that 5 or more ordinal variables may be treated as continuous. 
-
-
+We have two ordinal variables, but each has more than 5 levels, so we follow convention that 5 or more levels may be treated as continuous. 
 
 ## Model 0: Original Example
 
@@ -166,9 +163,11 @@ summary(fit0, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
 
 Residual check for the uncorrelated-disturbance assumption:
 
+This shows standardized residual correlations. Close to 0 is evidence that the disturbances are uncorrelated.
+
 ```{r}
 residuals(fit0, type = "cor")
-modificationIndices(fit0, sort. = TRUE)
+
 ```
 
 ### How well does Model 0 fit?
@@ -189,6 +188,7 @@ we build on -- next we bring technology into the model so the richer models stay
 comparable on the same variables.
 :::
 
+
 ## Question 2: 
 
 Question: 
@@ -198,10 +198,6 @@ children's reading scores (`READ_AVG`) mediated by books at home (`BOOKSHOME`)
 alone, or does technology (`TECH`) *also* carry part of the effect?
 
 This question does imply model comparison: One where tech is a predictor of reading scores and one where it is not. 
-
-You can only compare nested models: 
-
-
 
 ## Model 1: Books-only mediation
 
@@ -223,7 +219,6 @@ Residual check for the uncorrelated-disturbance assumption:
 
 ```{r}
 residuals(fit1, type = "cor")
-modificationIndices(fit1, sort. = TRUE)
 ```
 
 ### How well does Model 1 fit?
@@ -243,6 +238,7 @@ robust chi-square is `r fmt(fitMeasures(fit1, "chisq.scaled"), 1)` with $p$ =
 does not fully reproduce the four-variable covariance matrix. The question is
 whether *adding the technology path* fixes that.
 :::
+
 
 ## Model 2: Books + tech mediation
 
@@ -264,7 +260,6 @@ Residual check for the uncorrelated-disturbance assumption:
 
 ```{r}
 residuals(fit2, type = "cor")
-modificationIndices(fit2, sort. = TRUE)
 ```
 
 ### How well does Model 2 fit?
@@ -315,10 +310,4 @@ models fit the covariance matrix only moderately -- the comparison tells us the
 tech path isn't the missing piece, not that Model 1 is a great model.)
 :::
 
-## Wrap-up
 
-1. Why did we have to keep `TECH` in Model 1 instead of just dropping it?
-2. Which single statistic in the comparison most directly answers the research
-   question, and what does its value tell you?
-3. If multivariate normality had been badly violated, what would you change
-   about how you fit and compared these models?

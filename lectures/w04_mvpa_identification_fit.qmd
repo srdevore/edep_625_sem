@@ -18,7 +18,7 @@ draft: true
 - Recursive & Non-recursive models
 - Degrees of Freedom: Review & in SEM
 - Identification & Degrees of Freedom in SEM
-- Other assumptions Assumptions
+- Other Assumptions
 - Model-level Fit & Comparing models
 - Rlab: Lavaan Package
 
@@ -225,7 +225,7 @@ ggplot() +
 
 ::::
 
-Paramters: a1, b1, var(parent ed), Disturbance of books, disturbance of reading score
+Parameters: a1, b1, var(parent ed), Disturbance of books, disturbance of reading score
 
 ## Putting it together
 
@@ -394,14 +394,14 @@ $$
 
 ::::
 
-## Over-idetnification Summary
+## Over-identification Summary
 
 $$df > 0$$
 
 More pieces of information than parameters
 
 - no perfect solution that satisfies all equations
-- Add a critereon: get as close as possible to solving all three (OLS/ML)
+- Add a criterion: get as close as possible to solving all three (OLS/ML)
 
 
 ## Just-identification
@@ -507,7 +507,7 @@ $$df = 0$$
 ## Correct Specification
 ## Identification
 
-## Multicolinearity
+## Multicollinearity
 
 Solve Example 4: 
 
@@ -528,14 +528,14 @@ No new information is provided by the second observation
 
 ## Sample Size
 
-- Adequte sample size. ~20 cases per parameter. 
+- Adequate sample size. ~20 cases per parameter.
 
 ## Additional Assumptions you can adjust for
 
-- Multivariate normality: required for ML; other estimators can handle violations
-- Continuous predictors: set ordinal in Lavaan
+- Multivariate normality > required for ML; other estimators can handle violations
+- Continuous predictors > Ordinal can be set in Lavaan
 - Linearity: Ways to handle non-linear relationships
-- Uncorrelated disturnances: Applies only to recursive models
+- Uncorrelated disturbances: Applies only to recursive models
 
 ## Pause & Recap
 
@@ -571,7 +571,7 @@ Rejecting the null means the model we specified is not well-aligned to observed 
 Model χ² (chi-square): If model-implied cov matrix differs significantly from observed. 
 
 - Significant: reject the null (hypothesis not supported)
-- Non-significant: Accept the null (hypothesis supported) 
+- Non-significant: Fail to rejecct the null (hypothesis supported) 
 - Sensitive to sample size. 
 
 ## Key fit indices: CFI
@@ -604,14 +604,14 @@ Useful for model comparison
 
 - How well a model fits considering how complex it is using −2(log-likelihood). 
 
-Penalizes for compilexity: 
+Penalizes for complexity:
 
 - AIC: Fixed penalty based on number of parameters
 - BIC: Penalty for extra parameters grows with sample size 
 
-# RQ0 
+# Models 
 
-Does the number of books in the home mediate the relationship between parental education and children's reading achievement? 
+Q0: Does parent education relate to reading through the number of books in the home.
 
 # Model 0 Diagram
 
@@ -662,8 +662,6 @@ ggplot() +
 - How many degrees of freedom?
 - How to describe its identification?
 
-
-
 ## Model 0 Results
 
 ```{r}
@@ -705,8 +703,7 @@ model0 <- "
 fit0 <- lavaan(model0, data = pisa, auto.var = TRUE, auto.cov.y = FALSE, estimator = "MLR")
 ```
 
-The original model: parent education relates to reading only through the number
-of books in the home.
+
 
 $$\text{Parent Ed} \;\rightarrow\; \text{Books at home} \;\rightarrow\; \text{Reading}$$
 
@@ -729,7 +726,18 @@ testable. Robust $\chi^2$ = `r fmt(fitMeasures(fit0, "chisq.scaled"), 1)`, $p$ =
 
 # Model Comparison
 
-Q: Does parent education relate to students' reading achievement only through the number of books in the home or does access to technology serve as an additional mediating pathway? 
+Rules: 
+- Same variables
+- Same sample
+- Same estimator
+- Nested structure: One model's parameter space must be a subset of the other's, achieved by
+
+    - Fixing one or more parameters to a specific value (usually zero)
+    - Constraining two or more parameters to be equal to each other
+
+# Model Comparison Example
+
+RQ: Does parent education relate to students' reading achievement only through the number of books in the home or does access to technology serve as an additional mediating pathway? 
 
 1. Develop a model with only books as a mediator
 2. Develop a model with both books and technology as a mediator
@@ -762,9 +770,6 @@ model2 <- "
 "
 fit2 <- lavaan(model2, data = pisa, auto.var = TRUE, auto.cov.y = FALSE, estimator = "MLR")
 ```
-
-
-## Model 1
 
 ```{r}
 #| echo: false
@@ -889,8 +894,8 @@ ggplot() +
 ```
 
 - What theoretical claims does this make?
--  How many degrees of freedom?
--  How to describe its identification?
+- How many degrees of freedom?
+- How to describe its identification?
 
 ## How well does model 2 fit the data?
 
