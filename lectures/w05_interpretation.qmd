@@ -1,0 +1,1 @@
+Revisit what this approach tells us that the regression models we did at the beginning of class didn't. 

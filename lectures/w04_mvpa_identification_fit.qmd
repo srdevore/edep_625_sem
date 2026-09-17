@@ -9,10 +9,12 @@ format:
     embed-resources: true
     self-contained-math: true
 release: week 4
+draft: true
 ---
 
 # Agenda
 
+- Review
 - Recursive & Non-recursive models
 - Degrees of Freedom: Review & in SEM
 - Identification & Degrees of Freedom in SEM
@@ -21,6 +23,11 @@ release: week 4
 - Rlab: Lavaan Package
 
 # Review
+
+- Lamaku > Quiz > W4
+
+Answer the question. 
+3 minute time limit
 
 
 # Recursive & Nonrecursive models
@@ -32,7 +39,6 @@ release: week 4
   - no hidden shared causes of unexplained variance.   
 
 ## Nonrecursive
-
 
 :::: {.columns}
 ::: {.column width="50%"}
@@ -672,13 +678,20 @@ pisa <- read_csv("../rlabs/w04_data_pisa22_USA_cln.csv", show_col_types = FALSE)
 fmt <- function(x, d = 2) formatC(x, format = "f", digits = d, big.mark = ",")
 
 # Focused fit table: the headline indices with conventional good-fit cutoffs.
+# With MLR we report the robust/scaled statistics.
 fit_table <- function(fit) {
-  m <- fitMeasures(fit, c("chisq", "df", "pvalue", "cfi", "rmsea", "srmr"))
-  p <- if (m[["pvalue"]] < 0.001) "< .001" else paste0("= ", fmt(m[["pvalue"]], 3))
+  m <- fitMeasures(fit, c("chisq.scaled", "df", "pvalue.scaled", "cfi.robust",
+                          "rmsea.robust", "rmsea.ci.lower.robust",
+                          "rmsea.ci.upper.robust", "srmr"))
+  p <- if (m[["pvalue.scaled"]] < 0.001) "< .001" else
+    paste0("= ", fmt(m[["pvalue.scaled"]], 3))
+  rmsea <- sprintf("%s [%s, %s]", fmt(m[["rmsea.robust"]], 3),
+                   fmt(m[["rmsea.ci.lower.robust"]], 3),
+                   fmt(m[["rmsea.ci.upper.robust"]], 3))
   tibble::tibble(
-    Index      = c("χ² (df)", "CFI", "RMSEA", "SRMR"),
-    Value      = c(sprintf("%s (%d), p %s", fmt(m[["chisq"]], 1), as.integer(m[["df"]]), p),
-                   fmt(m[["cfi"]], 3), fmt(m[["rmsea"]], 3), fmt(m[["srmr"]], 3)),
+    Index      = c("χ² (df)", "CFI", "RMSEA [90% CI]", "SRMR"),
+    Value      = c(sprintf("%s (%d), p %s", fmt(m[["chisq.scaled"]], 1), as.integer(m[["df"]]), p),
+                   fmt(m[["cfi.robust"]], 3), rmsea, fmt(m[["srmr"]], 3)),
     `Good fit` = c("p > .05", "≥ .95", "≤ .06", "≤ .08")
   )
 }
@@ -689,7 +702,7 @@ model0 <- "
   BOOKSHOME ~ PAREDINT
   READ_AVG  ~ BOOKSHOME
 "
-fit0 <- sem(model0, data = pisa, auto.cov.y = FALSE)
+fit0 <- lavaan(model0, data = pisa, auto.var = TRUE, auto.cov.y = FALSE, estimator = "MLR")
 ```
 
 The original model: parent education relates to reading only through the number
@@ -705,10 +718,10 @@ knitr::kable(fit_table(fit0))
 ::: {.content-visible when-profile="teacher"}
 ::: {.fragment}
 Over-identified (df = `r as.integer(fitMeasures(fit0, "df"))`), so fit is
-testable. $\chi^2$ = `r fmt(fitMeasures(fit0, "chisq"), 1)`, $p$ =
-`r fmt(fitMeasures(fit0, "pvalue"), 3)` (CFI =
-`r fmt(fitMeasures(fit0, "cfi"), 3)`, RMSEA =
-`r fmt(fitMeasures(fit0, "rmsea"), 3)`, SRMR =
+testable. Robust $\chi^2$ = `r fmt(fitMeasures(fit0, "chisq.scaled"), 1)`, $p$ =
+`r fmt(fitMeasures(fit0, "pvalue.scaled"), 3)` (CFI =
+`r fmt(fitMeasures(fit0, "cfi.robust"), 3)`, RMSEA =
+`r fmt(fitMeasures(fit0, "rmsea.robust"), 3)`, SRMR =
 `r fmt(fitMeasures(fit0, "srmr"), 3)`).
 :::
 :::
@@ -738,7 +751,7 @@ model1 <- "
   TECH      ~ PAREDINT
   READ_AVG  ~ BOOKSHOME
 "
-fit1 <- sem(model1, data = pisa, auto.cov.y = FALSE)
+fit1 <- lavaan(model1, data = pisa, auto.var = TRUE, auto.cov.y = FALSE, estimator = "MLR")
 
 # Model 2: adds the TECH -> Reading path (books AND tech mediate).
 # Model 1 is Model 2 with that one path fixed to 0 -> nested.
@@ -747,7 +760,7 @@ model2 <- "
   TECH      ~ PAREDINT
   READ_AVG  ~ BOOKSHOME + TECH
 "
-fit2 <- sem(model2, data = pisa, auto.cov.y = FALSE)
+fit2 <- lavaan(model2, data = pisa, auto.var = TRUE, auto.cov.y = FALSE, estimator = "MLR")
 ```
 
 
@@ -814,10 +827,10 @@ knitr::kable(fit_table(fit1))
 ::: {.content-visible when-profile="teacher"}
 ::: {.fragment}
 Over-identified (df = `r as.integer(fitMeasures(fit1, "df"))`), so fit is
-testable. $\chi^2$ = `r fmt(fitMeasures(fit1, "chisq"), 1)`, $p$ =
-`r fmt(fitMeasures(fit1, "pvalue"), 3)` (CFI =
-`r fmt(fitMeasures(fit1, "cfi"), 3)`, RMSEA =
-`r fmt(fitMeasures(fit1, "rmsea"), 3)`, SRMR =
+testable. Robust $\chi^2$ = `r fmt(fitMeasures(fit1, "chisq.scaled"), 1)`, $p$ =
+`r fmt(fitMeasures(fit1, "pvalue.scaled"), 3)` (CFI =
+`r fmt(fitMeasures(fit1, "cfi.robust"), 3)`, RMSEA =
+`r fmt(fitMeasures(fit1, "rmsea.robust"), 3)`, SRMR =
 `r fmt(fitMeasures(fit1, "srmr"), 3)`) -- reading is modeled through books
 only; technology is in the model but not yet allowed to predict reading.
 :::
@@ -890,8 +903,8 @@ knitr::kable(fit_table(fit2))
 ::: {.fragment}
 Over-identified (df = `r as.integer(fitMeasures(fit2, "df"))`). Adding the
 technology -> reading path barely moves fit (CFI =
-`r fmt(fitMeasures(fit2, "cfi"), 3)`, RMSEA =
-`r fmt(fitMeasures(fit2, "rmsea"), 3)`), and that path itself is not
+`r fmt(fitMeasures(fit2, "cfi.robust"), 3)`, RMSEA =
+`r fmt(fitMeasures(fit2, "rmsea.robust"), 3)`), and that path itself is not
 significant. The question is whether it improves on Model 1 -- next slide.
 :::
 :::
