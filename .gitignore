@@ -22,3 +22,6 @@ __pycache__/
 
 # WIP draft -- erroring, excluded until fixed
 rlabs/w03_sem.qmd
+
+rlabs/w05_interpretation.qmd
+lectures/w05_interpretation.qmd
