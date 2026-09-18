@@ -1,5 +1,5 @@
 ---
-title: "Lab: SEM FUNdamentals"
+title: "W03 Lab: SEM FUNdamentals"
 date: today
 description: '<a href="rlab-downloads/rlabs/w03_sem.qmd" download="rlabs/w03_sem.qmd">Download .qmd</a>'
 data: '<a href="rlab-downloads/w01_data_pisa22_USA_cln.csv" download="w01_data_pisa22_USA_cln.csv">w01_data_pisa22_USA_cln.csv</a>'

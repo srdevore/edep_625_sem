@@ -1,0 +1,313 @@
+---
+title: "W04 Lab: Model Fit & Comparison"
+date: today
+description: '<a href="rlab-downloads/w04_rlab_model_fit.qmd" download="w04_rlab_model_fit.qmd">Download .qmd</a>'
+data: '<a href="rlab-downloads/w04_data_pisa22_USA_cln.csv" download="w04_data_pisa22_USA_cln.csv">w04_data_pisa22_USA_cln.csv</a>'
+format: html
+release: week 4
+draft: true
+---
+
+## Purpose
+
+Ensure that you can independently run the MVPA models. 
+
+You can adapt these for your own mini-project.
+
+## Setup
+
+Install packages if needed: 
+
+```{r}
+
+#install.packages("tidyverse")
+#install.packages("lavaan")
+#install.packages("lavaanPlot")
+#install.packages("psych")
+
+```
+
+```{r}
+#| message: false
+library(tidyverse)
+library(lavaan)
+library(lavaanPlot)
+library(psych)
+
+pisa <- read_csv("w04_data_pisa22_USA_cln.csv", show_col_types = FALSE)
+```
+
+```{r}
+#| include: false
+fmt <- function(x, d = 2) formatC(x, format = "f", digits = d, big.mark = ",")
+
+# Focused fit table: the headline indices with conventional good-fit cutoffs.
+# With MLR we report the robust/scaled statistics.
+fit_table <- function(fit) {
+  m <- fitMeasures(fit, c("chisq.scaled", "df", "pvalue.scaled", "cfi.robust",
+                          "rmsea.robust", "rmsea.ci.lower.robust",
+                          "rmsea.ci.upper.robust", "srmr"))
+  p <- if (m[["pvalue.scaled"]] < 0.001) "< .001" else
+    paste0("= ", fmt(m[["pvalue.scaled"]], 3))
+  rmsea <- sprintf("%s [%s, %s]", fmt(m[["rmsea.robust"]], 3),
+                   fmt(m[["rmsea.ci.lower.robust"]], 3),
+                   fmt(m[["rmsea.ci.upper.robust"]], 3))
+  tibble(
+    Index      = c("χ² (df)", "CFI", "RMSEA [90% CI]", "SRMR"),
+    Value      = c(sprintf("%s (%d), p %s", fmt(m[["chisq.scaled"]], 1), as.integer(m[["df"]]), p),
+                   fmt(m[["cfi.robust"]], 3), rmsea, fmt(m[["srmr"]], 3)),
+    `Good fit` = c("p > .05", "≥ .95", "≤ .06", "≤ .08")
+  )
+}
+```
+
+## Assumptions
+
+MVPA models estimated with maximum likelihood carry a handful of assumptions.
+
+### Multivariate normality
+
+ML assumes the endogenous variables are multivariate normal.
+
+```{r}
+
+mardia(pisa)
+
+```
+
+Interpretation: Significant results indicate evidence against multivariate normality, so we fit with a robust estimator, `estimator = "MLR"`,
+which corrects the standard errors and the chi-square for non-normality.
+
+::: {.content-visible when-profile="teacher"}
+**Sample answer.** With a large PISA sample, mild departures from normality are
+common and rarely fatal. If skew/kurtosis are moderate, ML point estimates stay
+trustworthy but the chi-square and standard errors can be off -- that is exactly
+what `MLR` fixes, so reporting the robust (scaled) statistics is the safe habit.
+:::
+
+### Linearity
+
+The `~` paths assume each relationship is linear. Scatterplots with a straight
+(`lm`) fit overlaid let us eyeball the two paths into reading.
+
+```{r}
+#| warning: false
+#| fig-width: 8
+#| fig-height: 3
+pisa |>
+  select(BOOKSHOME, TECH, READ_AVG) |>
+  pivot_longer(-READ_AVG, names_to = "predictor", values_to = "x") |>
+  ggplot(aes(x, READ_AVG)) +
+  geom_point(alpha = 0.15) +
+  geom_smooth(method = "lm", se = FALSE, colour = "#C81E7A") +
+  facet_wrap(~predictor, scales = "free_x") +
+  theme_minimal()
+```
+
+### Multicollinearity
+
+The two predictors that appear together in the reading equation are books at
+home and technology. They should not be near-perfectly correlated.
+
+```{r}
+vars <- c("PAREDINT", "BOOKSHOME", "TECH", "READ_AVG")
+cor(pisa[, vars], use = "pairwise.complete.obs")
+
+# Variance inflation factor for the BOOKSHOME / TECH pair
+r2  <- summary(lm(BOOKSHOME ~ TECH, data = pisa))$r.squared
+vif <- 1 / (1 - r2)
+vif
+```
+
+::: {.content-visible when-profile="teacher"}
+**Sample answer.** Correlation between books at home and technology is
+`r fmt(cor(pisa$BOOKSHOME, pisa$TECH, use = "pairwise.complete.obs"), 2)`, and
+VIF = `r fmt(vif, 2)` (rule of thumb: concern above ~5-10). No collinearity
+problem -- the two mediators carry distinct information.
+:::
+
+### Uncorrelated disturbances
+
+Recursive path models assume the disturbances of the
+endogenous variables are uncorrelated. We enforce this when fitting with
+`auto.cov.y = FALSE`. 
+
+After fitting we check the residual covariances.
+
+# MVPA Models
+
+One research decision note: 
+
+We have two ordinal variables, but each has more than 5 levels, so we follow convention that 5 or more levels may be treated as continuous. 
+
+## Model 0: Original Example
+
+This is the model we've been looking at in class. 
+
+Does parent education relate to reading achievement through books at home?
+
+This question does not imply any model comparison. 
+
+$$\text{PAREDINT} \;\rightarrow\; \text{BOOKSHOME} \;\rightarrow\; \text{READ\_AVG}$$
+
+```{r}
+#| warning: false
+model0 <- "
+  BOOKSHOME ~ PAREDINT
+  READ_AVG  ~ BOOKSHOME
+"
+
+fit0 <- lavaan(model0, data = pisa, auto.var = TRUE, auto.cov.y = FALSE, estimator = "MLR")
+summary(fit0, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
+```
+
+Residual check for the uncorrelated-disturbance assumption:
+
+This shows standardized residual correlations. Close to 0 is evidence that the disturbances are uncorrelated.
+
+```{r}
+residuals(fit0, type = "cor")
+
+```
+
+### How well does Model 0 fit?
+
+```{r}
+knitr::kable(fit_table(fit0))
+```
+
+::: {.content-visible when-profile="teacher"}
+**Sample answer.** Model 0 is over-identified (df =
+`r as.integer(fitMeasures(fit0, "df"))`), so its fit is testable. The robust
+chi-square is `r fmt(fitMeasures(fit0, "chisq.scaled"), 1)` with $p$ =
+`r fmt(fitMeasures(fit0, "pvalue.scaled"), 3)` (CFI =
+`r fmt(fitMeasures(fit0, "cfi.robust"), 3)`, RMSEA =
+`r fmt(fitMeasures(fit0, "rmsea.robust"), 3)`, SRMR =
+`r fmt(fitMeasures(fit0, "srmr"), 3)`). This three-variable chain is the baseline
+we build on -- next we bring technology into the model so the richer models stay
+comparable on the same variables.
+:::
+
+
+## Question 2: 
+
+Question: 
+
+Is the relationship between parental education (`PAREDINT`) and
+children's reading scores (`READ_AVG`) mediated by books at home (`BOOKSHOME`)
+alone, or does technology (`TECH`) *also* carry part of the effect?
+
+This question does imply model comparison: One where tech is a predictor of reading scores and one where it is not. 
+
+## Model 1: Books-only mediation
+
+```{r}
+#| warning: false
+model1 <- "
+  BOOKSHOME ~ PAREDINT
+  TECH      ~ PAREDINT
+  READ_AVG  ~ BOOKSHOME
+"
+
+fit1 <- lavaan(model1, data = pisa, auto.var = TRUE, auto.cov.y = FALSE, estimator = "MLR")
+summary(fit1, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
+```
+
+
+
+Residual check for the uncorrelated-disturbance assumption:
+
+```{r}
+residuals(fit1, type = "cor")
+```
+
+### How well does Model 1 fit?
+
+```{r}
+knitr::kable(fit_table(fit1))
+```
+
+::: {.content-visible when-profile="teacher"}
+**Sample answer.** Model 1 is over-identified (df =
+`r as.integer(fitMeasures(fit1, "df"))`), so its fit is testable. The
+robust chi-square is `r fmt(fitMeasures(fit1, "chisq.scaled"), 1)` with $p$ =
+`r fmt(fitMeasures(fit1, "pvalue.scaled"), 3)`, and the approximate-fit indices (CFI =
+`r fmt(fitMeasures(fit1, "cfi.robust"), 3)`, RMSEA =
+`r fmt(fitMeasures(fit1, "rmsea.robust"), 3)`, SRMR =
+`r fmt(fitMeasures(fit1, "srmr"), 3)`) are mediocre -- this simple structure
+does not fully reproduce the four-variable covariance matrix. The question is
+whether *adding the technology path* fixes that.
+:::
+
+
+## Model 2: Books + tech mediation
+
+```{r}
+#| warning: false
+model2 <- "
+  BOOKSHOME ~ PAREDINT
+  TECH      ~ PAREDINT
+  READ_AVG  ~ BOOKSHOME + TECH
+"
+
+fit2 <- lavaan(model2, data = pisa, auto.var = TRUE, auto.cov.y = FALSE, estimator = "MLR")
+summary(fit2, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
+```
+
+
+
+Residual check for the uncorrelated-disturbance assumption:
+
+```{r}
+residuals(fit2, type = "cor")
+```
+
+### How well does Model 2 fit?
+
+```{r}
+knitr::kable(fit_table(fit2))
+```
+
+::: {.content-visible when-profile="teacher"}
+**Sample answer.** Model 2 frees one more path (`READ_AVG ~ TECH`), so df =
+`r as.integer(fitMeasures(fit2, "df"))`. Its fit is essentially unchanged from
+Model 1 (CFI = `r fmt(fitMeasures(fit2, "cfi.robust"), 3)`, RMSEA =
+`r fmt(fitMeasures(fit2, "rmsea.robust"), 3)`), and the `TECH -> READ_AVG` coefficient
+itself is not significant. That is the first sign the extra path buys us little.
+:::
+
+## Is Model 2 better than Model 1?
+
+Because Model 1 is nested in Model 2 (Model 1 = Model 2 with the
+`TECH -> READ_AVG` path fixed to 0), we can compare them with a chi-square
+difference test, and also weigh parsimony with AIC/BIC.
+
+```{r}
+anova(fit1, fit2)
+```
+
+```{r}
+tibble(
+  Model  = c("Model 1: books-only", "Model 2: books + tech"),
+  df     = c(fitMeasures(fit1, "df"),    fitMeasures(fit2, "df")),
+  chisq  = c(fitMeasures(fit1, "chisq.scaled"), fitMeasures(fit2, "chisq.scaled")),
+  CFI    = c(fitMeasures(fit1, "cfi.robust"),   fitMeasures(fit2, "cfi.robust")),
+  RMSEA  = c(fitMeasures(fit1, "rmsea.robust"), fitMeasures(fit2, "rmsea.robust")),
+  AIC    = c(fitMeasures(fit1, "aic"),   fitMeasures(fit2, "aic")),
+  BIC    = c(fitMeasures(fit1, "bic"),   fitMeasures(fit2, "bic"))
+)
+```
+
+::: {.content-visible when-profile="teacher"}
+**Sample answer.** The chi-square difference is
+`r fmt(anova(fit1, fit2)[2, "Chisq diff"], 2)` on 1 df, $p$ =
+`r fmt(anova(fit1, fit2)[2, "Pr(>Chisq)"], 3)` -- **not** significant. AIC and
+BIC are both **lower for Model 1**, agreeing that the extra parameter is not
+worth it. So freeing the `TECH -> READ_AVG` path does *not* improve the model:
+we keep the simpler Model 1. Substantively, once books at home is accounted for,
+technology does not add explanatory power for reading in these data. (Note both
+models fit the covariance matrix only moderately -- the comparison tells us the
+tech path isn't the missing piece, not that Model 1 is a great model.)
+:::
+
+

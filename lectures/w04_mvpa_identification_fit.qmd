@@ -1,0 +1,976 @@
+---
+title: "Week 4: MVPA: Identification & Fit"
+date: today
+description: '<a href="lectures/w04_mvpa_identification_fit.pdf" download="w04_mvpa_identification_fit.pdf">Download PDF</a>'
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+    embed-resources: true
+    self-contained-math: true
+
+---
+
+# Agenda
+
+- Review
+- Recursive & Non-recursive models
+- Degrees of Freedom: Review & in SEM
+- Identification & Degrees of Freedom in SEM
+- Other Assumptions
+- Model-level Fit & Comparing models
+- Rlab: Lavaan Package
+
+# Review
+
+- Lamaku > Quiz > W4
+
+Answer the question. 
+3 minute time limit
+
+
+# Recursive & Nonrecursive models
+
+## Recursive
+
+- Causal/predictive direction Flows in one direction; 
+- disturbance terms are not correlated 
+  - no hidden shared causes of unexplained variance.   
+
+## Nonrecursive
+
+:::: {.columns}
+::: {.column width="50%"}
+
+- Causal/predictive direction can flow in either direction
+
+```{r}
+#| echo: false
+#| fig-width: 4.2
+#| fig-height: 5
+library(ggplot2)
+
+BLU <- "#2C6FB5"; oNG <- "#E07B1A"; dk <- "#3A3A3A"
+ar <- grid::arrow(length = grid::unit(0.22, "cm"), type = "closed")
+
+box <- function(y, label) list(
+  annotate("rect", xmin = -1.15, xmax = 1.15, ymin = y - 0.55, ymax = y + 0.55, fill = dk),
+  annotate("text", x = 0, y = y, label = label, colour = "white", size = 5, lineheight = 0.9)
+)
+
+ggplot() +
+  # b: Books -> Reading (left, pointing down)
+  annotate("segment", x = -0.5, y = 1.6, xend = -0.5, yend = 0.6,
+           colour = BLU, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = -0.85, y = 1.1, label = "b", parse = TRUE,
+           colour = BLU, size = 6, fontface = "italic") +
+  # b*: Reading -> Books (right, pointing up)
+  annotate("segment", x = 0.5, y = 0.6, xend = 0.5, yend = 1.6,
+           colour = oNG, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 0.85, y = 1.1, label = "b^'*'", parse = TRUE,
+           colour = oNG, size = 6, fontface = "italic") +
+  box(2.2, "Books at\nhome") + box(0, "Reading\nscore") +
+  coord_equal(clip = "off") +
+  expand_limits(x = c(-1.9, 1.9), y = c(-0.8, 3)) +
+  theme_void()
+```
+:::
+
+::: {.column width="50%"}
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+**Covariance matrix**
+
+$$
+\begin{array}{c|cc}
+ & \text{Books} & \text{Reading} \\ \hline
+\text{Books}   & \sigma^2_{B} &  \\
+\text{Reading} & \sigma_{BR} & \sigma^2_{R}
+\end{array}
+$$
+
+:::
+:::
+:::
+
+::::
+
+
+# Degrees of Freedom
+
+## DF in Regression
+
+How do we calculate DF in Regression models? 
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+$$df = n - k - 1$$
+
+- n: number of cases in the study
+- k: number of predictors in the regression model
+- 1: subtract one for the intercept
+
+:::
+:::
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+
+$$df = \underbrace{\text{information}}_{\text{n cases}} - \underbrace{\text{constraints}}_{\text{n parameters}}$$
+
+:::
+:::
+
+## DF in SEM
+
+$$df = \underbrace{\text{information}}_{\color{#C81E7A}{\text{n variances/covariances}}} - \underbrace{\text{constraints}}_{\text{n parameters}}$$
+
+## SEM information available
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+- n variances & covariances in the matrix
+- Information $= \dfrac{p(p+1)}{2}$
+
+
+::: {.content-visible when-profile="teacher"}
+
+::: {.fragment}
+
+- Information $= \dfrac{3(4)}{2} = 6$
+
+:::
+
+:::
+
+:::
+
+::: {.column width="50%"}
+
+$$
+\begin{array}{c|ccc}
+ & \text{Parent Ed} & \text{Books} & \text{Reading} \\ \hline
+\text{Parent Ed} & \sigma^2_{P} & & \\
+\text{Books}     & \sigma_{PB} & \sigma^2_{B} & \\
+\text{Reading}   & \sigma_{PR} & \sigma_{BR} & \sigma^2_{R}
+\end{array}
+$$
+
+:::
+
+::::
+
+
+## DF Parameters
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+* path coefficients,
+* variances of exogenous variables,
+* disturbance of endogenous variables,
+* Covariances among exogenous variables
+
+:::
+
+::: {.column width="50%"}
+
+```{r}
+#| echo: false
+#| fig-width: 6.5
+#| fig-height: 4.8
+library(ggplot2)
+
+oNG <- "#E07B1A"; BLU <- "#2C6FB5"; MAG <- "#C81E7A"; LIM <- "#6FA80F"; dk <- "#3A3A3A"
+ar <- grid::arrow(length = grid::unit(0.22, "cm"), type = "closed")
+ar2 <- grid::arrow(length = grid::unit(0.18, "cm"), ends = "both", type = "closed")
+
+circle <- function(x, y, r = 0.5) {
+  t <- seq(0, 2 * pi, length.out = 60)
+  data.frame(x = x + r * cos(t), y = y + r * sin(t))
+}
+box <- function(x, label) list(
+  annotate("rect", xmin = x - 1.15, xmax = x + 1.15, ymin = -0.55, ymax = 0.55, fill = dk),
+  annotate("text", x = x, y = 0, label = label, colour = "white", size = 5, lineheight = 0.9)
+)
+
+ggplot() +
+  # path a1: ParentEd -> Books (orange)
+  annotate("segment", x = 1.15, xend = 2.85, y = 0, yend = 0, colour = oNG, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 2, y = 0.45, label = "a[1]", parse = TRUE, colour = oNG, size = 6, fontface = "italic") +
+  # path b1: Books -> Reading (blue)
+  annotate("segment", x = 5.15, xend = 6.85, y = 0, yend = 0, colour = BLU, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 6, y = 0.45, label = "b[1]", parse = TRUE, colour = BLU, size = 6, fontface = "italic") +
+  # variance of exogenous Parent education (self-loop)
+  annotate("curve", x = -0.55, y = 0.6, xend = 0.55, yend = 0.6,
+           colour = dk, linewidth = 0.9, curvature = -1.4, arrow = ar2) +
+  annotate("text", x = 0, y = 1.85, label = "Var", colour = dk, size = 4.6, fontface = "italic") +
+  # disturbance zeta_B on Books (magenta)
+  annotate("segment", x = 4, xend = 4, y = 1.85, yend = 0.6, colour = MAG, arrow = ar) +
+  annotate("text", x = 4, y = 2.25, label = "zeta[B]", parse = TRUE, colour = MAG, size = 4.6) +
+  # disturbance zeta_R on Reading (lime)
+  annotate("segment", x = 8, xend = 8, y = 1.85, yend = 0.6, colour = LIM, arrow = ar) +
+  annotate("text", x = 8, y = 2.25, label = "zeta[R]", parse = TRUE, colour = LIM, size = 4.6) +
+  # measured variables
+  box(0, "Parent\neducation") + box(4, "Books at\nhome") + box(8, "Reading\nscore") +
+  coord_equal(clip = "off") +
+  expand_limits(x = c(-1.3, 9.3), y = c(-0.9, 3)) +
+  theme_void()
+```
+
+:::
+
+::::
+
+Parameters: a1, b1, var(parent ed), Disturbance of books, disturbance of reading score
+
+## Putting it together
+
+$$df = \underbrace{\text{information}}_{\text{n variances/covariances}} - \underbrace{\text{constraints}}_{\text{n parameters}}$$
+
+$$df = \dfrac{p(p+1)}{2} - q$$
+
+- p: n variables
+- q: n parameters to be estimated
+
+$$df = \left(\dfrac{3(4)}{2}\right) - 5 = 1$$
+
+# Identification
+
+Algebraic Illustration:
+
+- Treat A & B as parameters to estimate. 
+- Treat Outcome as a piece of information (cases)
+
+## Under-Identification
+
+:::: {.columns}
+
+::: {.column width="50%"}
+**Algebra**
+
+Solve Example 1:
+
+$$A + B = 6$$
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+More parameters than information
+
+:::
+:::
+:::
+
+::: {.column width="50%"}
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+**In SEM**
+
+```{r}
+#| echo: false
+#| fig-width: 4.2
+#| fig-height: 5
+library(ggplot2)
+
+BLU <- "#2C6FB5"; oNG <- "#E07B1A"; dk <- "#3A3A3A"
+ar <- grid::arrow(length = grid::unit(0.22, "cm"), type = "closed")
+
+box <- function(y, label) list(
+  annotate("rect", xmin = -1.15, xmax = 1.15, ymin = y - 0.55, ymax = y + 0.55, fill = dk),
+  annotate("text", x = 0, y = y, label = label, colour = "white", size = 5, lineheight = 0.9)
+)
+
+ggplot() +
+  # b: Books -> Reading (left, pointing down)
+  annotate("segment", x = -0.5, y = 1.6, xend = -0.5, yend = 0.6,
+           colour = BLU, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = -0.85, y = 1.1, label = "b", parse = TRUE,
+           colour = BLU, size = 6, fontface = "italic") +
+  # b*: Reading -> Books (right, pointing up)
+  annotate("segment", x = 0.5, y = 0.6, xend = 0.5, yend = 1.6,
+           colour = oNG, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 0.85, y = 1.1, label = "b^'*'", parse = TRUE,
+           colour = oNG, size = 6, fontface = "italic") +
+  box(2.2, "Books at\nhome") + box(0, "Reading\nscore") +
+  coord_equal(clip = "off") +
+  expand_limits(x = c(-1.9, 1.9), y = c(-0.8, 3)) +
+  theme_void()
+```
+
+
+:::
+:::
+:::
+
+::::
+
+
+## Under-identification Summary
+
+$$df < 0$$
+
+- Infinite correct solutions
+- No way to select a single solution over others
+
+
+## Over-identification
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+Solve Example 2:
+
+$$\begin{aligned}
+A + B &= 6 \\
+2A + B &= 10 \\
+3A + B &= 12
+\end{aligned}$$
+
+:::
+
+::: {.column width="50%"}
+
+::: {.fragment}
+
+```{r}
+#| echo: false
+#| fig-width: 6.5
+#| fig-height: 3.6
+library(ggplot2)
+
+oNG <- "#E07B1A"; BLU <- "#2C6FB5"; MAG <- "#C81E7A"; LIM <- "#6FA80F"; dk <- "#3A3A3A"
+ar <- grid::arrow(length = grid::unit(0.22, "cm"), type = "closed")
+ar2 <- grid::arrow(length = grid::unit(0.18, "cm"), ends = "both", type = "closed")
+
+circle <- function(x, y, r = 0.5) {
+  t <- seq(0, 2 * pi, length.out = 60)
+  data.frame(x = x + r * cos(t), y = y + r * sin(t))
+}
+box <- function(x, label) list(
+  annotate("rect", xmin = x - 1.15, xmax = x + 1.15, ymin = -0.55, ymax = 0.55, fill = dk),
+  annotate("text", x = x, y = 0, label = label, colour = "white", size = 5, lineheight = 0.9)
+)
+
+ggplot() +
+  # path a1: ParentEd -> Books (orange)
+  annotate("segment", x = 1.15, xend = 2.85, y = 0, yend = 0, colour = oNG, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 2, y = 0.45, label = "a[1]", parse = TRUE, colour = oNG, size = 6, fontface = "italic") +
+  # path b1: Books -> Reading (blue)
+  annotate("segment", x = 5.15, xend = 6.85, y = 0, yend = 0, colour = BLU, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 6, y = 0.45, label = "b[1]", parse = TRUE, colour = BLU, size = 6, fontface = "italic") +
+  # variance of exogenous Parent education (self-loop)
+  annotate("curve", x = -0.55, y = 0.6, xend = 0.55, yend = 0.6,
+           colour = dk, linewidth = 0.9, curvature = -1.4, arrow = ar2) +
+  annotate("text", x = 0, y = 1.85, label = "Var", colour = dk, size = 4.6, fontface = "italic") +
+  # disturbance zeta_B on Books (magenta)
+  annotate("segment", x = 4, xend = 4, y = 1.85, yend = 0.6, colour = MAG, arrow = ar) +
+  annotate("text", x = 4, y = 2.25, label = "zeta[B]", parse = TRUE, colour = MAG, size = 4.6) +
+  # disturbance zeta_R on Reading (lime)
+  annotate("segment", x = 8, xend = 8, y = 1.85, yend = 0.6, colour = LIM, arrow = ar) +
+  annotate("text", x = 8, y = 2.25, label = "zeta[R]", parse = TRUE, colour = LIM, size = 4.6) +
+  # measured variables
+  box(0, "Parent\neducation") + box(4, "Books at\nhome") + box(8, "Reading\nscore") +
+  coord_equal(clip = "off") +
+  expand_limits(x = c(-1.3, 9.3), y = c(-0.7, 2.6)) +
+  theme_void()
+```
+
+$$
+\begin{array}{c|ccc}
+ & \text{Parent Ed} & \text{Books} & \text{Reading} \\ \hline
+\text{Parent Ed} & \sigma^2_{P} & & \\
+\text{Books}     & \sigma_{PB} & \sigma^2_{B} & \\
+\text{Reading}   & \sigma_{PR} & \sigma_{BR} & \sigma^2_{R}
+\end{array}
+$$
+
+:::
+
+:::
+
+::::
+
+## Over-identification Summary
+
+$$df > 0$$
+
+More pieces of information than parameters
+
+- no perfect solution that satisfies all equations
+- Add a criterion: get as close as possible to solving all three (OLS/ML)
+
+
+## Just-identification
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+::: {.content-visible when-profile="teacher"}
+
+Solve Example 3:
+
+$$\begin{aligned}
+A + B &= 6 \\
+2A + B &= 10
+\end{aligned}$$
+
+:::
+
+:::
+
+::: {.column width="50%"}
+
+::: {.fragment}
+
+```{r}
+#| echo: false
+#| fig-width: 6.5
+#| fig-height: 3.8
+library(ggplot2)
+
+oNG <- "#E07B1A"; BLU <- "#2C6FB5"; MAG <- "#C81E7A"; LIM <- "#6FA80F"; PUR <- "#7A3FA0"; dk <- "#3A3A3A"
+ar <- grid::arrow(length = grid::unit(0.22, "cm"), type = "closed")
+ar2 <- grid::arrow(length = grid::unit(0.18, "cm"), ends = "both", type = "closed")
+
+circle <- function(x, y, r = 0.5) {
+  t <- seq(0, 2 * pi, length.out = 60)
+  data.frame(x = x + r * cos(t), y = y + r * sin(t))
+}
+box <- function(x, label) list(
+  annotate("rect", xmin = x - 1.15, xmax = x + 1.15, ymin = -0.55, ymax = 0.55, fill = dk),
+  annotate("text", x = x, y = 0, label = label, colour = "white", size = 5, lineheight = 0.9)
+)
+
+ggplot() +
+  # path a1: ParentEd -> Books (orange)
+  annotate("segment", x = 1.15, xend = 2.85, y = 0, yend = 0, colour = oNG, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 2, y = 0.45, label = "a[1]", parse = TRUE, colour = oNG, size = 6, fontface = "italic") +
+  # path b1: Books -> Reading (blue)
+  annotate("segment", x = 5.15, xend = 6.85, y = 0, yend = 0, colour = BLU, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 6, y = 0.45, label = "b[1]", parse = TRUE, colour = BLU, size = 6, fontface = "italic") +
+  # direct path c1: ParentEd -> Reading (straight, below the boxes, purple)
+  annotate("segment", x = 0.2, xend = 7.8, y = -0.75, yend = -0.75, colour = PUR, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 4, y = -1.1, label = "c[1]", parse = TRUE, colour = PUR, size = 6, fontface = "italic") +
+  # variance of exogenous Parent education (self-loop)
+  annotate("curve", x = -0.55, y = 0.6, xend = 0.55, yend = 0.6,
+           colour = dk, linewidth = 0.9, curvature = -1.4, arrow = ar2) +
+  annotate("text", x = 0, y = 1.85, label = "Var", colour = dk, size = 4.6, fontface = "italic") +
+  # disturbance zeta_B on Books (magenta)
+  annotate("segment", x = 4, xend = 4, y = 1.85, yend = 0.6, colour = MAG, arrow = ar) +
+  annotate("text", x = 4, y = 2.25, label = "zeta[B]", parse = TRUE, colour = MAG, size = 4.6) +
+  # disturbance zeta_R on Reading (lime)
+  annotate("segment", x = 8, xend = 8, y = 1.85, yend = 0.6, colour = LIM, arrow = ar) +
+  annotate("text", x = 8, y = 2.25, label = "zeta[R]", parse = TRUE, colour = LIM, size = 4.6) +
+  # measured variables
+  box(0, "Parent\neducation") + box(4, "Books at\nhome") + box(8, "Reading\nscore") +
+  coord_equal(clip = "off") +
+  expand_limits(x = c(-1.3, 9.3), y = c(-1.25, 2.55)) +
+  theme_void()
+```
+
+$$
+\small
+\begin{array}{c|ccc}
+ & \text{Parent Ed} & \text{Books} & \text{Reading} \\ \hline
+\text{Parent Ed} & \sigma^2_{P} & & \\
+\text{Books}     & \sigma_{PB} & \sigma^2_{B} & \\
+\text{Reading}   & \sigma_{PR} & \sigma_{BR} & \sigma^2_{R}
+\end{array}
+$$
+
+:::
+
+:::
+
+::::
+
+
+## Just-identified Summary
+
+$$df = 0$$
+
+- Always fits the data perfectly, regardless of whether the causal structure you specified is actually correct
+- Not falsifiable 
+
+## Pause & Recap
+
+- How do degrees of freedom differ between Regression & SEM? 
+- How are degrees of freedom used to determine how a model is identified? 
+
+
+# MVPA Assumptions
+
+## Correct Specification
+## Identification
+
+## Multicollinearity
+
+Solve Example 4: 
+
+$$\begin{aligned}
+A + B &= 6 \\
+3A + 3B &= 18
+\end{aligned}$$
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+
+Same as Example 1
+
+No new information is provided by the second observation
+
+:::
+:::
+
+## Sample Size
+
+- Adequate sample size. ~20 cases per parameter.
+
+## Additional Assumptions you can adjust for
+
+- Multivariate normality > required for ML; other estimators can handle violations
+- Continuous predictors > Ordinal can be set in Lavaan
+- Linearity: Ways to handle non-linear relationships
+- Uncorrelated disturbances: Applies only to recursive models
+
+## Pause & Recap
+
+- What assumptions should be met or adjusted for for MVPA?
+- What assumptions may be of concern in your data and for your mini project? 
+
+# Model Fit
+
+## Null Hypothesis in Regression
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+
+H0: There is no effect of the predictor on the outcome
+
+H1: There is an effect of the predictor on the outcome
+
+Rejecting the null means we have found an effect (evidence SUPPORTS our hypothesis)
+
+::: 
+:::
+
+## Null hypothesis in SEM 🤸
+
+
+H0: The model-implied covariance matrix equals the observed covariance matrix
+
+H1: The model-implied covariance matrix does not equal the observed covariance matrix
+
+Rejecting the null means the model we specified is not well-aligned to observed data (evidence AGAINST our hypothesis)
+
+## Key fit indices: Model χ² 
+
+Model χ² (chi-square): If model-implied cov matrix differs significantly from observed. 
+
+- Significant: reject the null (hypothesis not supported)
+- Non-significant: Fail to rejecct the null (hypothesis supported) 
+- Sensitive to sample size. 
+
+## Key fit indices: CFI
+
+CFI (Comparative Fit Index): Uses a baseline model 
+
+- Creates a baseline model in which nothing is related
+- Determines How much better your model is than assuming nothing is related. 
+- 0-1 range; higher is better; >= .95 indicates good fit; >= .9 is acceptable
+
+## Key fit indices: SRMR
+
+SRMR (Standardized Root Mean Square Residual)
+
+- Average size of the differences between the observed and model-predicted correlations
+- Standardized so it's comparable across variables. 
+- Lower is better; ≤ .08 indicates good fit
+
+## Key fit indices: RMSEA 
+
+RMSEA (Root Mean Square Error of Approximation)
+
+- Error per degree of freedom 
+- "how far off is the model, adjusting for how simple or complex it is." 
+- Lower is better ≤ .05 indicates good fit; .05–.08 is acceptable; ≥ .10 indicates poor fit
+
+## Key Fit Indices: AIC/BIC
+
+Useful for model comparison
+
+- How well a model fits considering how complex it is using −2(log-likelihood). 
+
+Penalizes for complexity:
+
+- AIC: Fixed penalty based on number of parameters
+- BIC: Penalty for extra parameters grows with sample size 
+
+# Models 
+
+Q0: Does parent education relate to reading through the number of books in the home.
+
+# Model 0 Diagram
+
+```{r}
+#| echo: false
+#| fig-width: 6.5
+#| fig-height: 4.8
+library(ggplot2)
+
+oNG <- "#E07B1A"; BLU <- "#2C6FB5"; MAG <- "#C81E7A"; LIM <- "#6FA80F"; dk <- "#3A3A3A"
+ar <- grid::arrow(length = grid::unit(0.22, "cm"), type = "closed")
+ar2 <- grid::arrow(length = grid::unit(0.18, "cm"), ends = "both", type = "closed")
+
+circle <- function(x, y, r = 0.5) {
+  t <- seq(0, 2 * pi, length.out = 60)
+  data.frame(x = x + r * cos(t), y = y + r * sin(t))
+}
+box <- function(x, label) list(
+  annotate("rect", xmin = x - 1.15, xmax = x + 1.15, ymin = -0.55, ymax = 0.55, fill = dk),
+  annotate("text", x = x, y = 0, label = label, colour = "white", size = 5, lineheight = 0.9)
+)
+
+ggplot() +
+  # path a1: ParentEd -> Books (orange)
+  annotate("segment", x = 1.15, xend = 2.85, y = 0, yend = 0, colour = oNG, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 2, y = 0.45, label = "a[1]", parse = TRUE, colour = oNG, size = 6, fontface = "italic") +
+  # path b1: Books -> Reading (blue)
+  annotate("segment", x = 5.15, xend = 6.85, y = 0, yend = 0, colour = BLU, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 6, y = 0.45, label = "b[1]", parse = TRUE, colour = BLU, size = 6, fontface = "italic") +
+  # variance of exogenous Parent education (self-loop)
+  annotate("curve", x = -0.55, y = 0.6, xend = 0.55, yend = 0.6,
+           colour = dk, linewidth = 0.9, curvature = -1.4, arrow = ar2) +
+  annotate("text", x = 0, y = 1.85, label = "Var", colour = dk, size = 4.6, fontface = "italic") +
+  # disturbance zeta_B on Books (magenta)
+  annotate("segment", x = 4, xend = 4, y = 1.85, yend = 0.6, colour = MAG, arrow = ar) +
+  annotate("text", x = 4, y = 2.25, label = "zeta[B]", parse = TRUE, colour = MAG, size = 4.6) +
+  # disturbance zeta_R on Reading (lime)
+  annotate("segment", x = 8, xend = 8, y = 1.85, yend = 0.6, colour = LIM, arrow = ar) +
+  annotate("text", x = 8, y = 2.25, label = "zeta[R]", parse = TRUE, colour = LIM, size = 4.6) +
+  # measured variables
+  box(0, "Parent\neducation") + box(4, "Books at\nhome") + box(8, "Reading\nscore") +
+  coord_equal(clip = "off") +
+  expand_limits(x = c(-1.3, 9.3), y = c(-0.9, 3)) +
+  theme_void()
+```
+
+- What theoretical claims does this model make?
+- How many degrees of freedom?
+- How to describe its identification?
+
+## Model 0 Results
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+library(tidyverse)
+library(lavaan)
+
+pisa <- read_csv("../rlabs/w04_data_pisa22_USA_cln.csv", show_col_types = FALSE)
+
+fmt <- function(x, d = 2) formatC(x, format = "f", digits = d, big.mark = ",")
+
+# Focused fit table: the headline indices with conventional good-fit cutoffs.
+# With MLR we report the robust/scaled statistics.
+fit_table <- function(fit) {
+  m <- fitMeasures(fit, c("chisq.scaled", "df", "pvalue.scaled", "cfi.robust",
+                          "rmsea.robust", "rmsea.ci.lower.robust",
+                          "rmsea.ci.upper.robust", "srmr"))
+  p <- if (m[["pvalue.scaled"]] < 0.001) "< .001" else
+    paste0("= ", fmt(m[["pvalue.scaled"]], 3))
+  rmsea <- sprintf("%s [%s, %s]", fmt(m[["rmsea.robust"]], 3),
+                   fmt(m[["rmsea.ci.lower.robust"]], 3),
+                   fmt(m[["rmsea.ci.upper.robust"]], 3))
+  tibble::tibble(
+    Index      = c("χ² (df)", "CFI", "RMSEA [90% CI]", "SRMR"),
+    Value      = c(sprintf("%s (%d), p %s", fmt(m[["chisq.scaled"]], 1), as.integer(m[["df"]]), p),
+                   fmt(m[["cfi.robust"]], 3), rmsea, fmt(m[["srmr"]], 3)),
+    `Good fit` = c("p > .05", "≥ .95", "≤ .06", "≤ .08")
+  )
+}
+
+# Model 0: the original simple chain -- parent education -> books -> reading
+# (no technology). A three-variable recursive mediation model.
+model0 <- "
+  BOOKSHOME ~ PAREDINT
+  READ_AVG  ~ BOOKSHOME
+"
+fit0 <- lavaan(model0, data = pisa, auto.var = TRUE, auto.cov.y = FALSE, estimator = "MLR")
+```
+
+
+
+$$\text{Parent Ed} \;\rightarrow\; \text{Books at home} \;\rightarrow\; \text{Reading}$$
+
+```{r}
+#| echo: false
+knitr::kable(fit_table(fit0))
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+Over-identified (df = `r as.integer(fitMeasures(fit0, "df"))`), so fit is
+testable. Robust $\chi^2$ = `r fmt(fitMeasures(fit0, "chisq.scaled"), 1)`, $p$ =
+`r fmt(fitMeasures(fit0, "pvalue.scaled"), 3)` (CFI =
+`r fmt(fitMeasures(fit0, "cfi.robust"), 3)`, RMSEA =
+`r fmt(fitMeasures(fit0, "rmsea.robust"), 3)`, SRMR =
+`r fmt(fitMeasures(fit0, "srmr"), 3)`).
+:::
+:::
+
+
+# Model Comparison
+
+Rules: 
+
+- Same variables
+- Same sample
+- Same estimator
+- Nested structure: One model's parameter space must be a subset of the other's, achieved by
+
+    - Fixing one or more parameters to a specific value (usually zero)
+    - Constraining two or more parameters to be equal to each other
+
+# Model Comparison Example
+
+RQ: Does parent education relate to students' reading achievement only through the number of books in the home or does access to technology serve as an additional mediating pathway? 
+
+1. Develop a model with only books as a mediator
+2. Develop a model with both books and technology as a mediator
+3. Compare the two models.
+ 
+## Model 1
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+# Model 1: reading mediated by books only. Technology is in the model
+# (predicted by parent education) but has no path to reading. This keeps
+# both models on the same four variables so they are nested and comparable.
+# auto.cov.y = FALSE keeps the disturbances uncorrelated (recursive model).
+model1 <- "
+  BOOKSHOME ~ PAREDINT
+  TECH      ~ PAREDINT
+  READ_AVG  ~ BOOKSHOME
+"
+fit1 <- lavaan(model1, data = pisa, auto.var = TRUE, auto.cov.y = FALSE, estimator = "MLR")
+
+# Model 2: adds the TECH -> Reading path (books AND tech mediate).
+# Model 1 is Model 2 with that one path fixed to 0 -> nested.
+model2 <- "
+  BOOKSHOME ~ PAREDINT
+  TECH      ~ PAREDINT
+  READ_AVG  ~ BOOKSHOME + TECH
+"
+fit2 <- lavaan(model2, data = pisa, auto.var = TRUE, auto.cov.y = FALSE, estimator = "MLR")
+```
+
+```{r}
+#| echo: false
+#| fig-width: 7.5
+#| fig-height: 5
+library(ggplot2)
+
+oNG <- "#E07B1A"; BLU <- "#2C6FB5"; MAG <- "#C81E7A"; LIM <- "#6FA80F"
+PUR <- "#7A3FA0"; TEA <- "#0E8F8F"; GLD <- "#C89A2B"; dk <- "#3A3A3A"
+ar <- grid::arrow(length = grid::unit(0.22, "cm"), type = "closed")
+ar2 <- grid::arrow(length = grid::unit(0.18, "cm"), ends = "both", type = "closed")
+
+box <- function(x, y, label) list(
+  annotate("rect", xmin = x - 1.15, xmax = x + 1.15, ymin = y - 0.55, ymax = y + 0.55, fill = dk),
+  annotate("text", x = x, y = y, label = label, colour = "white", size = 4.6, lineheight = 0.9)
+)
+
+ggplot() +
+  # a1: ParentEd -> Books (orange)
+  annotate("segment", x = 1.0, y = 0.45, xend = 3.85, yend = 1.35, colour = oNG, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 2.0, y = 1.2, label = "a[1]", parse = TRUE, colour = oNG, size = 6, fontface = "italic") +
+  # a2: ParentEd -> Tech (purple)
+  annotate("segment", x = 1.0, y = -0.45, xend = 3.85, yend = -1.35, colour = PUR, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 2.0, y = -1.2, label = "a[2]", parse = TRUE, colour = PUR, size = 6, fontface = "italic") +
+  # b1: Books -> Reading (blue)
+  annotate("segment", x = 6.15, y = 1.35, xend = 9.0, yend = 0.45, colour = BLU, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 8.0, y = 1.2, label = "b[1]", parse = TRUE, colour = BLU, size = 6, fontface = "italic") +
+  # variance of exogenous Parent education (self-loop)
+  annotate("curve", x = -0.55, y = 0.6, xend = 0.55, yend = 0.6,
+           colour = dk, linewidth = 0.9, curvature = -1.4, arrow = ar2) +
+  annotate("text", x = 0, y = 1.5, label = "Var", colour = dk, size = 4.4, fontface = "italic") +
+  # disturbance zeta_B on Books (magenta)
+  annotate("segment", x = 5, xend = 5, y = 3.05, yend = 2.2, colour = MAG, arrow = ar) +
+  annotate("text", x = 5, y = 3.35, label = "zeta[B]", parse = TRUE, colour = MAG, size = 4.4) +
+  # disturbance zeta_T on Tech (gold)
+  annotate("segment", x = 5, xend = 5, y = -3.05, yend = -2.2, colour = GLD, arrow = ar) +
+  annotate("text", x = 5, y = -3.35, label = "zeta[T]", parse = TRUE, colour = GLD, size = 4.4) +
+  # disturbance zeta_R on Reading (lime)
+  annotate("segment", x = 11.7, xend = 11.15, y = 0.9, yend = 0.35, colour = LIM, arrow = ar) +
+  annotate("text", x = 12.1, y = 1.2, label = "zeta[R]", parse = TRUE, colour = LIM, size = 4.4) +
+  # measured variables
+  box(0, 0, "Parent\neducation") + box(5, 1.6, "Books at\nhome") +
+  box(5, -1.6, "Technology") + box(10, 0, "Reading\nscore") +
+  coord_equal(clip = "off") +
+  expand_limits(x = c(-1.3, 12.6), y = c(-3.7, 3.7)) +
+  theme_void()
+```
+
+- What theoretical claims does this model make?
+- How many degrees of freedom?
+- How to describe its identification?
+
+## How well does the model fit the data?
+
+```{r}
+#| echo: false
+knitr::kable(fit_table(fit1))
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+Over-identified (df = `r as.integer(fitMeasures(fit1, "df"))`), so fit is
+testable. Robust $\chi^2$ = `r fmt(fitMeasures(fit1, "chisq.scaled"), 1)`, $p$ =
+`r fmt(fitMeasures(fit1, "pvalue.scaled"), 3)` (CFI =
+`r fmt(fitMeasures(fit1, "cfi.robust"), 3)`, RMSEA =
+`r fmt(fitMeasures(fit1, "rmsea.robust"), 3)`, SRMR =
+`r fmt(fitMeasures(fit1, "srmr"), 3)`) -- reading is modeled through books
+only; technology is in the model but not yet allowed to predict reading.
+:::
+:::
+
+## Model 2
+
+```{r}
+#| echo: false
+#| fig-width: 7.5
+#| fig-height: 5
+library(ggplot2)
+
+oNG <- "#E07B1A"; BLU <- "#2C6FB5"; MAG <- "#C81E7A"; LIM <- "#6FA80F"
+PUR <- "#7A3FA0"; TEA <- "#0E8F8F"; GLD <- "#C89A2B"; dk <- "#3A3A3A"
+ar <- grid::arrow(length = grid::unit(0.22, "cm"), type = "closed")
+ar2 <- grid::arrow(length = grid::unit(0.18, "cm"), ends = "both", type = "closed")
+
+box <- function(x, y, label) list(
+  annotate("rect", xmin = x - 1.15, xmax = x + 1.15, ymin = y - 0.55, ymax = y + 0.55, fill = dk),
+  annotate("text", x = x, y = y, label = label, colour = "white", size = 4.6, lineheight = 0.9)
+)
+
+ggplot() +
+  # a1: ParentEd -> Books (orange)
+  annotate("segment", x = 1.0, y = 0.45, xend = 3.85, yend = 1.35, colour = oNG, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 2.0, y = 1.2, label = "a[1]", parse = TRUE, colour = oNG, size = 6, fontface = "italic") +
+  # a2: ParentEd -> Tech (purple)
+  annotate("segment", x = 1.0, y = -0.45, xend = 3.85, yend = -1.35, colour = PUR, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 2.0, y = -1.2, label = "a[2]", parse = TRUE, colour = PUR, size = 6, fontface = "italic") +
+  # b1: Books -> Reading (blue)
+  annotate("segment", x = 6.15, y = 1.35, xend = 9.0, yend = 0.45, colour = BLU, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 8.0, y = 1.2, label = "b[1]", parse = TRUE, colour = BLU, size = 6, fontface = "italic") +
+  # b2: Tech -> Reading (teal)
+  annotate("segment", x = 6.15, y = -1.35, xend = 9.0, yend = -0.45, colour = TEA, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 8.0, y = -1.2, label = "b[2]", parse = TRUE, colour = TEA, size = 6, fontface = "italic") +
+  # variance of exogenous Parent education (self-loop)
+  annotate("curve", x = -0.55, y = 0.6, xend = 0.55, yend = 0.6,
+           colour = dk, linewidth = 0.9, curvature = -1.4, arrow = ar2) +
+  annotate("text", x = 0, y = 1.5, label = "Var", colour = dk, size = 4.4, fontface = "italic") +
+  # disturbance zeta_B on Books (magenta)
+  annotate("segment", x = 5, xend = 5, y = 3.05, yend = 2.2, colour = MAG, arrow = ar) +
+  annotate("text", x = 5, y = 3.35, label = "zeta[B]", parse = TRUE, colour = MAG, size = 4.4) +
+  # disturbance zeta_T on Tech (gold)
+  annotate("segment", x = 5, xend = 5, y = -3.05, yend = -2.2, colour = GLD, arrow = ar) +
+  annotate("text", x = 5, y = -3.35, label = "zeta[T]", parse = TRUE, colour = GLD, size = 4.4) +
+  # disturbance zeta_R on Reading (lime)
+  annotate("segment", x = 11.7, xend = 11.15, y = 0.9, yend = 0.35, colour = LIM, arrow = ar) +
+  annotate("text", x = 12.1, y = 1.2, label = "zeta[R]", parse = TRUE, colour = LIM, size = 4.4) +
+  # measured variables
+  box(0, 0, "Parent\neducation") + box(5, 1.6, "Books at\nhome") +
+  box(5, -1.6, "Technology") + box(10, 0, "Reading\nscore") +
+  coord_equal(clip = "off") +
+  expand_limits(x = c(-1.3, 12.6), y = c(-3.7, 3.7)) +
+  theme_void()
+```
+
+- What theoretical claims does this make?
+- How many degrees of freedom?
+- How to describe its identification?
+
+## How well does model 2 fit the data?
+
+```{r}
+#| echo: false
+knitr::kable(fit_table(fit2))
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+Over-identified (df = `r as.integer(fitMeasures(fit2, "df"))`). Adding the
+technology -> reading path barely moves fit (CFI =
+`r fmt(fitMeasures(fit2, "cfi.robust"), 3)`, RMSEA =
+`r fmt(fitMeasures(fit2, "rmsea.robust"), 3)`), and that path itself is not
+significant. The question is whether it improves on Model 1 -- next slide.
+:::
+:::
+
+## Model comparison:
+
+Does adding the technology -> reading path actually improve the model?
+
+```{r}
+#| echo: false
+knitr::kable(anova(fit1, fit2))
+```
+
+```{r}
+#| echo: false
+knitr::kable(tibble::tibble(
+  Model = c("M1: books-only", "M2: books + tech"),
+  df    = c(fitMeasures(fit1, "df"),  fitMeasures(fit2, "df")),
+  AIC   = c(fitMeasures(fit1, "aic"), fitMeasures(fit2, "aic")),
+  BIC   = c(fitMeasures(fit1, "bic"), fitMeasures(fit2, "bic"))
+))
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+Nested models (M1 = M2 with the tech -> reading path fixed to 0). The
+$\chi^2$ difference is `r fmt(anova(fit1, fit2)[2, "Chisq diff"], 2)` on 1 df,
+$p$ = `r fmt(anova(fit1, fit2)[2, "Pr(>Chisq)"], 3)` -- **not** significant.
+AIC and BIC are both **lower for Model 1**. Adding the technology pathway does
+*not* improve the model: keep the simpler Model 1.
+:::
+:::
+
+# Mini Project Checkin: 
+
+- You should have preliminary ideas about how to specify a model using your data
+- You should be able to run at least a draft version of your own model with your own data
+- You should understand if your draft model is a good fit.
+
+# R Lab: 
+
+1. Run: W04 Lab: Model Fit & Comparison 
+
+2. Continue to Specify your model in the Lavaan (or other) GUI.
+
+- Start your own qmd or rmd file for your mini project
+- use the code provided & the code from Lavaan GUI to start building your model
+- Run at least a draft version of your model today.   
+
+# Up Next: 
+
+Interpreting the models
+
+Prep: Lavaan package exploration
+
+- What arguments are relevant to your project/data?
+- Use AI to help interpret tech writing into less technical language.
+
+
+
+

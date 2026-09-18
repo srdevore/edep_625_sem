@@ -149,3 +149,33 @@ git reset
 
 Then re-stage deliberately, now that `.gitignore` excludes `.venv/`:
 
+## 7. Hide a WIP page you already committed
+
+A half-finished `.qmd` breaks the site render (Quarto builds every `.qmd` in the
+project) and, if committed, publishes to the public site. To keep one private
+until it is ready, do all three:
+
+1. **Stop the render** -- add an exclusion line under `project: render:` in
+   `_quarto.yml` (order matters; the `!` line comes after the `**/*.qmd` glob):
+
+    ```yaml
+    render:
+      - "**/*.qmd"
+      - "!rlabs/w05_interpretation.qmd"  # WIP draft -- excluded from render
+    ```
+
+2. **Ignore it going forward** -- add the path to `.gitignore`.
+
+3. **Untrack the already-committed copy** -- `.gitignore` only affects
+   *untracked* files, so a file that is already committed keeps being tracked.
+   `git rm --cached` removes it from the index while leaving your local copy on
+   disk:
+
+    ```{bash}
+    git rm --cached rlabs/w05_interpretation.qmd lectures/w05_interpretation.qmd
+    git commit -m "Untrack WIP w05 interpretation files; exclude from render"
+    ```
+
+When the page is ready, reverse it: delete its lines from `.gitignore` and
+`_quarto.yml`, then `git add` the file.
+
