@@ -38,7 +38,7 @@ jobs:
           restore-keys: ${{ runner.os }}-r43-
 
       - name: Install R packages
-        run: Rscript -e 'install.packages(c("rmarkdown", "knitr", "yaml", "tidyverse", "lavaan", "lavaanPlot"))'
+        run: Rscript -e 'install.packages(c("rmarkdown", "knitr", "yaml", "tidyverse", "lavaan", "lavaanPlot", "psych"))'
 
       - name: Render site
         uses: quarto-dev/quarto-actions/render@v2

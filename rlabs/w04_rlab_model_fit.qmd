@@ -5,7 +5,6 @@ description: '<a href="rlab-downloads/w04_rlab_model_fit.qmd" download="w04_rlab
 data: '<a href="rlab-downloads/w04_data_pisa22_USA_cln.csv" download="w04_data_pisa22_USA_cln.csv">w04_data_pisa22_USA_cln.csv</a>'
 format: html
 release: week 4
-draft: true
 ---
 
 ## Purpose
