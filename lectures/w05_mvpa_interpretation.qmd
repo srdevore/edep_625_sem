@@ -1,0 +1,162 @@
+---
+title: "Week 5: MVPA Interpretation"
+date: today
+description: '<a href="lectures/w05_mvpa_interpretation.pdf" download="w05_mvpa_interpretation.pdf">Download PDF</a>'
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+    embed-resources: true
+    self-contained-math: true
+
+---
+
+# Agenda
+
+- Review
+- Interpretation of path coefficients
+  - practice
+- Comparing methods
+- Lavaan settings 
+
+# Review
+
+What are just- under- and over-identification? 
+
+- how does identification impact what we model & interpretation? 
+
+How do we get the number of degrees of freedom in SEM? 
+Why/how are DF & identification related? 
+
+What do chi2, rmsea, srmsea, cli tell us? 
+
+## Review Coefficient Interpretation
+
+![Regression Outputs](images/regression_output_ex.png)
+
+## Review of Effects
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+Main effects 
+:::
+:::
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+Interaction effects
+:::
+:::
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+Between vs within group effects
+:::
+:::
+
+## SEM Effects
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+- Direct effect: X > Y
+  - Unstandardized: For every 1-SD increase in X, Y changes by the b standard deviations. 
+  - Standardized: For every 1-SD increase in X, Y changes by b standard deviations 
+:::
+:::
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+- Indirect effect: X > M > Y: Multiply path coefficients to get indirect effects
+  - Unstandardized: For every 1-unit increase in X, Y changes by the product's units, because X changed M, which then changed Y.
+  - Standardized: For every 1-SD increase in X, Y changes by the product's standard deviations, because X changed M, which then changed Y.
+:::
+:::
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+- Total effect: Direct + indirect effects
+:::
+:::
+
+Note that not all models have direct effects/total effects
+
+## Model Interpretation
+
+![Reading scores example - unstandardized](images/mvpa.png)
+ 
+## Interpretation: 
+
+a * b = indirect effect
+
+0.15 * 30.65 = 4.597
+
+- Unstandardized: For every 1-unit increase in X (parent Ed), Y (reading score) changes by 4.597 units (points).
+
+# Unstandardized table results
+
+![Reading scores example - unstandardized](images/mvpa_results_unst.png)
+
+# Standardized table results
+
+![Reading scores example - standardized](images/mvpa_results_std.png)
+
+# Standardized Interpretation
+
+0.272 * 0.424 = .115
+
+- Standardized: For every 1-SD increase in X (parent Ed), Y (reading score) changes by .115 standard deviations.
+
+## Standardized vs Unstandaridized
+
+- Unstandaridized: 
+  - often easier to interpret raw units (i.e. points)
+  - needed for replication
+
+- Standardized: 
+  - Shows effect size of variables on different scales (i.e. parent ed vs points relative importance)
+
+# Examples
+
+^ Full mediation (indirect-only)
+
+## Partial mediation
+
+![UCLA: MPlus Class Notes, standardized](images/ucla_example.png)
+
+## Parallel (multiple) mediators
+
+## Serial (sequential) mediators
+
+## Common-cause ("fork") structure
+
+## Multiple outcomes from a shared process
+
+# Practice
+
+## Partial Mediation 
+
+![UCLA: SAS, standardized](images/ucla_sas.png)
+
+
+## Kline Model
+
+## Pfeuffer Model
+
+![Pfeuffer et al. (2025), Figure 2: path model for STEM choice intentions](images/pfeuffer_fig2_pathmodel.png)
+
+# Discussion
+
+Paper compare your interpretation to the author's interpretation. 
+
+# Compare 
+
+Revisit what this approach tells us that the regression models we did at the beginning of class didn't. 
+
+# Lavaan Settings
+
+Set up some fake data with various glitches. 1. build the model in lavaan from a description. 2. decide which specs in lavaan need to be changed (if any). 
+
+Up next: 
+
+
+
