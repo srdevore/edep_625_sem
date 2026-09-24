@@ -9,7 +9,6 @@ project:
   render:
     - "**/*.qmd"
     - "!rlabs/w03_sem.qmd"  # WIP draft -- excluded from render for now
-    - "!rlabs/w05_interpretation.qmd"  # WIP draft -- excluded from render for now
     - "!lectures/w05_interpretation.qmd"  # WIP draft -- excluded from render for now
 
 profile:

@@ -1,0 +1,45 @@
+---
+title: "W05 Lab: Working with Lavaan"
+date: today
+description: '<a href="rlab-downloads/w05_interpretation.qmd" download="w05_interpretation.qmd">Download .qmd</a>'
+data: '<a href="rlab-downloads/w04_data_pisa22_USA_cln.csv" download="w04_data_pisa22_USA_cln.csv">w04_data_pisa22_USA_cln.csv</a>'
+format: html
+release: week 6
+draft: true
+---
+
+# Modification Inidices
+
+## Datamining 
+
+Use with caution
+
+
+```{r}
+#| eval: false
+lavaanPlot(model = fit0, coefs = TRUE, stand = TRUE, stars = "regress")
+```
+
+
+```{r}
+#| eval: false
+lavaanPlot(model = fit1, coefs = TRUE, stand = TRUE, stars = "regress")
+```
+
+```{r}
+#| eval: false
+lavaanPlot(model = fit2, coefs = TRUE, stand = TRUE, stars = "regress")
+```
+
+
+Lavaan practice 
+
+series of var-covar matrics where we need to adjust settings: 
+
+ordered
+
+sample_cov
+
+constraints
+
+se = bootstrapping

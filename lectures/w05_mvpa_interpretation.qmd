@@ -18,18 +18,18 @@ format:
   - different model types
   - practice
 - Comparing methods
-- Lavaan settings 
+- Lavaan settings
 
 ## Review
 
-What are just- under- and over-identification? 
+What are just- under- and over-identification?
 
-- how does identification impact what we model & interpretation? 
+- how does identification impact what we model & interpretation?
 
-How do we get the number of degrees of freedom in SEM? 
-Why/how are DF & identification related? 
+How do we get the number of degrees of freedom in SEM?
+Why/how are DF & identification related?
 
-What do chi2, rmsea, srmsea, cli tell us? 
+What do chi2, rmsea, srmsea, cli tell us?
 
 What is H0 in SEM?
 
@@ -41,7 +41,7 @@ What is H0 in SEM?
 
 ::: {.content-visible when-profile="teacher"}
 ::: {.fragment}
-Main effects 
+Main effects
 :::
 :::
 
@@ -63,15 +63,15 @@ Similar to regression
 
 ::: {.content-visible when-profile="teacher"}
 ::: {.fragment}
-- Direct effect: X > Y
-  - Unstandardized: For every 1-unit change in X, Y changes by the path's units. 
-  - Standardized: For every 1-SD change in X, Y changes by the path's standard deviations 
+- Direct effect: $X \rightarrow Y$
+  - Unstandardized: For every 1-unit change in X, Y changes by the path's units.
+  - Standardized: For every 1-SD change in X, Y changes by the path's standard deviations
 :::
 :::
 
 ## SEM Effects: Indirect
 
-- Indirect effect: X > M > Y: Multiply path coefficients to get indirect effects
+- Indirect effect: $X \rightarrow M \rightarrow Y$: Multiply path coefficients to get indirect effects
   - Unstandardized: For every 1-unit increase in X, Y changes by the paths' products units.
   - Standardized: For every 1-SD increase in X, Y changes by the paths' products standard deviations.
 
@@ -84,12 +84,12 @@ Note that not all models have all types effects
 ## Model Interpretation
 
 ![Reading scores example - unstandardized](images/mvpa.png)
- 
-## Interpretation: 
 
-a * b = indirect effect
+## Interpretation:
 
-0.15 * 30.65 = 4.597
+$$a \times b = \text{indirect effect}$$
+
+$$0.15 \times 30.65 = 4.597$$
 
 - Unstandardized: For every 1-unit increase in X (parent Ed), Y (reading score) is expected to change by 4.597 units (points) via the pathway through books_home. This is the indirect effect.
 
@@ -101,7 +101,7 @@ a * b = indirect effect
 
 ParentEd Var: We aren't trying to explain this.
 
-Disturbance in Books: 
+Disturbance in Books:
 
 - 2.001 likert steps$^2$
 - typical prediction error for Books $= \sqrt{2.001} = \pm 1.414$ likert steps
@@ -115,12 +115,12 @@ Disturbance in Reading Score
 
 ![Reading scores example - standardized](images/mvpa_results_std.png)
 
-## Standardized Interpretation Indirect effect
+## Standardized Interpretation: Indirect effect
 
 
-0.272 * 0.424 = .115
+$$0.272 \times 0.424 = 0.115$$
 
-- Standardized: For every 1-SD increase in X (parent Ed), Y (reading score) is expected to change by .115 standard deviations via the pathway through books_home. This is the indirect effect.
+- Standardized: For every 1-SD increase in X (parent Ed), Y (reading score) is expected to change by 0.115 standard deviations via the pathway through books_home. This is the indirect effect.
 
 ## Standardized Var/Disturbance
 
@@ -128,19 +128,19 @@ Variance in parent ed: Always 1
 
 Disturbance: the proportion of variance in this endogenous variable that is NOT explained by its predictors
 
-- Books: .926 
+- Books: 0.926
   - 92.6% of variance in Books remains unexplained by ParentEd
 
-- Reading Ave: .82
+- Reading Ave: 0.82
   - 82% of variance in Reading Ave is unexplained by Books
 
 ## Standardized vs Unstandaridized
 
-- Unstandaridized: 
+- Unstandaridized:
   - often easier to interpret raw units (i.e. points)
   - needed for replication
 
-- Standardized: 
+- Standardized:
   - Shows effect size of variables on different scales (i.e. relative importance of parent ed vs reading score)
 
 Typically report both
@@ -155,30 +155,30 @@ Typically report both
 
 ## Partial Mediation: Direct
 
-hs > grad = .372
+$$\text{hs} \rightarrow \text{grad} = 0.372$$
 
-Col > grad = .123
+$$\text{col} \rightarrow \text{grad} = 0.123$$
 
-- For every one-unit increase in hs gpa, grad gpa is expected to increase by .372 units. This is a direct effect. 
-- For every one-unit increase in college gpa, grad gpa is expected to increase by .123 units. This is a direct effect. 
+- For every one-unit increase in hs gpa, grad gpa is expected to increase by 0.372 units. This is a direct effect.
+- For every one-unit increase in college gpa, grad gpa is expected to increase by 0.123 units. This is a direct effect.
 
 ## Partial Mediation: Indirect
 
-hs > gre > grad = 0.309 * 0.369 = 0.114
+$$\text{hs} \rightarrow \text{gre} \rightarrow \text{grad} = 0.309 \times 0.369 = 0.114$$
 
-- For every one-unit increase in hs gpa, grad gpa is expected to increase by .114 units via the pathway through GRE. This is an indirect effect. 
+- For every one-unit increase in hs gpa, grad gpa is expected to increase by 0.114 units via the pathway through GRE. This is an indirect effect.
 
-col > gre > grad = 0.4 * 0.369 = 0.147
+$$\text{col} \rightarrow \text{gre} \rightarrow \text{grad} = 0.4 \times 0.369 = 0.147$$
 
-- For every one-unit increase in college gpa, grad gpa is expected to increase by .147 units via the pathway through GRE. This is an indirect effect. 
+- For every one-unit increase in college gpa, grad gpa is expected to increase by 0.147 units via the pathway through GRE. This is an indirect effect.
 
 ## Total effect
 
-Total effect of hs on grad = 0.372 + 0.114 = 0.486
+Total effect of hs on grad $= 0.372 + 0.114 = 0.486$
 
 - For every one-unit increase in hs GPA, grad GPA is expected to increase by 0.486 units overall — combining both the direct effect (0.372) and the indirect effect through GRE (0.114).
 
-Total effect of col on grad = 0.123 + 0.147 = 0.270
+Total effect of col on grad $= 0.123 + 0.147 = 0.270$
 
 - For every one-unit increase in college GPA, grad GPA is expected to increase by 0.270 units overall — combining both the direct effect (0.123) and the indirect effect through GRE (0.147).
 
@@ -186,19 +186,19 @@ Total effect of col on grad = 0.123 + 0.147 = 0.270
 
 Percent of total effect
 
-indirect / total = %
+$$\dfrac{\text{indirect}}{\text{total}} = \%$$
 
-- hs: 0.114 / 0.486 = 23% of hs's total effect on grad GPA is mediated by GRE
-- col: 0.147 / 0.270 = 54% of col's total effect on grad GPA is mediated by GRE
+- hs: $0.114 / 0.486 = 23\%$ of hs's total effect on grad GPA is mediated by GRE
+- col: $0.147 / 0.270 = 54\%$ of col's total effect on grad GPA is mediated by GRE
 
 ## Disturbances
 
-Typical prediction error for GRE = sqrt(49.694) = +/- 7.049 points
-Typical prediction error for Grad GPA = sqrt(59.998) = +/- 7.745 points
+- Typical prediction error for GRE $= \sqrt{49.694} = \pm 7.049$ points
+- Typical prediction error for Grad GPA $= \sqrt{59.998} = \pm 7.745$ points
 
 ## Real world impact
 
-In pairs: What does this mean for grad school admissions? 
+In pairs: What does this mean for grad school admissions?
 
 # Parallel (multiple) mediators
 
@@ -206,27 +206,28 @@ In pairs: What does this mean for grad school admissions?
 
 ## Direct Effect
 
-X → Y = 0.4213
+$$X \rightarrow Y = 0.4213$$
 
 - For every one-unit increase in X, Y is expected to increase by 0.4213 units. This is a direct effect.
 
 
 ## Indirect Effect
 
-X → M1 → Y = 0.5517 × 0.4097 = 0.2260
+$$X \rightarrow M_1 \rightarrow Y = 0.5517 \times 0.4097 = 0.2260$$
 
 - For every one-unit increase in X, Y is expected to increase by 0.2260 units via the pathway through M1. This is an indirect effect.
 
-X → M2 → Y = 0.6085 × 0.0057 = 0.0035
+$$X \rightarrow M_2 \rightarrow Y = 0.6085 \times 0.0057 = 0.0035$$
+
 - For every one-unit increase in X, Y is expected to increase by 0.0035 units via the pathway through M2. This is an indirect effect.
 
 ## Total Effect
 
-Total effect of X on Y (via M1) = 0.4213 + 0.226 = 0.6473
+Total effect of X on Y (via M1) $= 0.4213 + 0.226 = 0.6473$
 
 - For every one-unit increase in X, Y is expected to increase by 0.6473 units overall — combining both the direct effect (0.4213) and the indirect effect through M1 (0.226).
 
-Total effect of X on Y (via M2) = 0.4213 + 0.0035 = 0.4248
+Total effect of X on Y (via M2) $= 0.4213 + 0.0035 = 0.4248$
 
 - For every one-unit increase in X, Y is expected to increase by 0.4248 units overall — combining both the direct effect (0.4213) and the indirect effect through M2 (0.0035).
 
@@ -234,17 +235,17 @@ Total effect of X on Y (via M2) = 0.4213 + 0.0035 = 0.4248
 
 Percent of total effect
 
-indirect / total = %
+$$\dfrac{\text{indirect}}{\text{total}} = \%$$
 
-- via M1: .226 / .6473 = 35% of X's total effect (through this pathway) is mediated by M1
-- via M2: .0035 / .4248 = 0.8% of X's total effect (through this pathway) is mediated by M2
+- via M1: $0.226 / 0.6473 = 35\%$ of X's total effect (through this pathway) is mediated by M1
+- via M2: $0.0035 / 0.4248 = 0.8\%$ of X's total effect (through this pathway) is mediated by M2
 
 ## Real world impact
 
-Discuss with others from your dept: 
+Discuss with others from your dept:
 
-1. Reverse-engineer a research question & variables that fit this model 
-2. Given your variables, how would you interpret the results? 
+1. Reverse-engineer a research question & variables that fit this model
+2. Given your variables, how would you interpret the results?
 
 # A more complicated model
 
@@ -252,66 +253,62 @@ Discuss with others from your dept:
 
 ## Direct effects
 
-Gender → PTR = .17***
+$$\text{Gender} \rightarrow \text{PTR} = 0.17^{***}$$
 
-- For every one-unit increase in Gender, PTR is expected to increase by .17 units. This is a direct effect.
+- For every one-unit increase in Gender, PTR is expected to increase by 0.17 units. This is a direct effect.
 
-Gender → Symptoms = −.12***
+$$\text{Gender} \rightarrow \text{Symptoms} = -0.12^{***}$$
 
-- For every one-unit increase in Gender, Symptoms is expected to decrease by .12 units. This is a direct effect.
+- For every one-unit increase in Gender, Symptoms is expected to decrease by 0.12 units. This is a direct effect.
 
 ## Indirect effects p1
 
-Gender → Family → PTR = −.09 × .19 = −.0171
+$$\text{Gender} \rightarrow \text{Family} \rightarrow \text{PTR} = -0.09 \times 0.19 = -0.0171$$
 
-- For every one-unit increase in Gender, PTR is expected to decrease by .0171 units via the pathway through Family. This is an indirect effect.
+- For every one-unit increase in Gender, PTR is expected to decrease by 0.0171 units via the pathway through Family. This is an indirect effect.
 
-Gender → Family → Symptoms = −.09 × −.19 = .0171
+$$\text{Gender} \rightarrow \text{Family} \rightarrow \text{Symptoms} = -0.09 \times -0.19 = 0.0171$$
 
-- For every one-unit increase in Gender, Symptoms is expected to increase by .0171 units via the pathway through Family. This is an indirect effect.
+- For every one-unit increase in Gender, Symptoms is expected to increase by 0.0171 units via the pathway through Family. This is an indirect effect.
 
 ## Indirect effects p2
 
-Gender → Danger → PTR = −.14 × −.12 = .0168
+$$\text{Gender} \rightarrow \text{Danger} \rightarrow \text{PTR} = -0.14 \times -0.12 = 0.0168$$
 
-- For every one-unit increase in Gender, PTR is expected to increase by .0168 units via the pathway through Danger. This is an indirect effect.
+- For every one-unit increase in Gender, PTR is expected to increase by 0.0168 units via the pathway through Danger. This is an indirect effect.
 
-Gender → Danger → Symptoms = −.14 × .52 = −.0728
+$$\text{Gender} \rightarrow \text{Danger} \rightarrow \text{Symptoms} = -0.14 \times 0.52 = -0.0728$$
 
-- For every one-unit increase in Gender, Symptoms is expected to decrease by .0728 units via the pathway through Danger. This is an indirect effect.
+- For every one-unit increase in Gender, Symptoms is expected to decrease by 0.0728 units via the pathway through Danger. This is an indirect effect.
 
 ## Total effects: gender on ptr
 
-direct + indirect(Family) + indirect(Danger) 
+$$\text{direct} + \text{indirect(Family)} + \text{indirect(Danger)} = 0.17 + (-0.0171) + 0.0168 = 0.170$$
 
-= .17 + (−.0171) + .0168 = .170
-
-- Combining the direct effect and both indirect pathways, a one-unit increase in Gender is associated with a .170-unit increase in PTR overall.
+- Combining the direct effect and both indirect pathways, a one-unit increase in Gender is associated with a 0.170-unit increase in PTR overall.
 
 ## Total effects: Gender on Symptoms
 
-direct + indirect(Family) + indirect(Danger)
+$$\text{direct} + \text{indirect(Family)} + \text{indirect(Danger)} = -0.12 + 0.0171 + (-0.0728) = -0.176$$
 
-= −.12 + .0171 + (−.0728) = −.176
-
-- Combining the direct effect and both indirect pathways, a one-unit increase in Gender is associated with a .176-unit decrease in Symptoms overall.
+- Combining the direct effect and both indirect pathways, a one-unit increase in Gender is associated with a 0.176-unit decrease in Symptoms overall.
 
 ## A useful interpretation: PTR
 
-Via Family, to PTR: −.0171 / .170  
+Via Family, to PTR: $-0.0171 / 0.170$
 - ≈ −10% of Gender's total effect on PTR is mediated by Family (note the negative sign — this indirect path actually works against the direct effect, partially offsetting it)
 
-Via Danger, to PTR: .0168 / .170 
+Via Danger, to PTR: $0.0168 / 0.170$
 
 - ≈ 10% of Gender's total effect on PTR is mediated by Danger
 
 ## A useful interpretation: Symptoms
 
-Via Family, to Symptoms: .0171 / −.176 
+Via Family, to Symptoms: $0.0171 / -0.176$
 
 - ≈ −10% mediated by Family (again, opposing the direct effect)
 
-Via Danger, to Symptoms: −.0728 / −.176 
+Via Danger, to Symptoms: $-0.0728 / -0.176$
 
 - ≈ 41% of Gender's total effect on Symptoms is mediated by Danger.
 
@@ -319,41 +316,43 @@ Via Danger, to Symptoms: −.0728 / −.176
 
 Correlated disturbances of PTR & Symptoms
 
-— Still recursive these two variables are not on the same path. There is no direct line connecting them. 
+— Still recursive these two variables are not on the same path. There is no direct line connecting them.
 
 ## Real world impact
 
-How do you interpret these results? 
+How do you interpret these results?
 
 # Practice
 
-## Practice 1 
+## Practice 1
 
 ![UCLA: SAS, standardized](images/ucla_sas.png)
 
-## Practice 2: 
+## Practice 2:
 
 ![Pfeuffer et al. (2025), Figure 2: path model for STEM choice intentions](images/pfeuffer_fig2_pathmodel.png)
 
 # Discussion
 
-Paper compare your interpretation to the author's interpretation. 
+Paper compare your interpretation to the author's interpretation.
 
-# Compare 
+# Compare
 
-Look back to XX in Lamaku. 
+Look back to XX in Lamaku.
 
-1. What do the regressions models tell us? 
-2. What does the SEM model tell us that the regression models didn't? 
+1. What do the regressions models tell us?
+2. What does the SEM model tell us that the regression models didn't?
 
-# Lavaan Settings
+# Rlab: working with Lavaan
 
-Set up some fake data with various glitches. 
+- 3 scenarios with description & all required inputs
+- Build the models with lavaan syntax (fine to use the gui if needed)
+- Determine which arguments you will need to set & what to set them as
 
-1. build the model in lavaan from a description. 
-2. decide which specs in lavaan need to be changed (if any). 
+Your goal: Get the same outputs I did
+Bonus goal: Interpret the model, including fit and the direct, indirect, & total effects
 
-Up next: 
+Up next:
 
 - Reporting & Review: prep reading
 - MVPA Methods Review 1: Alana, Mia, Alex, Bocar

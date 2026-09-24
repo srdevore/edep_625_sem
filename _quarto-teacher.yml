@@ -1,2 +1,9 @@
 project:
   output-dir: _teacher
+
+# Teacher builds embed all CSS/JS into each .html so a single downloaded
+# page (e.g. an answer-key rlab) is fully styled on its own, without the
+# shared site_libs/ folder.
+format:
+  html:
+    embed-resources: true
