@@ -226,7 +226,6 @@ X → M2 → Y
 .6085 × .0057 = .0035
 For every one-unit increase in X, Y is expected to increase by .0035 units via the pathway through M2. This is an indirect effect.
 
-
 ## Total Effect
 
 direct + indirect = total effect
@@ -235,7 +234,6 @@ For every one-unit increase in X, Y is expected to increase by .6473 units overa
 Total effect of X on Y (via M2) = .4213 + .0035 = .4248
 For every one-unit increase in X, Y is expected to increase by .4248 units overall — combining both the direct effect (.4213) and the indirect effect through M2 (.0035).
 
-
 ## A useful interpretation
 
 Percent of total effect
@@ -243,18 +241,70 @@ indirect / total = %
 via M1: .226 / .6473 = 35% of X's total effect (through this pathway) is mediated by M1
 via M2: .0035 / .4248 = 0.8% of X's total effect (through this pathway) is mediated by M2
 
-
-# Real world impact
+## Real world impact
 
 Discuss with others from your dept: 
 
-What variables would you use a research design like this for? What would the impact be?  
+What variables would you use this type of model for? 
 
-## Serial (sequential) mediators
+How would you interpret the results? 
 
-## Common-cause ("fork") structure
+# A more complicated model
 
-## Multiple outcomes from a shared process
+![Kimhi, war, danger, family & geneder](images/complex example.png)
+
+## Direct effects
+
+Gender → PTR = .17***
+Gender → Symptoms = −.12***
+For every one-unit increase in Gender (coded direction depends on the study), PTR is expected to increase by .17 units. This is a direct effect.
+For every one-unit increase in Gender, Symptoms is expected to decrease by .12 units. This is a direct effect.
+
+## Indirect effects
+
+Gender → Family → PTR
+−.09 × .19 = −.0171
+For every one-unit increase in Gender, PTR is expected to decrease by .0171 units via the pathway through Family. This is an indirect effect.
+Gender → Family → Symptoms
+−.09 × −.19 = .0171
+For every one-unit increase in Gender, Symptoms is expected to increase by .0171 units via the pathway through Family. This is an indirect effect.
+Gender → Danger → PTR
+−.14 × −.12 = .0168
+For every one-unit increase in Gender, PTR is expected to increase by .0168 units via the pathway through Danger. This is an indirect effect.
+Gender → Danger → Symptoms
+−.14 × .52 = −.0728
+For every one-unit increase in Gender, Symptoms is expected to decrease by .0728 units via the pathway through Danger. This is an indirect effect.
+
+## Total effects
+
+Total effect of Gender on PTR
+= direct + indirect(Family) + indirect(Danger)
+= .17 + (−.0171) + .0168 = .170
+Combining the direct effect and both indirect pathways, a one-unit increase in Gender is associated with a .170-unit increase in PTR overall.
+Total effect of Gender on Symptoms
+= direct + indirect(Family) + indirect(Danger)
+= −.12 + .0171 + (−.0728) = −.176
+Combining the direct effect and both indirect pathways, a one-unit increase in Gender is associated with a .176-unit decrease in Symptoms overall.
+
+# A useful interpretation
+
+Via Family, to PTR: −.0171 / .170 ≈ −10% of Gender's total effect on PTR is mediated by Family (note the negative sign — this indirect path actually works against the direct effect, partially offsetting it)
+Via Danger, to PTR: .0168 / .170 ≈ 10% of Gender's total effect on PTR is mediated by Danger
+Via Family, to Symptoms: .0171 / −.176 ≈ −10% mediated by Family (again, opposing the direct effect)
+Via Danger, to Symptoms: −.0728 / −.176 ≈ 41% of Gender's total effect on Symptoms is mediated by Danger — by far the dominant pathway here
+
+## Note
+
+COrrelated residuals
+This suggests some shared cause not included in the model — some unmeasured factor is pushing PTR and Symptoms in opposite directions, beyond what Gender/Family/Danger already explain
+
+## Real world impact
+
+What does this model suggest about appropriate interventions? 
+
+# Common-cause ("fork") structure
+
+# Multiple outcomes from a shared process
 
 # Practice
 
