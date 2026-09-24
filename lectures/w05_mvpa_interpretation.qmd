@@ -11,15 +11,16 @@ format:
 
 ---
 
-# Agenda
+## Agenda
 
 - Review
 - Interpretation of path coefficients
+  - different model types
   - practice
 - Comparing methods
 - Lavaan settings 
 
-# Review
+## Review
 
 What are just- under- and over-identification? 
 
@@ -54,23 +55,29 @@ Between vs within group effects
 :::
 :::
 
-## SEM Effects
+## SEM Effects: Direct
+
+Similar to regression
 
 ::: {.content-visible when-profile="teacher"}
 ::: {.fragment}
 - Direct effect: X > Y
-  - Unstandardized: For every 1-SD increase in X, Y changes by the b standard deviations. 
-  - Standardized: For every 1-SD increase in X, Y changes by b standard deviations 
+  - Unstandardized: For every 1-unit change in X, Y changes by the path's units. 
+  - Standardized: For every 1-SD change in X, Y changes by the path's standard deviations 
 :::
 :::
+
+## SEM Effects Indirect Effects
 
 ::: {.content-visible when-profile="teacher"}
 ::: {.fragment}
 - Indirect effect: X > M > Y: Multiply path coefficients to get indirect effects
-  - Unstandardized: For every 1-unit increase in X, Y changes by the product's units, because X changed M, which then changed Y.
-  - Standardized: For every 1-SD increase in X, Y changes by the product's standard deviations, because X changed M, which then changed Y.
+  - Unstandardized: For every 1-unit increase in X, Y changes by the paths' products units.
+  - Standardized: For every 1-SD increase in X, Y changes by the paths' products standard deviations.
 :::
 :::
+
+## SEM Total Effects
 
 ::: {.content-visible when-profile="teacher"}
 ::: {.fragment}
@@ -78,7 +85,11 @@ Between vs within group effects
 :::
 :::
 
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
 Note that not all models have direct effects/total effects
+:::
+:::
 
 ## Model Interpretation
 
@@ -90,21 +101,47 @@ a * b = indirect effect
 
 0.15 * 30.65 = 4.597
 
-- Unstandardized: For every 1-unit increase in X (parent Ed), Y (reading score) changes by 4.597 units (points).
+- Unstandardized: For every 1-unit increase in X (parent Ed), Y (reading score) is expected to change by 4.597 units (points) via the pathway through books_home. This is the indirect effect.
 
-# Unstandardized table results
+## Unstandardized table results
 
 ![Reading scores example - unstandardized](images/mvpa_results_unst.png)
 
-# Standardized table results
+## Unstandardized Var/Disturbance
+
+Variance in parent ed: Not important. We aren't trying to explain this.
+
+Disturbance in Books: 
+
+- 2.001 likert steps^2
+- typical prediction error for Books = sqrt(2.001) = +/-1.414 likert steps
+
+Disturbance in Reading Score
+
+- 9269.298 points^2
+- typical prediction error for Reading Score = +/- 96.277 points
+
+## Standardized table results
 
 ![Reading scores example - standardized](images/mvpa_results_std.png)
 
-# Standardized Interpretation
+## Standardized Interpretation
 
 0.272 * 0.424 = .115
 
-- Standardized: For every 1-SD increase in X (parent Ed), Y (reading score) changes by .115 standard deviations.
+- Standardized: For every 1-SD increase in X (parent Ed), Y (reading score) is expected to change by .115 standard deviations via the pathway through books_home. This is the indirect effect.
+
+## Interpretation of Standardized Var/Disturbance
+
+Variance in parent ed: Always 1; still not important. We aren't trying to explain this.
+
+Disturbance: the proportion of variance in this endogenous variable that is NOT explained by its predictors
+
+- Books: .926 
+  - 92.6% of variance in Books remains unexplained by ParentEd
+
+- Reading Ave: .82
+  - 82% of variance in Reading Ave is unexplained by Books
 
 ## Standardized vs Unstandaridized
 
@@ -113,17 +150,105 @@ a * b = indirect effect
   - needed for replication
 
 - Standardized: 
-  - Shows effect size of variables on different scales (i.e. parent ed vs points relative importance)
+  - Shows effect size of variables on different scales (i.e. relative importance of parent ed vs reading score)
 
 # Examples
 
 ^ Full mediation (indirect-only)
 
-## Partial mediation
+# Partial mediation
 
-![UCLA: MPlus Class Notes, standardized](images/ucla_example.png)
+![UCLA: MPlus Class Notes, Unstandardized](images/ucla_example.png)
 
-## Parallel (multiple) mediators
+## Partial Mediation: Direct
+
+hs > grad = .372
+
+Col > grad = .123
+
+- For every one-unit increase in hs gpa, grad gpa is expected to increase by .372 units. This is a direct effect. 
+- For every one-unit increase in college gpa, grad gpa is expected to increase by .123 units. This is a direct effect. 
+
+## Partial Mediation: Indirect
+
+hs > gre > grad
+.309 * .369 = .114
+
+- For every one-unit increase in hs gpa, grad gpa is expected to increase by .114 units via the pathway through GRE. This is an indirect effect. 
+
+col > gre > grad
+.4 * .369 = .147
+
+- For every one-unit increase in college gpa, grad gpa is expected to increase by .147 units via the pathway through GRE. This is an indirect effect. 
+
+## Total effect
+
+direct + indirect = total effect
+
+Total effect of hs on grad = .372 + .114 = .486
+
+- For every one-unit increase in hs GPA, grad GPA is expected to increase by .486 units overall — combining both the direct effect (.372) and the indirect effect through GRE (.114).
+
+Total effect of col on grad = .123 + .147 = .270
+
+- For every one-unit increase in college GPA, grad GPA is expected to increase by .270 units overall — combining both the direct effect (.123) and the indirect effect through GRE (.147).
+
+## A useful interpretation
+
+Percent of total effect
+
+indirect / total = %
+
+- hs: .114 / .486 = 23% of hs's total effect is mediated by GRE
+- col: .147 / .270 = 54% of col's total effect is mediated by GRE
+
+## Real world impact
+
+In pairs: What does this mean for grad school admissions? 
+
+# Parallel (multiple) mediators
+
+![UCLA: Introduction to Mediation Models, Standardized](images/UCLA_parallele_mediation.png)
+
+## Direct Effect
+
+X → Y = .4213
+For every one-unit increase in X, Y is expected to increase by .4213 units. This is a direct effect.
+
+
+## Indirect Effect
+
+X → M1 → Y
+.5517 × .4097 = .2260
+For every one-unit increase in X, Y is expected to increase by .2260 units via the pathway through M1. This is an indirect effect.
+
+X → M2 → Y
+.6085 × .0057 = .0035
+For every one-unit increase in X, Y is expected to increase by .0035 units via the pathway through M2. This is an indirect effect.
+
+
+## Total Effect
+
+direct + indirect = total effect
+Total effect of X on Y (via M1) = .4213 + .226 = .6473
+For every one-unit increase in X, Y is expected to increase by .6473 units overall — combining both the direct effect (.4213) and the indirect effect through M1 (.226).
+Total effect of X on Y (via M2) = .4213 + .0035 = .4248
+For every one-unit increase in X, Y is expected to increase by .4248 units overall — combining both the direct effect (.4213) and the indirect effect through M2 (.0035).
+
+
+## A useful interpretation
+
+Percent of total effect
+indirect / total = %
+via M1: .226 / .6473 = 35% of X's total effect (through this pathway) is mediated by M1
+via M2: .0035 / .4248 = 0.8% of X's total effect (through this pathway) is mediated by M2
+
+
+# Real world impact
+
+Discuss with others from your dept: 
+
+What variables would you use a research design like this for? What would the impact be?  
 
 ## Serial (sequential) mediators
 
@@ -136,7 +261,6 @@ a * b = indirect effect
 ## Partial Mediation 
 
 ![UCLA: SAS, standardized](images/ucla_sas.png)
-
 
 ## Kline Model
 
@@ -158,5 +282,8 @@ Set up some fake data with various glitches. 1. build the model in lavaan from a
 
 Up next: 
 
+- Reporting & Review: prep reading
+- MVPA Methods Review 1: Alana, Mia, Alex, Bocar
+- In 2 weeks: Mini Project 1
 
 
