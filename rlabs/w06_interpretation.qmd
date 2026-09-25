@@ -5,6 +5,7 @@ description: '<a href="rlab-downloads/w05_interpretation.qmd" download="w05_inte
 data: '<a href="rlab-downloads/w04_data_pisa22_USA_cln.csv" download="w04_data_pisa22_USA_cln.csv">w04_data_pisa22_USA_cln.csv</a>'
 format: html
 release: week 6
+draft: true
 ---
 
 # Modification Inidices
