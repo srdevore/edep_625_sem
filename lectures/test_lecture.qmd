@@ -1,6 +1,5 @@
 ---
 title: "Test Lecture draft true"
-draft: true
 date: today
 description: '<a href="lectures/test_lecture.pdf" download="test_lecture.pdf">Download PDF</a>'
 format:
@@ -8,6 +7,8 @@ format:
     theme: simple
     slide-number: true
     embed-resources: true
+
+release: week 17
 ---
 
 ## Welcome to SEM

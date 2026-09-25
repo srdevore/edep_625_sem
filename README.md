@@ -179,3 +179,7 @@ until it is ready, do all three:
 When the page is ready, reverse it: delete its lines from `.gitignore` and
 `_quarto.yml`, then `git add` the file.
 
+
+rm -rf lectures/_freeze lectures/.quarto lectures/w05_mvpa_interpretation_files
+quarto render lectures/w05_mvpa_interpretation.qmd --profile teacher --cache-refresh
+

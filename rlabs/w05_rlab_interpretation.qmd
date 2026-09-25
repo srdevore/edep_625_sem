@@ -1,0 +1,422 @@
+---
+title: "W05 Lab: Working with Lavaan"
+date: today
+description: '<a href="rlab-downloads/w05_rlab_interpretation.qmd" download="w05_rlab_interpretation.qmd">Download .qmd</a>'
+format: html
+code-fold: true
+code-summary: "Show code"
+---
+
+## Purpose
+
+Practice building models in Lavaan & applying basic Lavaan arguments. 
+
+[**NOTE:** This is all fake data, specifically generated to highlight specific aspects of the Lavaan model]{style="color:red;"}
+
+Each scenario below gives you a research question, a description of the data,
+and the necessary inputs to the model. 
+
+In this rlab: 
+
+1. Develop the appropriate model for the RQ, using Lavaan syntax.
+2. Determine the correct arguments to set in the lavaan function.
+3. Compare your results to the solutions
+4. Iterate until you get the same answers (or can make an argument for why yours are justified)
+
+## Setup
+
+```{r}
+#| message: false
+#| code-fold: false
+library(tidyverse)
+library(lavaan)
+```
+
+::: {.content-visible when-profile="teacher"}
+```{r}
+#| include: false
+# Teacher-only: path-diagram helper (coefficients + variances + disturbances).
+# Lives in a teacher block so it is stripped from the student .qmd download.
+library(semPlot)
+path_diagram <- function(fit, layout = "tree2", cols = NULL, seed = 3) {
+  # cols: a named matrix of (x, y) node positions -- e.g. exogenous in a left
+  # column, mediators in the middle, outcomes on the right. Rows are reordered
+  # to lavaan's node order automatically.
+  opts <- list(whatLabels = "est", style = "ram",
+               residuals = TRUE, intercepts = FALSE, thresholds = FALSE,
+               exoCov = FALSE, nCharNodes = 0, sizeMan = 9,
+               edge.label.cex = 0.95, edge.color = "black")
+  set.seed(seed)
+  if (!is.null(cols)) {
+    ord <- do.call(semPaths,
+                   c(list(fit, DoNotPlot = TRUE), opts))$graphAttributes$Nodes$labels
+    layout <- cols[ord, , drop = FALSE]
+  }
+  do.call(semPaths, c(list(fit, layout = layout), opts))
+}
+```
+:::
+
+## Default model
+
+Here is the `lavaan()` function with its defaults. The argument(s) you need to
+adjust yourself are limited to those in this list. 
+
+For all three scenarios, you will also need to set these. It is already set up in the templates.
+
+- `auto.var = TRUE` -- freely estimate the variances/disturbances.
+- `auto.cov.y = FALSE` -- keep endogenous disturbances uncorrelated (recursive model).
+
+```r
+lavaan(model = NULL, data = NULL, ordered = NULL, aux = NULL,
+       sampling_weights = NULL,
+       sample_cov = NULL, sample_mean = NULL, sample_th = NULL,
+       sample_nobs = NULL,
+       group = NULL, cluster = NULL, constraints = "",
+       wls_v = NULL, nacov = NULL, ov_order = "model",
+       slot_options = NULL, slot_par_table = NULL, slot_sample_stats = NULL,
+       slot_data = NULL, slot_model = NULL, slot_cache = NULL,
+       sloth1 = NULL,
+       ...)
+```
+
+---
+
+# Scenario 1
+
+**Research question.** Among high-school students, does **test anxiety**
+relate to **self-rated exam performance** *through* **test-avoidance
+behavior** (procrastinating, skipping practice)?
+
+**The data.** A survey of 500 students. Every variable is a Likert item.
+
+| Variable  | Meaning                        | Scale                       |
+|-----------|--------------------------------|-----------------------------|
+| `anxiety` | "I feel anxious before tests"  | 1-4 (strongly disagree→agree) |
+| `avoid`   | test-avoidance behavior        | 1-4 (never→often)           |
+| `perf`    | self-rated exam performance    | 1-5 (very poor→excellent)   |
+
+```{r}
+#| code-fold: false
+set.seed(625)
+n <- 500
+anx_s   <- rnorm(n)
+avoid_s <- 0.55 * anx_s   + rnorm(n, 0, sqrt(1 - 0.55^2))
+perf_s  <- -0.50 * avoid_s + 0.30 * anx_s + rnorm(n, 0, sqrt(1 - 0.50^2))
+
+to4 <- function(z) {
+  as.integer(cut(z, c(-Inf, -0.8, 0, 0.8, Inf), labels = 1:4))
+}
+to5 <- function(z) {
+  as.integer(cut(z, c(-Inf, -1, -0.2, 0.5, 1.1, Inf), labels = 1:5))
+}
+
+anxiety_survey <- data.frame(
+  anxiety = to4(anx_s),
+  avoid   = to4(avoid_s),
+  perf    = to5(perf_s)
+)
+
+head(anxiety_survey)
+sapply(anxiety_survey, table)   # a few discrete categories each
+```
+
+
+```{r}
+#| eval: false
+#| code-fold: false
+# YOUR TURN
+# Step 1 -- write the path model implied by the research question:
+model1 <- "
+  # ...your paths here...
+"
+# Step 2 -- fit it, choosing the argument(s) the data situation requires:
+fit1 <- lavaan(model1, data = anxiety_survey )   # <- what's missing?
+
+summary(fit1, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
+```
+
+::: {.content-visible when-profile="teacher"}
+
+
+```{r}
+#| message: false
+#| warning: false
+model1 <- "
+  avoid ~ anxiety
+  perf  ~ avoid
+"
+fit1 <- lavaan(model1, data = anxiety_survey,
+               ordered = c("anxiety", "avoid", "perf"),
+               auto.var = TRUE, auto.cov.y = FALSE)
+summary(fit1, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
+```
+
+::: {.callout-note collapse="true" title="Path diagram — coefficients, variances & disturbances"}
+```{r}
+#| echo: false
+#| fig-width: 8
+#| fig-height: 4.5
+path_diagram(fit1, cols = rbind(
+  anxiety = c(0, 0), avoid = c(1, 0), perf = c(2, 0)))
+```
+:::
+
+:::
+
+---
+
+# Scenario 2
+
+**Research question.** Do **prior achievement** and **weekly study time**
+predict students' **final exam** score *through* their score on a **practice
+(mock) test**?
+
+**The data.** There are four variables in this data (described below) and the sample size is (**N = 250**).
+
+| Variable | Meaning                         |
+|----------|---------------------------------|
+| `prior`  | prior-achievement score         |
+| `study`  | weekly study hours              |
+| `mock`   | practice (mock) test score (different instrument from final test)      |
+| `final`  | final exam score                |
+
+```{r}
+#| code-fold: false
+test_cov <- matrix(c(
+   91.393, 14.086, 56.418,  52.332,
+   14.086,  6.357, 16.931,  16.577,
+   56.418, 16.931, 85.823,  75.840,
+   52.332, 16.577, 75.840, 117.496),
+  nrow = 4, byrow = TRUE,
+  dimnames = list(c("prior", "study", "mock", "final"),
+                  c("prior", "study", "mock", "final")))
+
+test_cov
+```
+
+
+```{r}
+#| eval: false
+#| code-fold: false
+# YOUR TURN
+model2 <- "
+  # ...your paths here...
+"
+fit2 <- lavaan(model2,
+               auto.var = TRUE, auto.cov.y = FALSE)   # <- what do you have to do?
+summary(fit2, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
+```
+
+::: {.content-visible when-profile="teacher"}
+
+
+```{r}
+#| message: false
+#| warning: false
+model2 <- "
+  mock  ~ prior + study
+  final ~ mock + prior
+"
+fit2 <- lavaan(model2,
+               sample_cov  = test_cov,
+               sample_nobs = 250,
+               auto.var = TRUE, auto.cov.y = FALSE)
+summary(fit2, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
+```
+
+::: {.callout-note collapse="true" title="Path diagram — coefficients, variances & disturbances"}
+```{r}
+#| echo: false
+#| fig-width: 8
+#| fig-height: 5.5
+path_diagram(fit2, cols = rbind(
+  prior = c(0, 1), study = c(0, -1),
+  mock  = c(1, 0), final = c(2, 0)))
+```
+:::
+
+:::
+
+---
+
+# Scenario 3
+
+**Research question.** In a district testing dataset, how do students'
+**socioeconomic status** and **prior achievement** shape their **final exam**
+score -- both directly and *through* their **motivation**, **test anxiety**,
+**study time**, and **class attendance**?
+
+**The data.** There are 7 variables, described below. **N = 500**, across seven variables:
+
+| Variable  | Meaning                          |
+|-----------|----------------------------------|
+| `ses`     | socioeconomic-status index       |
+| `prior`   | prior-year achievement score     |
+| `motiv`   | academic motivation              |
+| `anxiety` | test anxiety                     |
+| `study`   | weekly study hours               |
+| `attend`  | class attendance (%)             |
+| `final`   | final exam score                 |
+
+**The hypothesized structure.** The research team theorizes these relationships
+(and *only* these -- everything else is left out on purpose):
+
+- `ses` and `prior` are background variables (they may covary).
+- `motiv` is predicted by `ses` and `prior`.
+- `anxiety` is predicted by `motiv` and `prior`.
+- `study` is predicted by `motiv` and `ses`.
+- `attend` is predicted by `motiv` and `ses`.
+- `final` is predicted by `prior`, `study`, `attend`, and `anxiety`.
+
+```{r}
+#| code-fold: false
+big_cov <- matrix(c(
+   0.944,   4.796,   4.289,  -1.864,   1.975,   1.274,   5.839,
+   4.796, 103.878,  44.578, -29.646,  17.468,   8.459,  81.571,
+   4.289,  44.578,  85.216, -26.365,  24.380,  12.595,  73.673,
+  -1.864, -29.646, -26.365,  58.352,  -9.027,  -5.672, -49.709,
+   1.975,  17.468,  24.380,  -9.027,  16.036,   4.613,  33.118,
+   1.274,   8.459,  12.595,  -5.672,   4.613,  27.516,  20.719,
+   5.839,  81.571,  73.673, -49.709,  33.118,  20.719, 169.422),
+  nrow = 7, byrow = TRUE,
+  dimnames = list(
+    c("ses", "prior", "motiv", "anxiety", "study", "attend", "final"),
+    c("ses", "prior", "motiv", "anxiety", "study", "attend", "final")))
+
+big_cov
+```
+
+
+```{r}
+#| eval: false
+#| code-fold: false
+# YOUR TURN
+model3 <- "
+  # ...your paths here...
+"
+fit3 <- lavaan(model3,
+               auto.var = TRUE, auto.cov.y = FALSE)   # <- what else do you need?
+summary(fit3, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
+```
+
+::: {.content-visible when-profile="teacher"}
+
+
+```{r}
+#| message: false
+#| warning: false
+model3 <- "
+  motiv   ~ ses + prior
+  anxiety ~ motiv + prior
+  study   ~ motiv + ses
+  attend  ~ motiv + ses
+  final   ~ prior + study + attend + anxiety
+"
+fit3 <- lavaan(model3,
+               sample_cov  = big_cov,
+               sample_nobs = 500,
+               auto.var = TRUE, auto.cov.y = FALSE)
+summary(fit3, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
+```
+
+::: {.callout-note collapse="true" title="Path diagram — coefficients, variances & disturbances"}
+```{r}
+#| echo: false
+#| fig-width: 9
+#| fig-height: 6
+path_diagram(fit3, cols = rbind(
+  ses     = c(0,  1.2), prior   = c(0, -1.2),
+  motiv   = c(1,  2.4), anxiety = c(1,  0.8),
+  study   = c(1, -0.8), attend  = c(1, -2.4),
+  final   = c(2,  0)))
+```
+:::
+
+:::
+
+---
+
+# Scenario 4
+
+**Research question.** Does students' **classroom engagement** predict their
+**final test** score *through* the amount of **test preparation** they do?
+
+**The data.** A district pulled 400 students' records. Prep & final have missing data, due to students who transferred and absences on test day).
+
+| Variable | Meaning              | Missing? |
+|----------|----------------------|----------|
+| `engage` | classroom engagement | complete |
+| `prep`   | test prep            | ~19% NA  |
+| `final`  | final test score     | ~25% NA  |
+| `attend` | attendance rate      | complete |
+| `prior`  | prior-year test score| complete |
+
+```{r}
+#| code-fold: false
+set.seed(42)
+n3 <- 400
+prior  <- rnorm(n3)
+attend <- 0.5 * prior + rnorm(n3)
+engage <- 0.4 * prior + rnorm(n3)
+prep   <- 0.5 * engage + rnorm(n3)
+final  <- 0.5 * prep + 0.3 * engage + rnorm(n3)
+
+district <- data.frame(engage, prep, final, attend, prior)
+
+# Missingness that depends on the auxiliary variables (MAR)
+district$final[rbinom(n3, 1, plogis(-1.2 - 0.8 * scale(attend))) == 1] <- NA
+district$prep[rbinom(n3, 1, plogis(-1.6 - 0.7 * scale(prior))) == 1] <- NA
+
+round(colMeans(is.na(district)) * 100, 1)   # % missing per variable
+```
+
+
+```{r}
+#| eval: false
+#| code-fold: false
+# YOUR TURN
+# Step 1 -- write the path model implied by the research question
+#           (only engage, prep, final -- attend & prior are NOT in it):
+model4 <- "
+  # ...your paths here...
+"
+# Step 2 -- fit it: use FIML AND borrow strength from attend & prior.
+fit4 <- lavaan(model4, data = district,
+               missing = "fiml",
+               auto.var = TRUE, auto.cov.y = FALSE)   # <- add the aux vars how?
+summary(fit4, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
+```
+
+::: {.content-visible when-profile="teacher"}
+
+```{r}
+#| message: false
+#| warning: false
+model4 <- "
+  prep  ~ engage
+  final ~ prep + engage
+"
+fit4 <- lavaan(model4, data = district,
+               aux     = c("attend", "prior"),
+               missing = "fiml",
+               auto.var = TRUE, auto.cov.y = FALSE)
+summary(fit4, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
+```
+
+::: {.callout-note collapse="true" title="Path diagram — coefficients, variances & disturbances"}
+```{r}
+#| echo: false
+#| fig-width: 8
+#| fig-height: 5.5
+path_diagram(fit4)
+```
+:::
+
+:::
+
+---
+
+
+
+
