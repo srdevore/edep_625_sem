@@ -37,6 +37,10 @@ jobs:
           key: ${{ runner.os }}-r43-${{ hashFiles('.github/workflows/publish.yml') }}
           restore-keys: ${{ runner.os }}-r43-
 
+      - name: Install system libraries
+        # semPlot -> igraph needs GLPK (libglpk.so.40) at load time.
+        run: sudo apt-get update && sudo apt-get install -y libglpk40
+
       - name: Install R packages
         run: Rscript -e 'install.packages(c("rmarkdown", "knitr", "yaml", "tidyverse", "lavaan", "lavaanPlot", "psych", "semPlot"))'
 
