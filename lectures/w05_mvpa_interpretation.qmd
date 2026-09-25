@@ -97,16 +97,16 @@ $$0.15 \times 30.65 = 4.597$$
 
 ![Reading scores example - unstandardized](images/mvpa_results_unst.png)
 
-## Unstandardized Var/Disturbance
+## Unstandardized Var/Disturbance Variance
 
 ParentEd Var: We aren't trying to explain this.
 
-Disturbance in Books:
+Disturbance Variance in Books:
 
 - 2.001 likert steps$^2$
 - typical prediction error for Books $= \sqrt{2.001} = \pm 1.414$ likert steps
 
-Disturbance in Reading Score
+Disturbance Variance in Reading Score
 
 - 9269.298 points$^2$
 - typical prediction error for Reading Score $= \sqrt{9269.298} = \pm 96.277$ points
@@ -122,11 +122,11 @@ $$0.272 \times 0.424 = 0.115$$
 
 - Standardized: For every 1-SD increase in X (parent Ed), Y (reading score) is expected to change by 0.115 standard deviations via the pathway through books_home. This is the indirect effect.
 
-## Standardized Var/Disturbance
+## Standardized Var/Disturbance Variance
 
 Variance in parent ed: Always 1
 
-Disturbance: the proportion of variance in this endogenous variable that is NOT explained by its predictors
+Disturbance variance: the proportion of variance in this endogenous variable that is NOT explained by its predictors
 
 - Books: 0.926
   - 92.6% of variance in Books remains unexplained by ParentEd
@@ -191,7 +191,7 @@ $$\dfrac{\text{indirect}}{\text{total}} = \%$$
 - hs: $0.114 / 0.486 = 23\%$ of hs's total effect on grad GPA is mediated by GRE
 - col: $0.147 / 0.270 = 54\%$ of col's total effect on grad GPA is mediated by GRE
 
-## Disturbances
+## Disturbance Variance
 
 - Typical prediction error for GRE $= \sqrt{49.694} = \pm 7.049$ points
 - Typical prediction error for Grad GPA $= \sqrt{59.998} = \pm 7.745$ points
@@ -283,19 +283,28 @@ $$\text{Gender} \rightarrow \text{Danger} \rightarrow \text{Symptoms} = -0.14 \t
 
 ## Total effects: gender on ptr
 
-$$\text{direct} + \text{indirect(Family)} + \text{indirect(Danger)} = 0.17 + (-0.0171) + 0.0168 = 0.170$$
+$$\text{direct} + \text{indirect(Family)} + \text{indirect(Danger)}$$ 
+
+$$= 0.17 + (-0.0171) + 0.0168 $$
+
+$$= 0.170$$
 
 - Combining the direct effect and both indirect pathways, a one-unit increase in Gender is associated with a 0.170-unit increase in PTR overall.
 
 ## Total effects: Gender on Symptoms
 
-$$\text{direct} + \text{indirect(Family)} + \text{indirect(Danger)} = -0.12 + 0.0171 + (-0.0728) = -0.176$$
+$$\text{direct} + \text{indirect(Family)} + \text{indirect(Danger)}$$
+
+$$ = -0.12 + 0.0171 + (-0.0728) $$
+
+$$= -0.176$$
 
 - Combining the direct effect and both indirect pathways, a one-unit increase in Gender is associated with a 0.176-unit decrease in Symptoms overall.
 
 ## A useful interpretation: PTR
 
 Via Family, to PTR: $-0.0171 / 0.170$
+
 - ≈ −10% of Gender's total effect on PTR is mediated by Family (note the negative sign — this indirect path actually works against the direct effect, partially offsetting it)
 
 Via Danger, to PTR: $0.0168 / 0.170$
@@ -314,13 +323,13 @@ Via Danger, to Symptoms: $-0.0728 / -0.176$
 
 ## Note
 
-Correlated disturbances of PTR & Symptoms
+Correlated disturbance variances of PTR & Symptoms
 
-— Still recursive these two variables are not on the same path. There is no direct line connecting them.
+— The two variables are not on the same causal pathway, so this is fine. 
 
 ## Real world impact
 
-How do you interpret these results?
+What impact could you use these results for?
 
 # Practice
 
@@ -338,10 +347,10 @@ Paper compare your interpretation to the author's interpretation.
 
 # Compare
 
-Look back to XX in Lamaku.
+Lamaku > Assignments > w2 Rlab.
 
 1. What do the regressions models tell us?
-2. What does the SEM model tell us that the regression models didn't?
+2. What does the SEM model tell us that the regression models didn't capture?
 
 # Rlab: working with Lavaan
 
@@ -349,10 +358,10 @@ Look back to XX in Lamaku.
 - Build the models with lavaan syntax (fine to use the gui if needed)
 - Determine which arguments you will need to set & what to set them as
 
-Your goal: Get the same outputs I did
-Bonus goal: Interpret the model, including fit and the direct, indirect, & total effects
+- Your goal: Get the same outputs I did
+- Bonus goal: Interpret the model, including fit and the direct, indirect, & total effects
 
-Up next:
+## Up next:
 
 - Reporting & Review: prep reading
 - MVPA Methods Review 1: Alana, Mia, Alex, Bocar
