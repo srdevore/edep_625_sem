@@ -1,0 +1,333 @@
+---
+title: "Week 5: MVPA Interpretation"
+date: today
+description: '<a href="lectures/w06_mvpa_review_reporting.pdf" download="w06_mvpa_review_reporting.pdf">Download PDF</a>'
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+    embed-resources: true
+    self-contained-math: true
+draft: true
+release: week 6
+---
+
+# Agenda
+
+- Methods Walkthrough
+- Reporting MVPA
+- Ordinal data Interpretation
+- Interactions in MVPA
+- Modification Indices & Nestedness
+  - practice
+- Missing Data
+- rlab
+
+# Methods walkthrough
+
+- Alana, Mia, Alex, Bocar
+
+When not presenting: 
+
+
+
+# Reporting: 
+
+A useful checklist from [APA](https://apastyle.apa.org/jars/quant-table-7.pdf)
+
+## Reporting: Model Specification
+
+1. Model specification
+
+  - theoretical justifcation for the paths & direction
+  - Identification
+  - Plausible alternatives
+
+## Reporting: Data & Assumptions
+
+2. Data & Assumptions
+
+  - % missing; how handled
+  - Assumptions & how you handled any unmet
+  - Estimator used (typically ML)
+
+## Model Fit
+
+3. Model fit
+
+  - X2, CFI, TLI, RMSEA (with 90% CI), SRMR
+  - If just-identified, indicate no model fit.
+    - additionally specify the reason for using just-identified
+
+## Reporting Path coefficients
+
+4. Path coefficients specified
+
+  - Standardized & unstandardized
+  - Direct, indirect, total as appropriate
+    - bootstrapped CIs on indirect effects
+  - All paths, regardless of significance
+  - Disturbance variances for all endogenous variables
+
+## Reporting Analysis
+
+Use the reporting slides as a checklist. 
+
+1. Did Pfeuffer cover each of the reporting standards? Highlight where/how.
+  
+  - How did they connect theory to specification, identification, model fit, interpretation, and back to impact on theory?   
+
+## Mini Project 
+
+- Any final questions/clarifications?
+
+# Ordinal data Interpretation
+
+Scenario 1 from w05 Rlab 
+
+## Ordinal - Continuous differences
+
+- Conceptually the same: Generate a model-implied covariance structure that is as close as possible to the observed one. 
+
+- Different: Cannot directly calculate covariance between ordinal variables. Estimate polychoric correlation instead. 
+
+## Ordinal data: Estimate Polychoric correlation
+
+Estimate the polychoric correlation (ρ) between variable pairs
+
+  - Estimate ρ so that **predicted proportion** is as close as possible to the **observed proportion**.
+  - **Observed proportion** is just the proportion of respondents falling in each cell of the cross-tab
+  - **Predicted proportion** is the proportion expected to fall in each cell, based on bivariate normal, **thresholds** & candidate ρ 
+
+    - Assumes each ordinal variable has an underlying latent continuous standard normal variable.
+    - Cut the standard normal variable based on the number of categories and proportion of respondents in each to get **thresholds** for each ordinal variable. 
+
+## Ordinal data: Estimate Model Parameters
+
+Estimate model parameters so that the model-implied correlation is as close as possible to the estimated polychoric correlation. 
+
+- Model-implied correlation is based on the same path tracing rules as previous. 
+- DWLS (not ML) estimates the parameters that best reproduce it.  
+  - minimizes weighted squared distance between the estimated polychoric correlations and the model-implied ones. 
+  - DWLS (diagonal weighted least squares): measures fit; accounts for the error in the estimated matrix
+
+## Ordinal data: Impact on Model fit
+
+Model fit is largely the same.
+- chi-square, CFI, TLI, RMSEA, SRMR
+
+- Lavaan returns "standard" & "scaled" model fit. Report scaled model fit.
+- indices tell you how well the model reproduces the estimated polychoric structure, not the observed likert scales (1-4)
+- thresholds are fixed so they don't contribute to misfit.
+
+## Ordinal data: Impact on interpretation
+
+Generally interpret standardized, since the assumed latent variables underlying the polychronic correlation matrix have no natural scale. 
+
+
+
+
+## Example sentence 
+
+Anxiety positively predicted avoidance (b = 0.57, 95% CI [.47, .69], β = .51), and avoidance negatively predicted performance (b = -0.27, 95% CI [-.37, -.20], β = -.31). The indirect effect of anxiety on performance through avoidance was b = -0.16, 95% CI [-.21, -.11] (β = -.16).
+
+- note both unstandardized (b) & standardized (β)
+~*~ are thresholds (not typically reported)
+
+## Lavaan-specific notes
+
+- Exogenous ordinal variables are treated as covariates by default
+  - we don't want to explain their variance
+- note some additional arguments to set for ordinal data in today's rlab. 
+- get standardized se, ci, z, p with standardizedSolution(fit1)
+- Get indirect effects in Lavaan in R. 
+
+## Practice 
+
+Lamaku > Assignments > w06_ordinal_interpretation 
+
+Lavaan results provided. 
+
+1. What info is needed to answer the question (curate)? 
+2. Write up a results section.
+3. Answer the question based on the results. 
+
+## Example Interpretation
+
+::: {.content-visible when-profile="teacher"}
+
+- The hypothesized model fit the data well (scaled), χ²(2) = 2.88, *p* = .24, CFI = .991, TLI = .995, RMSEA = .031, 90% CI [.000, .104], SRMR = .013.
+- Instructor responsiveness positively predicted sense of belonging, *b* = 0.48, 95% CI [0.36, 0.59], β = .41.
+- Peer interaction also positively predicted belonging, *b* = 0.33, 95% CI [0.21, 0.44], β = .28.
+- Belonging, in turn, positively predicted intention to persist, *b* = 0.41, 95% CI [0.31, 0.50], β = .47.
+- The indirect effect of responsiveness on persistence through belonging was positive and significant, *b* = 0.19, 95% CI [0.14, 0.25], β = .19.
+- The indirect effect of peer interaction through belonging was also significant, *b* = 0.13, 95% CI [0.09, 0.19], β = .13.
+- Together, the results suggest both instructor responsiveness and peer interaction support persistence *because* they foster a sense of belonging.
+
+:::
+
+# Interactions in MVPA
+
+Define Interaction
+
+Effect of X on Y depends on W. 
+
+## In SEM
+
+No interaction 
+
+**X** --a-- **M** --b-- **Y**
+
+One estimate each for a and b respectiv
+
+Interaction 
+
+    W
+    |
+X  ---- Y
+
+Effect of X on Y when W is low
+Effect of X on Y when W is mean
+Effect of X on Y when W is high
+
+## Handling Interaction Effects
+
+Which variable is the predictor and which is the moderator? 
+
+- this is theory-driven. 
+
+## Handling Interaction Effects: Lavaan
+
+- Mean-center interaction variables > create new X_c, W_c variables
+- Multiply them > create new X_c * W_c variable
+- Keep X & W in the model but don't interpret
+- Use robust ML estimator = "MLR"
+- Report unstandardized coefficients for the interactions
+
+## Handling Interaction Effects: Lavaan Model
+
+Model simple slopes of X on Y at three values of W: -1 SD, mean (0), and +1 SD  
+
+sdW <- sd(d$support_c)
+
+model <- sprintf('
+  burnout ~ b1*stress_c + b2*support_c + b3*int
+
+  slope_low  := b1 - b3*%f
+  slope_mean := b1
+  slope_high := b1 + b3*%f
+', sdW, sdW)
+
+## Example: teacher burnout
+
+**RQ.** Does administrative **support** buffer the effect of job **stress** on
+**burnout** -- and does burnout predict teachers' **intention to leave**?
+
+- 300 teachers; all variables continuous (survey scales).
+- `stress`, `support` → `burnout` (with a stress × support interaction) → `leave`.
+- Center `stress` & `support`, build `int = stress_c * support_c`, fit with `estimator = "MLR"`.
+
+## Example: model & fit
+
+```r
+sdW <- sd(d$support_c)
+
+model <- sprintf('
+  burnout ~ b1*stress_c + b2*support_c + b3*int
+  leave   ~ c1*burnout
+
+  slope_low  := b1 - b3*%f
+  slope_mean := b1
+  slope_high := b1 + b3*%f
+', sdW, sdW)
+
+fit <- sem(model, data = d, estimator = "MLR")
+```
+
+## Example: model fit
+
+Good fit -- the interaction path model reproduces the data well.
+
+```
+                Scaled
+  chi-square    1.29
+  df            3
+  p             .73
+  CFI           1.00
+  TLI           1.01
+  RMSEA         .00
+  SRMR          .01
+```
+
+## Example: path coefficients
+
+```
+                        b      SE      p        95% CI
+  burnout ~ stress_c    0.61   0.045   <.001   [ 0.53,  0.70]
+  burnout ~ support_c  -0.43   0.048   <.001   [-0.53, -0.34]
+  burnout ~ int        -0.32   0.048   <.001   [-0.42, -0.23]
+  leave   ~ burnout     0.68   0.055   <.001   [ 0.58,  0.79]
+```
+
+- Negative interaction (b3 = -0.32): support **buffers** the stress → burnout link.
+- Report the **unstandardized** interaction coefficient.
+
+## Example: simple slopes
+
+Effect of stress on burnout at three levels of support:
+
+```
+  support -1 SD (low)    0.93   [0.80, 1.07]
+  support    mean        0.61   [0.53, 0.70]
+  support +1 SD (high)   0.29   [0.17, 0.41]
+```
+
+- Stress drives burnout most when support is **low**; the slope shrinks as
+  support rises -- the buffering effect in plain terms.
+
+# Groups vs Predictors
+
+Q1: Does gender predict an outcome? 
+
+- yes you can do this in a measured variable path analysis
+
+Q2: Do gender groups A, B, C, D have different paths? 
+
+- no, this is a between groups difference. 
+
+# Rlab
+
+## Lavaan Indirect & total effects
+
+model <- '
+  M ~ a*X
+  Y ~ b*M + c*X
+  indirect := a*b
+  total := c + (a*b)
+'
+
+## Standard Errors & CI in SEM
+
+Indirect effects are a product & so not normally distributed. 
+
+Standard SE methods assume normality; indirect effects are a product and so not normal 
+
+Use bootstrapping instead 
+
+fit <- sem(model, data = data, 
+           se = "bootstrap", 
+           bootstrap = 5000)
+
+## Rlab
+
+  - Continue with the scenarios if not yet finished
+  - Report of the four scenarios, focused on evaluating model fit, interpreting path coefficients, and ansewring the RQ. 
+    - what is relevant to answer the RQ?
+
+  # Up Next
+
+  - Mini Project 1 Due
+  - Shifting to confirmatory factor analysis
+
+
+
