@@ -33,7 +33,7 @@ sessions:
     turn_in: "Mini Project 1: MVPA"
     Other: ""
   - topic: "CFA: Model Identification & Fit "
-    prep: ""
+    prep: "[UCLA Two Examples](https://stats.oarc.ucla.edu/spss/seminars/introduction-to-factor-analysis/a-practical-introduction-to-factor-analysis-confirmatory-factor-analysis/)"
     turn_in: ""
     Other: ""
   - topic: "CFA: Interpretation"
