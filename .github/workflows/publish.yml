@@ -59,6 +59,11 @@ jobs:
         run: |
           shopt -s nullglob
           for html in _site/lectures/*.html; do
+            # Only reveal.js decks can be converted by decktape; skip plain HTML docs.
+            if ! grep -q 'class="reveal"' "$html"; then
+              echo "Skipping $html (not a reveal.js deck)"
+              continue
+            fi
             pdf="${html%.html}.pdf"
             echo "Converting $html -> $pdf"
             decktape reveal --chrome-arg=--no-sandbox "$html" "$pdf"
