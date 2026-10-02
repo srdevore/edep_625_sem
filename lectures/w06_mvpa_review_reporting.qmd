@@ -8,27 +8,15 @@ format:
     slide-number: true
     embed-resources: true
     self-contained-math: true
-release: week 6
 ---
 
 # Agenda
 
+- Reporting MVPA models
 - Methods Walkthrough
-- Reporting MVPA
-- Ordinal data Interpretation
-- Interactions in MVPA
-- Modification Indices & Nestedness
-  - practice
-- Missing Data
+- Ordinal data
+- Interactions
 - rlab
-
-# Methods walkthrough
-
-- Alana, Mia, Alex, Bocar
-
-When not presenting: 
-
-
 
 # Reporting: 
 
@@ -64,13 +52,19 @@ A useful checklist from [APA](https://apastyle.apa.org/jars/quant-table-7.pdf)
 
 Use the reporting slides as a rubric. 
 
-1. Did Pfeuffer et al cover each of the reporting standards? Highlight where/how.
+1. Did Pleuffer et al cover each of these reporting standards? Highlight where/how.
   
 2. How did they connect theory to specification, identification, model fit, interpretation, and back to impact on theory?   
 
-## Mini Project 
+# Methods walkthrough
 
-- Any final questions/clarifications?
+When not presenting: 
+
+- Use the reporting slides from today as a checklist: Based on the presentation, did the paper report everything it should have?
+
+- Act as a reviewer: Write a short list of things that you would ask the authors to update about the reporting. Assume the presenter covered everything in the paper for this.
+
+- Lamaku > Assignments > Methods walkthrough response (submit as text, not file)
 
 # Ordinal data Interpretation
 
@@ -117,11 +111,11 @@ Model fit is largely the same.
 
 - Lavaan returns "standard" & "scaled" model fit. Report scaled model fit.
 - indices tell you how well the model reproduces the estimated polychoric structure, not the observed Likert scales (1-4)
-- thresholds are fixed so they don't contribute to misfit.
 
 ## Ordinal data: Impact on interpretation
 
-Generally interpret standardized, since the assumed latent variables underlying the polychoric correlation matrix have no natural scale. 
+- Still report both
+- Generally interpret standardized, since the assumed latent variables underlying the polychoric correlation matrix have no natural scale. 
 
 ## Example interpretation 
 
@@ -291,9 +285,9 @@ How is the model fit?
 Effect of stress on burnout at three levels of support:
 
 ```
-  support -1 SD (low)    0.93   [0.80, 1.07]
-  support    mean        0.61   [0.53, 0.70]
-  support +1 SD (high)   0.29   [0.17, 0.41]
+  support (low)    0.93   [0.80, 1.07]
+  support  mean    0.61   [0.53, 0.70]
+  support (high)   0.29   [0.17, 0.41]
 ```
 
 - Stress drives burnout most when support is **low**; the slope shrinks as
@@ -301,7 +295,7 @@ Effect of stress on burnout at three levels of support:
 
 # Pause & Recap
 
-- Conceptually, how does interaction work in the SEM model?  
+- Conceptually, how does interaction change our interpretation of an MVPA model?  
 
 # Groups vs Predictors
 
