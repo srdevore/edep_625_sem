@@ -1,0 +1,140 @@
+---
+title: "W06 Practice: Interpreting an Ordinal Path Model"
+date: today
+format:
+  html:
+    toc: false
+    number-sections: false
+    embed-resources: true
+description: '<a href="lectures/w06_mvpa_ordinal_practice.pdf" download="w06_mvpa_ordinal_practice.pdf">Download PDF</a>'
+---
+
+## Purpose
+
+Practice reporting on an ordinal MVPA. 
+
+::: {.callout-note appearance="simple"}
+**This is all fake data**, generated specifically to illustrate an ordinal
+measured-variable path analysis.
+:::
+
+## The scenario
+
+**Research question.** Among undergraduates in online courses, do **instructor
+responsiveness** and **peer interaction** relate to students' **intention to
+persist** in the course *through* their **sense of belonging**?
+
+**The data.** A survey of 450 students. Every variable is a Likert item.
+
+| Variable  | Meaning                                         | Scale                           |
+|-----------|-------------------------------------------------|---------------------------------|
+| `respond` | "My instructor responds to questions promptly"  | 1–4 (strongly disagree → agree) |
+| `peer`    | "I interact regularly with classmates"          | 1–4 (strongly disagree → agree) |
+| `belong`  | sense of belonging in the course                | 1–5 (not at all → completely)   |
+| `persist` | intention to continue / re-enroll               | 1–4 (very unlikely → very likely) |
+
+**The hypothesized model.**
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-width: 7
+#| fig-height: 3.2
+#| fig-align: center
+library(lavaan)
+library(semPlot)
+hyp <- "belong  ~ respond + peer
+        persist ~ belong"
+spm <- semPlotModel(lavaanify(hyp))
+pos <- rbind(respond = c(0, 1), peer = c(0, -1),
+             belong  = c(1, 0), persist = c(2, 0))
+ord <- semPaths(spm, DoNotPlot = TRUE, whatLabels = "no", nCharNodes = 0)$graphAttributes$Nodes$labels
+semPaths(spm, whatLabels = "no", layout = pos[ord, ], style = "ram",
+         residuals = FALSE, intercepts = FALSE, exoCov = FALSE,
+         nCharNodes = 0, sizeMan = 10, edge.color = "black")
+```
+
+## The data
+
+```{r}
+#| message: false
+#| warning: false
+library(lavaan)
+
+set.seed(625)
+n <- 450
+respond_s <- rnorm(n)
+peer_s    <- 0.30 * respond_s + rnorm(n, 0, sqrt(1 - 0.30^2))
+belong_s  <- 0.45 * respond_s + 0.35 * peer_s +
+             rnorm(n, 0, sqrt(1 - 0.45^2 - 0.35^2))
+persist_s <- 0.50 * belong_s + rnorm(n, 0, sqrt(1 - 0.50^2))
+
+to4 <- function(z) as.integer(cut(z, c(-Inf, -0.8, 0, 0.8, Inf), labels = 1:4))
+to5 <- function(z) as.integer(cut(z, c(-Inf, -1, -0.2, 0.5, 1.1, Inf), labels = 1:5))
+
+belong_survey <- data.frame(
+  respond = to4(respond_s),
+  peer    = to4(peer_s),
+  belong  = to5(belong_s),
+  persist = to4(persist_s)
+)
+
+head(belong_survey)
+sapply(belong_survey, table)   # a few discrete categories each
+```
+
+## The fitted model
+
+Notice some additional arguments to last week's Rlab:
+
+```{r}
+#| message: false
+#| warning: false
+model <- "
+  belong  ~ a1*respond + a2*peer
+  persist ~ b*belong
+
+  ind_respond := a1*b
+  ind_peer    := a2*b
+"
+
+fit <- lavaan(model, data = belong_survey,
+              ordered = c("respond", "peer", "belong", "persist"),
+              estimator = "DWLS",
+              test = "scaled.shifted", # adds the scaled (robust) test statistic, so fit indices report both standard & scaled columns
+              auto.var = TRUE,   # disturbance variances of the endogenous variables
+              auto.cov.y = FALSE,# keep endogenous disturbances uncorrelated (recursive)
+              auto.th = TRUE,    # thresholds of the ordered variables as free parameters
+              auto.delta = TRUE, # scaling parameters (delta) for ordered variables
+              se = "bootstrap", bootstrap = 200
+              )
+```
+
+## The output (path coefficients)
+
+```{r}
+#| message: false
+#| warning: false
+summary(fit, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
+```
+
+```{r}
+#| message: false
+#| warning: false
+# Standardized estimates with standard errors, z, p, and CIs
+standardizedSolution(fit)
+```
+
+```{r}
+#| message: false
+#| warning: false
+# Unstandardized estimates with percentile bootstrap CIs
+parameterEstimates(fit, boot.ci.type = "perc", standardized = TRUE)
+```
+
+## Your task
+
+1. What info is needed to answer the question?  (curate) 
+2. Write up a results section. Bullet points is fine. Include key information.
+3. Answer the question based on the results. 
