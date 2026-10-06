@@ -7,6 +7,16 @@ format: html
 release: week 3
 ---
 
+# Notes: 
+::: {.content-visible when-profile="teacher"}
+
+was short - need one more activity. 
+
+Introduce both simple & more complicated models. 
+
+:::
+
+
 
 ## Setup
 

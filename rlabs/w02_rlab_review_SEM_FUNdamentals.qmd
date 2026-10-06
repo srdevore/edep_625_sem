@@ -7,6 +7,13 @@ format: html
 release: week 2
 ---
 
+Notes: 
+::: {.content-visible when-profile="teacher"}
+add multivariate normality here. 
+
+:::
+
+
 ## Purpose
 
 Goal: Run & Interpret the regression models below. 

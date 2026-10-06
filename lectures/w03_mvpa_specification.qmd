@@ -10,6 +10,14 @@ format:
     self-contained-math: true
 ---
 
+# notes
+
+::: {.content-visible when-profile="teacher"}
+
+add recursive vs non-recursive distinction here. 
+Make this r lab focused on building the models in Lavaan. 
+:::
+
 # Model specification
 
 * Which variables are included in the model
