@@ -1,0 +1,44 @@
+---
+title: "Week 7: CFA Specification"
+date: today
+description: '<a href="lectures/w06_mvpa_review_reporting.pdf" download="w06_mvpa_review_reporting.pdf">Download PDF</a>'
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+    embed-resources: true
+    self-contained-math: true
+---
+
+Latent variables: constructs that can't be directly measured. Everything about the latent variable is inferred from the measured variables; specifically the var/cov of the measured variables. 
+Fundamentally the same: same tracing rules/systems of equations that give us the model-implied cov matrix. goal is still to get model implied as close to observed as possible. Same/similar methods (oroptions for methods) for estimating parameters. 
+
+Key differences: 
+1. need a scale. latent variables have no natural scale, so we need to give it one. Latent variables are exogenous (they explain only); 
+- observed variables are typically called indicators (indicators of the latent variable)
+2. measurement error: this is accounted for in cfa. 
+3. df calculation is impacted: latent variables do't add information (isn't a parameter)? 
+
+La
+
+
+| Path analysis (measured) | CFA |
+|---|---|
+| Path coefficients (single-headed arrows between measured variables) | **Loadings** (single-headed arrows from factor to indicator) |
+| Variances/covariances of exogenous variables | **Factor variances/covariances** (the factors are the exogenous variables, they just happen to be latent) |
+| Disturbance variances of endogenous variables | **Residual variances** (the indicators are the endogenous variables) |
+
+
+| Path analysis (measured) | CFA | Matrix |
+|---|---|---|
+| Path coefficients (single-headed arrows between measured variables) | **Loadings** (factor → indicator) | Λ |
+| Variances/covariances of exogenous variables | **Factor variances/covariances** | Ψ |
+| Disturbance variances of endogenous variables | **Residual variances** | Θ |
+
+
+Information is p(p+1)/2 still. 
+parameters (q) 
+Λ: roughly p loadings bcs one indicator typically only associated with one latent variable.  
+Ψ: k(k+1)/2 where k = number of latent variables  (unless fixed to 1). 
+Θ: p residual variances
+

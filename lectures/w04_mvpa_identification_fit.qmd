@@ -11,6 +11,13 @@ format:
 
 ---
 
+# notes
+
+::: {.content-visible when-profile="teacher"}
+
+:::
+
+
 # Agenda
 
 - Review
@@ -34,7 +41,7 @@ Answer the question.
 ## Recursive
 
 - Causal/predictive direction Flows in one direction; 
-- disturbance terms are not correlated 
+- disturbance terms between variables with direct causal path are not correlated 
   - no hidden shared causes of unexplained variance.   
 
 ## Nonrecursive

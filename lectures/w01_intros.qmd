@@ -17,6 +17,14 @@ format:
 6. R Intro & lab data 
 5. Homework: Scavenger hunt: Finding datasets; review videos for variance, covariance, correlation. 
 
+Notes: 
+::: {.content-visible when-profile="teacher"}
+- do a survey on R experience, qmd/rmd, lavaan (sem, cfa) packages, regression, prior SEM work. 
+
+
+:::
+
+
 ## Introductions
 
 About Me
