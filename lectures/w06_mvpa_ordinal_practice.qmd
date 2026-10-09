@@ -6,6 +6,7 @@ format:
     toc: false
     number-sections: false
     embed-resources: true
+description: '<a href="lectures/w06_mvpa_ordinal_practice.pdf" download="w06_mvpa_ordinal_practice.pdf">Download PDF</a>'
 ---
 
 ## Purpose
