@@ -1,0 +1,349 @@
+---
+title: "W07 Lab: Specifying CFA models in lavaan"
+date: today
+description: '<a href="rlab-downloads/w07_rlab_cfa_specification.qmd" download="w07_rlab_cfa_specification.qmd">Download .qmd</a>'
+format: html
+code-fold: true
+code-summary: "Show code"
+---
+
+## Purpose
+
+- Practice writing `lavaan()` model syntax for CFA models
+
+Each scenario below gives you a research question and some background.
+
+In this rlab, for each scenario:
+
+1. Decide which latent variables there are, and which indicators measure each one.
+2. Write the model in lavaan syntax (just the model, we won't fit it in this class). 
+  - only change the Model, nothing else. 
+3. Run the `semPaths()` code to check that the diagram matches the model you intended.
+4. Refer to lecture slides for relevant symbols. 
+
+::: {.callout-note appearance="simple"}
+These are **fictional scenarios**, and the data are placeholders. Because we never fit the models, the numbers do not matter, only the structure.
+:::
+
+## Setup
+
+```{r}
+#| message: false
+#| code-fold: false
+library(lavaan)
+library(semPlot)
+
+# Placeholder data: random numbers with the right column names.
+# lavaan() needs *some* data to build the model object; since we use
+# do.fit = FALSE, the values are never used.
+make_dat <- function(vars, n = 200) {
+  as.data.frame(setNames(replicate(length(vars), rnorm(n), simplify = FALSE), vars))
+}
+```
+
+::: {.content-visible when-profile="teacher"}
+```{r}
+#| include: false
+# Teacher-only: one helper that draws the answer diagram, so each scenario
+# below only has to supply its model. Stripped from the student .qmd download.
+answer_diagram <- function(model, vars) {
+  fit0 <- lavaan(model, data = make_dat(vars), do.fit = FALSE)
+  semPaths(fit0, what = "path", whatLabels = "name", style = "lisrel",
+           layout = "tree", residuals = TRUE, nCharNodes = 0,
+           sizeMan = 8, sizeMan2 = 4)
+}
+```
+:::
+
+
+---
+
+# Scenario 1
+
+**Research question.** Do students' responses to four survey items reflect a single underlying **growth mindset**?
+
+**Background.**
+
+- A district gave 8th graders four Likert items about how they think about ability (1 = strongly disagree, 5 = strongly agree).
+- Researchers believe the items are all driven by one construct, growth mindset.
+- Each item also has its own unique influences (wording, mood on the day, etc.).
+- **Scaling:** set the scale of the latent variable by fixing the **first loading to 1**.
+
+| Variable | Item |
+|----------|------|
+| `develop`  | "My intelligence can be developed"        |
+| `workhard` | "Working hard makes me smarter"           |
+| `hardsubj` | "I can get better even at hard subjects"  |
+| `mistakes` | "Mistakes help me learn"                  |
+
+```{r}
+#| eval: false
+#| code-fold: false
+# YOUR TURN
+vars1 <- c("develop", "workhard", "hardsubj", "mistakes")
+
+model1 <- "
+  # ...your model here...
+"
+fit1 <- lavaan(model1, data = make_dat(vars1), do.fit = FALSE)
+
+semPaths(fit1, what = "path", whatLabels = "name", style = "lisrel",
+         layout = "tree", residuals = TRUE, nCharNodes = 0,
+         sizeMan = 8, sizeMan2 = 4)
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.callout-tip collapse="true" title="Model answer: code (teacher)"}
+```{r}
+#| code-fold: false
+vars1 <- c("develop", "workhard", "hardsubj", "mistakes")
+model1 <- "
+  mindset =~ 1*develop + workhard + hardsubj + mistakes
+  mindset ~~ mindset
+  develop ~~ develop
+  workhard ~~ workhard
+  hardsubj ~~ hardsubj
+  mistakes ~~ mistakes
+"
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer: diagram (teacher)"}
+```{r}
+#| echo: false
+#| fig-width: 7
+#| fig-height: 4
+#| fig-align: center
+answer_diagram(model1, vars1)
+```
+:::
+:::
+
+---
+
+# Scenario 2
+
+**Research question.** Are **reading comprehension** and **listening comprehension** in a second language (L2) distinct but related skills?
+
+**Background.**
+
+- Adult learners of English took a proficiency test with six tasks (scores in points).
+- Theory says reading and listening are separate skills, but there is also evidence that they may be related.
+- **Scaling:** set the scale of each latent variable by fixing its **first loading to 1**.
+
+| Variable | Item |
+|----------|------|
+| `dialogue`     | listening to an everyday dialogue   |
+| `mainidea`     | finding the main idea of a passage  |
+| `lecture`      | listening to an academic lecture    |
+| `vocab`        | vocabulary in context               |
+| `instructions` | following spoken instructions       |
+| `inference`    | inference from a text               |
+
+```{r}
+#| eval: false
+#| code-fold: false
+# YOUR TURN
+vars2 <- c("dialogue", "mainidea", "lecture", "vocab", "instructions", "inference")
+
+model2 <- "
+  # ...your model here...
+"
+fit2 <- lavaan(model2, data = make_dat(vars2), do.fit = FALSE)
+
+semPaths(fit2, what = "path", whatLabels = "name", style = "lisrel",
+         layout = "tree", residuals = TRUE, nCharNodes = 0,
+         sizeMan = 8, sizeMan2 = 4)
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.callout-tip collapse="true" title="Model answer: code (teacher)"}
+```{r}
+#| code-fold: false
+vars2 <- c("dialogue", "mainidea", "lecture", "vocab", "instructions", "inference")
+model2 <- "
+  read   =~ 1*mainidea + vocab + inference
+  listen =~ 1*dialogue + lecture + instructions
+  read   ~~ read
+  listen ~~ listen
+  read   ~~ listen
+  mainidea ~~ mainidea
+  vocab ~~ vocab
+  inference ~~ inference
+  dialogue ~~ dialogue
+  lecture ~~ lecture
+  instructions ~~ instructions
+"
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer: diagram (teacher)"}
+```{r}
+#| echo: false
+#| fig-width: 8
+#| fig-height: 4.5
+#| fig-align: center
+answer_diagram(model2, vars2)
+```
+:::
+:::
+
+---
+
+# Scenario 3
+
+**Research question.** Are **positive affect** and **negative affect** two separate dimensions of daily emotional experience among outpatients?
+
+**Background.**
+
+- Outpatients rated how often they experienced seven feelings and states over the past week (1 = never, 5 = always).
+- Some items are expected to reflect positive affect and some negative affect.
+- In this research team's theory, the two dimensions are **independent**: feeling more positive says nothing about feeling more (or less) negative.
+- **Scaling:** set the scale of each latent variable by fixing its **variance to 1**.
+
+| Variable | Item |
+|----------|------|
+| `distressed`   | distressed    |
+| `enthusiastic` | enthusiastic  |
+| `afraid`       | afraid        |
+| `joyful`       | joyful        |
+| `irritable`    | irritable     |
+| `hungry`       | hungry        |
+| `calm`         | calm          |
+
+```{r}
+#| eval: false
+#| code-fold: false
+# YOUR TURN
+vars3 <- c("distressed", "enthusiastic", "afraid", "joyful", "irritable",
+           "hungry", "calm")
+
+model3 <- "
+  # ...your model here...
+"
+fit3 <- lavaan(model3, data = make_dat(vars3), do.fit = FALSE)
+
+semPaths(fit3, what = "path", whatLabels = "name", style = "lisrel",
+         layout = "tree", residuals = TRUE, nCharNodes = 0,
+         sizeMan = 8, sizeMan2 = 4)
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.callout-tip collapse="true" title="Model answer: code (teacher)"}
+```{r}
+#| code-fold: false
+vars3 <- c("distressed", "enthusiastic", "afraid", "joyful", "irritable",
+           "hungry", "calm")
+model3 <- "
+  # `hungry` is not part of either dimension, so it is left out of the model
+  pa =~ NA*enthusiastic + joyful + calm
+  na =~ NA*distressed + irritable + afraid
+  pa ~~ 1*pa
+  na ~~ 1*na
+  enthusiastic ~~ enthusiastic
+  joyful ~~ joyful
+  calm ~~ calm
+  distressed ~~ distressed
+  irritable ~~ irritable
+  afraid ~~ afraid
+"
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer: diagram (teacher)"}
+```{r}
+#| echo: false
+#| fig-width: 8
+#| fig-height: 4.5
+#| fig-align: center
+answer_diagram(model3, vars3)
+```
+:::
+:::
+
+---
+
+# Scenario 4
+
+**Research question.** How are customers' **trust in a brand**, their **perceived product quality**, and their **purchase intention** related to one another?
+
+**Background.**
+
+- An online survey of shoppers asked shoppers a set of questions on 7-point agreement scales.
+- All three constructs are expected to be correlated with one another.
+- Two of the purchase-intention items were worded almost identically ("I plan to buy" and "I intend to buy"), so the researchers expect their unique parts (residuals) to **covary** beyond what purchase intention explains.
+- **Scaling:** set the scale of each latent variable by fixing its **variance to 1** (so all loadings are free).
+
+| Variable | Item |
+|----------|------|
+| `reliable`   | "The product is reliable"              |
+| `buysoon`    | "I will buy this product soon"         |
+| `trustbrand` | "I trust this brand"                   |
+| `plantobuy`  | "I plan to buy this product"           |
+| `promises`   | "This brand keeps its promises"        |
+| `lasts`      | "The product lasts a long time"        |
+| `intendbuy`  | "I intend to buy this product"         |
+| `honest`     | "This brand is honest with customers"  |
+| `wellmade`   | "The product is well made"             |
+| `shopfreq`   | "I shop online at least once a week"  |
+
+```{r}
+#| eval: false
+#| code-fold: false
+# YOUR TURN
+vars4 <- c("reliable", "buysoon", "trustbrand", "plantobuy", "promises",
+           "lasts", "intendbuy", "shopfreq", "honest", "wellmade")
+
+model4 <- "
+  # ...your model here...
+"
+fit4 <- lavaan(model4, data = make_dat(vars4), do.fit = FALSE)
+
+semPaths(fit4, what = "path", whatLabels = "name", style = "lisrel",
+         layout = "tree", residuals = TRUE, nCharNodes = 0,
+         sizeMan = 8, sizeMan2 = 4)
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.callout-tip collapse="true" title="Model answer: code (teacher)"}
+```{r}
+#| code-fold: false
+vars4 <- c("reliable", "buysoon", "trustbrand", "plantobuy", "promises",
+           "lasts", "intendbuy", "shopfreq", "honest", "wellmade")
+model4 <- "
+  # `shopfreq` measures none of the three constructs, so it is left out
+  trust  =~ NA*trustbrand + promises + honest
+  qual   =~ NA*wellmade + reliable + lasts
+  intent =~ NA*buysoon + plantobuy + intendbuy
+  trust  ~~ 1*trust
+  qual   ~~ 1*qual
+  intent ~~ 1*intent
+  trust  ~~ qual
+  trust  ~~ intent
+  qual   ~~ intent
+  trustbrand ~~ trustbrand
+  promises ~~ promises
+  honest ~~ honest
+  wellmade ~~ wellmade
+  reliable ~~ reliable
+  lasts ~~ lasts
+  buysoon ~~ buysoon
+  plantobuy ~~ plantobuy
+  intendbuy ~~ intendbuy
+  plantobuy ~~ intendbuy
+"
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer: diagram (teacher)"}
+```{r}
+#| echo: false
+#| fig-width: 10
+#| fig-height: 5
+#| fig-align: center
+answer_diagram(model4, vars4)
+```
+:::
+:::
+
+---

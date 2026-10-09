@@ -99,7 +99,6 @@ difference between an observed value and the value your model predicts
 
 ## Disturbance
 
-* Case-level: Actual value of the endogenous variable minus what's predicted by whatever the model says explains it
 
 * Model level: Var(disturbance) the part of an endogenous variable's variance that isn't explained by the model
 

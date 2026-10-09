@@ -1,7 +1,7 @@
 ---
 title: "Week 7: CFA Specification"
 date: today
-description: '<a href="lectures/w06_mvpa_review_reporting.pdf" download="w06_mvpa_review_reporting.pdf">Download PDF</a>'
+description: '<a href="lectures/w07_cfa_specification.pdf" download="w07_cfa_specification.pdf">Download PDF</a>'
 format:
   revealjs:
     theme: simple
@@ -10,35 +10,1394 @@ format:
     self-contained-math: true
 ---
 
-Latent variables: constructs that can't be directly measured. Everything about the latent variable is inferred from the measured variables; specifically the var/cov of the measured variables. 
-Fundamentally the same: same tracing rules/systems of equations that give us the model-implied cov matrix. goal is still to get model implied as close to observed as possible. Same/similar methods (oroptions for methods) for estimating parameters. 
+# Agenda
 
-Key differences: 
-1. need a scale. latent variables have no natural scale, so we need to give it one. Latent variables are exogenous (they explain only); 
-- observed variables are typically called indicators (indicators of the latent variable)
-2. measurement error: this is accounted for in cfa. 
-3. df calculation is impacted: latent variables do't add information (isn't a parameter)? 
+- CFA Intro
+- CFA Path Diagrams & Sysems of Equations
+- CFA Model Implied Covariance 
+- Implications of CFA
+- Specifying CFA in Lavaan
+- Rlab
 
-La
+# Overview
+
+Fundamentally the same: 
+
+- Theory remains the motivation for all specification decisions
+- Specify a theoretically motivated model
+- Estimate parameters so that model-implied covariance matrix is as close to observed as possible
+
+Key difference: 
+
+- Relationship between measured variables (indicators) and latent variables 
+
+# Review
+
+Definition of latent variables
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+
+- not observed directly
+- inferred from patterns among measured variables
+- typically not easily captured by a single variable
+- Ex: academic performance, intelligence, problem-solving ability.
+:::
+:::
 
 
-| Path analysis (measured) | CFA |
-|---|---|
-| Path coefficients (single-headed arrows between measured variables) | **Loadings** (single-headed arrows from factor to indicator) |
-| Variances/covariances of exogenous variables | **Factor variances/covariances** (the factors are the exogenous variables, they just happen to be latent) |
-| Disturbance variances of endogenous variables | **Residual variances** (the indicators are the endogenous variables) |
+# Reframe 
+
+:::: {.columns}
+::: {.column width="50%"}
+**MVPA RQ:**
+What is the effect of parent education on reading score through books in the home?
+:::
+
+::: {.column width="50%"}
+**Latent Variable RQ:**
+To what extent do parent education, books in the home, and technology in the home reflect a single latent socioeconomic status variable?
+:::
+::::
+
+## System of equations
+
+:::: {.columns}
+::: {.column width="46%" style="font-size: 0.75em;"}
+**MVPA**
+
+$$
+\begin{aligned}
+\text{Books} &= a_0 + a_1\,(\text{ParentEd}) + \zeta_B \\
+\text{Reading} &= b_0 + b_1\,(\text{Books}) + \zeta_R
+\end{aligned}
+$$
+:::
+
+::: {.column width="54%" style="font-size: 0.75em;"}
+**Latent Variable**
+
+$$
+\begin{aligned}
+\text{ParentEd} &= \tau_1 + \lambda_1\,\text{SES} + \varepsilon_1 \\
+\text{BooksHome} &= \tau_2 + \lambda_2\,\text{SES} + \varepsilon_2 \\
+\text{TechHome} &= \tau_3 + \lambda_3\,\text{SES} + \varepsilon_3
+\end{aligned}
+$$
+
+Where: 
+
+- τ = intercept 
+- λ = path coefficient
+- ε = residual
+
+:::
+::::
+
+# Systems of equations to path diagrams
+
+## Path Diagrams Review 
+
+What do the following represent? 
+
+- squares/rectangles
+- Single-headed straight arrow
+- curved double headed arrow
+
+::: {.fragment}
+
+- Circles/ovals: latent variables
+
+:::
 
 
-| Path analysis (measured) | CFA | Matrix |
-|---|---|---|
-| Path coefficients (single-headed arrows between measured variables) | **Loadings** (factor → indicator) | Λ |
-| Variances/covariances of exogenous variables | **Factor variances/covariances** | Ψ |
-| Disturbance variances of endogenous variables | **Residual variances** | Θ |
+## Path diagram MVPA
+
+```{r}
+#| echo: false
+#| fig-width: 6.5
+#| fig-height: 4.8
+library(ggplot2)
+
+oNG <- "#E07B1A"; BLU <- "#2C6FB5"; MAG <- "#C81E7A"; LIM <- "#6FA80F"; dk <- "#3A3A3A"
+ar <- grid::arrow(length = grid::unit(0.22, "cm"), type = "closed")
+ar2 <- grid::arrow(length = grid::unit(0.18, "cm"), ends = "both", type = "closed")
+
+circle <- function(x, y, r = 0.5) {
+  t <- seq(0, 2 * pi, length.out = 60)
+  data.frame(x = x + r * cos(t), y = y + r * sin(t))
+}
+box <- function(x, label) list(
+  annotate("rect", xmin = x - 1.15, xmax = x + 1.15, ymin = -0.55, ymax = 0.55, fill = dk),
+  annotate("text", x = x, y = 0, label = label, colour = "white", size = 5, lineheight = 0.9)
+)
+
+ggplot() +
+  # path a1: ParentEd -> Books (orange)
+  annotate("segment", x = 1.15, xend = 2.85, y = 0, yend = 0, colour = oNG, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 2, y = 0.45, label = "a[1]", parse = TRUE, colour = oNG, size = 6, fontface = "italic") +
+  # path b1: Books -> Reading (blue)
+  annotate("segment", x = 5.15, xend = 6.85, y = 0, yend = 0, colour = BLU, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 6, y = 0.45, label = "b[1]", parse = TRUE, colour = BLU, size = 6, fontface = "italic") +
+  # variance of exogenous Parent education (self-loop)
+  annotate("curve", x = -0.55, y = 0.6, xend = 0.55, yend = 0.6,
+           colour = dk, linewidth = 0.9, curvature = -1.4, arrow = ar2) +
+  annotate("text", x = 0, y = 1.85, label = "Var", colour = dk, size = 4.6, fontface = "italic") +
+  # disturbance zeta_B on Books (magenta)
+  annotate("segment", x = 4, xend = 4, y = 1.85, yend = 0.6, colour = MAG, arrow = ar) +
+  annotate("text", x = 4, y = 2.25, label = "zeta[B]", parse = TRUE, colour = MAG, size = 4.6) +
+  # disturbance zeta_R on Reading (lime)
+  annotate("segment", x = 8, xend = 8, y = 1.85, yend = 0.6, colour = LIM, arrow = ar) +
+  annotate("text", x = 8, y = 2.25, label = "zeta[R]", parse = TRUE, colour = LIM, size = 4.6) +
+  # measured variables
+  box(0, "Parent\neducation") + box(4, "Books at\nhome") + box(8, "Reading\nscore") +
+  coord_equal(clip = "off") +
+  expand_limits(x = c(-1.3, 9.3), y = c(-0.9, 3)) +
+  theme_void()
+```
+
+## Path diagram Latent Variable
+
+```{r}
+#| echo: false
+#| fig-width: 6.5
+#| fig-height: 4.8
+library(ggplot2)
+
+oNG <- "#E07B1A"; BLU <- "#2C6FB5"; MAG <- "#C81E7A"; LIM <- "#6FA80F"; dk <- "#3A3A3A"
+ar <- grid::arrow(length = grid::unit(0.22, "cm"), type = "closed")
+ar2 <- grid::arrow(length = grid::unit(0.18, "cm"), ends = "both", type = "closed")
+
+circle <- function(x, y, r = 0.5) {
+  t <- seq(0, 2 * pi, length.out = 60)
+  data.frame(x = x + r * cos(t), y = y + r * sin(t))
+}
+box <- function(x, y, label) list(
+  annotate("rect", xmin = x - 1.15, xmax = x + 1.15, ymin = y - 0.55, ymax = y + 0.55, fill = dk),
+  annotate("text", x = x, y = y, label = label, colour = "white", size = 5, lineheight = 0.9)
+)
+
+r_ses <- 1.1
+bx <- 6
+ys <- c(2.4, 0, -2.4)
+cols <- c(oNG, BLU, LIM)
+lam <- c("lambda[1]", "lambda[2]", "lambda[3]")
+eps <- c("epsilon[1]", "epsilon[2]", "epsilon[3]")
+th <- atan2(ys, bx - 1.15)
+x0 <- r_ses * cos(th)
+y0 <- r_ses * sin(th)
+x1 <- rep(bx - 1.15, 3)
+
+ggplot() +
+  # latent factor (circle)
+  geom_polygon(data = circle(0, 0, r_ses), aes(x, y), fill = dk) +
+  annotate("text", x = 0, y = 0, label = "SES", colour = "white", size = 6) +
+  # variance of the latent factor (self-loop)
+  annotate("curve", x = -0.5, y = 1.0, xend = 0.5, yend = 1.0,
+           colour = dk, linewidth = 0.9, curvature = -1.4, arrow = ar2) +
+  annotate("text", x = 0, y = 2.25, label = "Var", colour = dk, size = 4.6, fontface = "italic") +
+  # loadings: SES -> indicators
+  annotate("segment", x = x0, xend = x1, y = y0, yend = ys,
+           colour = cols, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 0.55 * x1 + 0.45 * x0, y = 0.55 * ys + 0.45 * y0 + 0.5,
+           label = lam, parse = TRUE, colour = cols, size = 6, fontface = "italic") +
+  # residuals on each indicator (magenta)
+  annotate("segment", x = bx + 3, xend = bx + 1.15, y = ys, yend = ys,
+           colour = MAG, arrow = ar) +
+  annotate("text", x = bx + 3.5, y = ys, label = eps, parse = TRUE, colour = MAG, size = 4.6) +
+  # measured variables
+  box(bx, ys[1], "Parent\neducation") +
+  box(bx, ys[2], "Books at\nhome") +
+  box(bx, ys[3], "Technology\nat home") +
+  coord_equal(clip = "off") +
+  expand_limits(x = c(-1.5, 10.5), y = c(-3.3, 3)) +
+  theme_void()
+```
+
+# Model-implied covariance matrix
+
+- Use path tracing rules & the path diagram
 
 
-Information is p(p+1)/2 still. 
-parameters (q) 
-Λ: roughly p loadings bcs one indicator typically only associated with one latent variable.  
-Ψ: k(k+1)/2 where k = number of latent variables  (unless fixed to 1). 
-Θ: p residual variances
+## Review path tracing rules
 
+Take a few minutes to review the path tracing rules from [Lecture 3](https://srdevore.github.io/edep_625_sem/lectures/w03_mvpa_specification.html#/title-slide). 
+
+Then you'll decide if some paths are allowed or not allowed. 
+
+## Allowed or not allowed? 
+
+For each example, the **magenta** path is the route to evaluate. Is it an allowed route?
+
+```{r}
+#| include: false
+library(ggplot2)
+
+MAG <- "#C81E7A"; GRY <- "#9AA0A6"; dk <- "#3A3A3A"
+ar <- grid::arrow(length = grid::unit(0.22, "cm"), type = "closed")
+ar2 <- grid::arrow(length = grid::unit(0.18, "cm"), ends = "both", type = "closed")
+
+pc <- function(id, hl) ifelse(id %in% hl, MAG, GRY)
+pw <- function(id, hl) ifelse(id %in% hl, 1.8, 1.0)
+
+circle <- function(x, y, r = 0.5) {
+  t <- seq(0, 2 * pi, length.out = 60)
+  data.frame(x = x + r * cos(t), y = y + r * sin(t))
+}
+qbox <- function(x, y, label) list(
+  annotate("rect", xmin = x - 1.15, xmax = x + 1.15, ymin = y - 0.55, ymax = y + 0.55, fill = dk),
+  annotate("text", x = x, y = y, label = label, colour = "white", size = 5, lineheight = 0.9)
+)
+
+# MVPA diagram; hl = ids to highlight: a1, b1, zB, zR, varP
+mvpa_plot <- function(hl = character()) {
+  ggplot() +
+    annotate("segment", x = 1.15, xend = 2.85, y = 0, yend = 0,
+             colour = pc("a1", hl), linewidth = pw("a1", hl), arrow = ar) +
+    annotate("text", x = 2, y = 0.45, label = "a[1]", parse = TRUE,
+             colour = pc("a1", hl), size = 6, fontface = "italic") +
+    annotate("segment", x = 5.15, xend = 6.85, y = 0, yend = 0,
+             colour = pc("b1", hl), linewidth = pw("b1", hl), arrow = ar) +
+    annotate("text", x = 6, y = 0.45, label = "b[1]", parse = TRUE,
+             colour = pc("b1", hl), size = 6, fontface = "italic") +
+    annotate("curve", x = -0.55, y = 0.6, xend = 0.55, yend = 0.6,
+             colour = pc("varP", hl), linewidth = pw("varP", hl), curvature = -1.4, arrow = ar2) +
+    annotate("text", x = 0, y = 1.85, label = "Var", colour = pc("varP", hl),
+             size = 4.6, fontface = "italic") +
+    annotate("segment", x = 4, xend = 4, y = 1.85, yend = 0.6,
+             colour = pc("zB", hl), linewidth = pw("zB", hl), arrow = ar) +
+    annotate("text", x = 4, y = 2.25, label = "zeta[B]", parse = TRUE,
+             colour = pc("zB", hl), size = 4.6) +
+    annotate("segment", x = 8, xend = 8, y = 1.85, yend = 0.6,
+             colour = pc("zR", hl), linewidth = pw("zR", hl), arrow = ar) +
+    annotate("text", x = 8, y = 2.25, label = "zeta[R]", parse = TRUE,
+             colour = pc("zR", hl), size = 4.6) +
+    qbox(0, 0, "Parent\neducation") + qbox(4, 0, "Books at\nhome") + qbox(8, 0, "Reading\nscore") +
+    coord_equal(clip = "off") +
+    expand_limits(x = c(-1.3, 9.3), y = c(-0.9, 3)) +
+    theme_void()
+}
+
+# Latent diagram; hl = ids to highlight: l1, l2, l3, e1, e2, e3, varS
+latent_plot <- function(hl = character()) {
+  r_ses <- 1.1
+  bx <- 6
+  ys <- c(2.4, 0, -2.4)
+  ids_l <- c("l1", "l2", "l3")
+  ids_e <- c("e1", "e2", "e3")
+  th <- atan2(ys, bx - 1.15)
+  x0 <- r_ses * cos(th)
+  y0 <- r_ses * sin(th)
+  x1 <- rep(bx - 1.15, 3)
+  ggplot() +
+    geom_polygon(data = circle(0, 0, r_ses), aes(x, y), fill = dk) +
+    annotate("text", x = 0, y = 0, label = "SES", colour = "white", size = 6) +
+    annotate("curve", x = -0.5, y = 1.0, xend = 0.5, yend = 1.0,
+             colour = pc("varS", hl), linewidth = pw("varS", hl), curvature = -1.4, arrow = ar2) +
+    annotate("text", x = 0, y = 2.25, label = "Var", colour = pc("varS", hl),
+             size = 4.6, fontface = "italic") +
+    annotate("segment", x = x0, xend = x1, y = y0, yend = ys,
+             colour = pc(ids_l, hl), linewidth = pw(ids_l, hl), arrow = ar) +
+    annotate("text", x = 0.55 * x1 + 0.45 * x0, y = 0.55 * ys + 0.45 * y0 + 0.5,
+             label = c("lambda[1]", "lambda[2]", "lambda[3]"), parse = TRUE,
+             colour = pc(ids_l, hl), size = 6, fontface = "italic") +
+    annotate("segment", x = bx + 3, xend = bx + 1.15, y = ys, yend = ys,
+             colour = pc(ids_e, hl), linewidth = pw(ids_e, hl), arrow = ar) +
+    annotate("text", x = bx + 3.5, y = ys, label = c("epsilon[1]", "epsilon[2]", "epsilon[3]"),
+             parse = TRUE, colour = pc(ids_e, hl), size = 4.6) +
+    qbox(bx, ys[1], "Parent\neducation") +
+    qbox(bx, ys[2], "Books at\nhome") +
+    qbox(bx, ys[3], "Technology\nat home") +
+    coord_equal(clip = "off") +
+    expand_limits(x = c(-1.5, 10.5), y = c(-3.3, 3)) +
+    theme_void()
+}
+```
+
+## Allowed or not allowed? 
+
+**Route:** Parent education → Books at home → Reading score
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 6.5
+#| fig-height: 2.6
+mvpa_plot(c("a1", "b1"))
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+**Allowed.** Every arrow is followed in the direction of its arrowhead, and no variable is visited more than once.
+:::
+:::
+
+## Allowed or not allowed? 
+
+**Route:** Parent education ← SES → Books at home
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 5.6
+#| fig-height: 3.2
+latent_plot(c("l1", "l2", "varS"))
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+**Allowed.** The route goes backward against λ₁, then forward with λ₂ — backward-then-forward is fine. Each variable appears once on the path.
+:::
+:::
+
+## Allowed or not allowed?
+
+**Route:** Parent education ← SES ↺ SES ↺ SES → Technology at home
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 5.6
+#| fig-height: 3.2
+latent_plot(c("l1", "l3", "varS"))
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+**Not allowed.** The route passes through the curved double-headed arrow (Var of SES) twice. A route may use at most one curved arrow, and only at its turning point.
+:::
+:::
+
+## Allowed or not allowed?
+
+**Route:** Parent education → Books at home ← ζ<sub>B</sub>
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 6.5
+#| fig-height: 2.6
+mvpa_plot(c("a1", "zB"))
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+**Not allowed.** The route goes forward along a₁ and then backward against the arrow from ζ<sub>B</sub>. Forward-then-backward is never allowed.
+:::
+:::
+
+## Allowed or not allowed?
+
+**Route:** Parent education ← SES → Books at home ← SES → Technology at home
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 5.6
+#| fig-height: 3.2
+latent_plot(c("l1", "l2", "l3"))
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+**Not allowed.** The route passes through SES twice. It also goes forward into Books at home and then backward out of it.
+:::
+:::
+
+## Allowed or not allowed?
+
+**Route:** Books at home ← Parent education ↺ Parent education → Books at home
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 6.5
+#| fig-height: 2.6
+mvpa_plot(c("a1", "varP"))
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+**Allowed.** The route goes backward along a₁, crosses one curved arrow (Var of Parent education) exactly at its turning point, then forward along a₁. Parent education is passed only once.
+:::
+:::
+
+## Review: Getting Model-implied cov
+
+First identify the paths using tracing rules: 
+
+1. A route may go backward against an arrowhead, then forward with an arrowhead — but never forward-then-backward. 
+4. Never pass through the same variable twice in one route (no loops).
+3. A route may pass through at most one curved double-headed (covariance) arrow, and only at the route's turning point.
+
+## Review: Getting model-implied covariance
+
+Then get the covariance using the paths
+
+1. Find every valid route between the two variables (following the rules above).
+2. For each route, multiply together all the path coefficients (and the one correlation/covariance term, if a curved arrow is involved).
+3. Multiply the whole product by the variance of the route's ultimate common source variable.
+4. Sum the contributions across all valid routes — that sum equals the total covariance between the two variables.
+
+
+## Latent Variable Model-implied Covariance
+
+The path diagram is simply a representation of the system of equations
+
+$$
+\begin{aligned}
+\text{ParentEd} &= \tau_1 + \lambda_1\,\text{SES} + \varepsilon_1 \\
+\text{BooksHome} &= \tau_2 + \lambda_2\,\text{SES} + \varepsilon_2 \\
+\text{TechHome} &= \tau_3 + \lambda_3\,\text{SES} + \varepsilon_3
+\end{aligned}
+$$
+
+*PE = Parent ed · BH = Books at home · TH = Technology at home · S = SES*
+
+```{r}
+#| include: false
+library(ggplot2)
+
+## one colour per matrix cell (same palette as the MVPA example)
+lv_c11 <- "#128A7D"; lv_c12 <- "#E07B1A"; lv_c22 <- "#C81E7A"
+lv_c13 <- "#2C6FB5"; lv_c23 <- "#7A3FA0"; lv_c33 <- "#6FA80F"
+lv_BASE <- "#BFC3C7"; lv_DK <- "#3A3A3A"
+
+lv_AR <- grid::arrow(length = grid::unit(0.18, "cm"), type = "closed")
+lv_AR2 <- grid::arrow(length = grid::unit(0.14, "cm"), ends = "both", type = "closed")
+
+## geometry (same as the latent path diagram)
+lv_r <- 1.1
+lv_bx <- 6
+lv_ys <- c(2.4, 0, -2.4)
+lv_th <- atan2(lv_ys, lv_bx - 1.15)
+lv_x0 <- lv_r * cos(lv_th)
+lv_y0 <- lv_r * sin(lv_th)
+
+lv_circle <- function(x, y, r) {
+  t <- seq(0, 2 * pi, length.out = 60)
+  data.frame(x = x + r * cos(t), y = y + r * sin(t))
+}
+# Var(SES) self-loop, above the SES circle
+lv_varloop <- function(col, lty, lwd) annotate("curve", x = -0.5, y = 1.0, xend = 0.5, yend = 1.0,
+                                               curvature = -1.4, colour = col, linewidth = lwd,
+                                               linetype = lty, arrow = lv_AR2)
+lv_nodebox <- function(y, label) list(
+  annotate("rect", xmin = lv_bx - 1.15, xmax = lv_bx + 1.15, ymin = y - 0.55, ymax = y + 0.55, fill = lv_DK),
+  annotate("text", x = lv_bx, y = y, label = label, colour = "white", size = 4.4, lineheight = 0.9)
+)
+lv_base_model <- function(col = lv_BASE,
+                          box_labels = c("Parent\neducation", "Books at\nhome", "Technology\nat home"),
+                          latent = "SES", latent_size = 5, varlab = "Var(S)") list(
+  geom_polygon(data = lv_circle(0, 0, lv_r), aes(x, y), fill = lv_DK),
+  annotate("text", x = 0, y = 0, label = latent, colour = "white", size = latent_size),
+  annotate("segment", x = lv_x0, xend = rep(lv_bx - 1.15, 3), y = lv_y0, yend = lv_ys,
+           colour = col, linewidth = 1, arrow = lv_AR),
+  annotate("text", x = 0.55 * (lv_bx - 1.15) + 0.45 * lv_x0, y = 0.55 * lv_ys + 0.45 * lv_y0 + 0.5,
+           label = c("lambda[1]", "lambda[2]", "lambda[3]"), parse = TRUE, colour = col, size = 4.2),
+  annotate("segment", x = lv_bx + 3, xend = lv_bx + 1.15, y = lv_ys, yend = lv_ys,
+           colour = col, arrow = lv_AR),
+  annotate("text", x = lv_bx + 3.5, y = lv_ys, label = c("epsilon[1]", "epsilon[2]", "epsilon[3]"),
+           parse = TRUE, colour = col, size = 3.6),
+  lv_varloop(col, "solid", 0.9),
+  annotate("text", x = 0, y = 2.25, label = varlab, colour = col, size = 3.4),
+  lv_nodebox(lv_ys[1], box_labels[1]),
+  lv_nodebox(lv_ys[2], box_labels[2]),
+  lv_nodebox(lv_ys[3], box_labels[3])
+)
+lv_trace_edge <- function(e, col) annotate("segment", x = e[1], y = e[2], xend = e[3], yend = e[4],
+                                           colour = col, linewidth = 1.7, linetype = "dotted", arrow = lv_AR)
+lv_L <- lapply(1:3, function(i) c(lv_x0[i], lv_y0[i], lv_bx - 1.15, lv_ys[i]))
+lv_E <- lapply(1:3, function(i) c(lv_bx + 3, lv_ys[i], lv_bx + 1.15, lv_ys[i]))
+
+lv_STEPS <- list(
+  list(cells = list(c(1, 1)), col = lv_c11,
+       expr = "atop(lambda[1]^2 %.% Var(S), +~Var(epsilon[1]))", edges = list(lv_L[[1]], lv_E[[1]])),
+  list(cells = list(c(1, 2), c(2, 1)), col = lv_c12,
+       expr = "lambda[1] %.% lambda[2] %.% Var(S)", edges = list(lv_L[[1]], lv_L[[2]])),
+  list(cells = list(c(2, 2)), col = lv_c22,
+       expr = "atop(lambda[2]^2 %.% Var(S), +~Var(epsilon[2]))", edges = list(lv_L[[2]], lv_E[[2]])),
+  list(cells = list(c(1, 3), c(3, 1)), col = lv_c13,
+       expr = "lambda[1] %.% lambda[3] %.% Var(S)", edges = list(lv_L[[1]], lv_L[[3]])),
+  list(cells = list(c(2, 3), c(3, 2)), col = lv_c23,
+       expr = "lambda[2] %.% lambda[3] %.% Var(S)", edges = list(lv_L[[2]], lv_L[[3]])),
+  list(cells = list(c(3, 3)), col = lv_c33,
+       expr = "atop(lambda[3]^2 %.% Var(S), +~Var(epsilon[3]))", edges = list(lv_L[[3]], lv_E[[3]]))
+)
+
+lv_diagram <- function(i, steps = lv_STEPS, ...) {
+  g <- ggplot() + lv_base_model(if (i == 0) lv_DK else lv_BASE, ...)
+  if (i >= 1) {
+    st <- steps[[i]]
+    for (e in st$edges) g <- g + lv_trace_edge(e, st$col)
+    g <- g + lv_varloop(st$col, "dotted", 1.7)   # every cell passes through Var(SES) at the top
+  }
+  g + coord_equal(clip = "off") + theme_void() +
+    expand_limits(x = c(-1.5, 10.5), y = c(-3.3, 3))
+}
+
+lv_covmat <- function(i, steps = lv_STEPS, labs = c("PE", "BH", "TH")) {
+  g <- ggplot()
+  for (r in 1:3) for (cc in 1:3) {
+    g <- g + annotate("rect", xmin = cc - 0.48, xmax = cc + 0.48,
+                      ymin = (4 - r) - 0.48, ymax = (4 - r) + 0.48,
+                      fill = "grey95", colour = "grey80")
+  }
+  for (s in seq_len(i)) {
+    st <- steps[[s]]; emph <- (s == i)
+    for (cell in st$cells) {
+      rr <- cell[1]; ccx <- cell[2]
+      g <- g +
+        annotate("rect", xmin = ccx - 0.48, xmax = ccx + 0.48,
+                 ymin = (4 - rr) - 0.48, ymax = (4 - rr) + 0.48,
+                 fill = st$col, alpha = if (emph) 0.92 else 0.32,
+                 colour = if (emph) "black" else NA, linewidth = if (emph) 1 else 0) +
+        annotate("text", x = ccx, y = (4 - rr), label = st$expr, parse = TRUE,
+                 colour = if (emph) "white" else "grey25", size = 3.1, lineheight = 0.9)
+    }
+  }
+  for (k in 1:3) {
+    g <- g + annotate("text", x = k, y = 3.72, label = labs[k], fontface = "bold", size = 4.2) +
+      annotate("text", x = 0.32, y = 4 - k, label = labs[k], fontface = "bold", size = 4.2)
+  }
+  g + coord_equal(clip = "off") + theme_void() +
+    expand_limits(x = c(0.1, 3.6), y = c(0.4, 4.0))
+}
+```
+
+## Trace 1 — Var(Parent ed)
+
+:::: {.columns}
+::: {.column width="56%"}
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3.4
+lv_diagram(1)
+```
+:::
+::: {.column width="44%"}
+```{r}
+#| echo: false
+#| fig-width: 4.4
+#| fig-height: 4.4
+lv_covmat(1)
+```
+:::
+::::
+
+**Var(PE):** trace PE to itself. Up-and-back through the common cause SES → λ₁²·Var(S); plus its own residual → Var(ε₁). Sum the routes.
+
+## Trace 2 — Cov(Parent ed, Books)
+
+:::: {.columns}
+::: {.column width="56%"}
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3.4
+lv_diagram(2)
+```
+:::
+::: {.column width="44%"}
+```{r}
+#| echo: false
+#| fig-width: 4.4
+#| fig-height: 4.4
+lv_covmat(2)
+```
+:::
+::::
+
+**Cov(PE, BH):** one route PE ← SES → BH (backward, forward). Multiply the loadings λ₁·λ₂, then × the variance at the top, Var(S). The indicators share only SES.
+
+## Trace 3 — Var(Books)
+
+:::: {.columns}
+::: {.column width="56%"}
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3.4
+lv_diagram(3)
+```
+:::
+::: {.column width="44%"}
+```{r}
+#| echo: false
+#| fig-width: 4.4
+#| fig-height: 4.4
+lv_covmat(3)
+```
+:::
+::::
+
+**Var(BH):** up-and-back through SES → λ₂²·Var(S); plus its own residual → Var(ε₂). Sum.
+
+## Trace 4 — Cov(Parent ed, Technology)
+
+:::: {.columns}
+::: {.column width="56%"}
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3.4
+lv_diagram(4)
+```
+:::
+::: {.column width="44%"}
+```{r}
+#| echo: false
+#| fig-width: 4.4
+#| fig-height: 4.4
+lv_covmat(4)
+```
+:::
+::::
+
+**Cov(PE, TH):** one route PE ← SES → TH. Multiply λ₁·λ₃, then × Var(S).
+
+## Trace 5 — Cov(Books, Technology)
+
+:::: {.columns}
+::: {.column width="56%"}
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3.4
+lv_diagram(5)
+```
+:::
+::: {.column width="44%"}
+```{r}
+#| echo: false
+#| fig-width: 4.4
+#| fig-height: 4.4
+lv_covmat(5)
+```
+:::
+::::
+
+**Cov(BH, TH):** one route BH ← SES → TH. Multiply λ₂·λ₃, then × Var(S).
+
+## Trace 6 — Var(Technology)
+
+:::: {.columns}
+::: {.column width="56%"}
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3.4
+lv_diagram(6)
+```
+:::
+::: {.column width="44%"}
+```{r}
+#| echo: false
+#| fig-width: 4.4
+#| fig-height: 4.4
+lv_covmat(6)
+```
+:::
+::::
+
+**Var(TH):** up-and-back through SES → λ₃²·Var(S); plus its own residual → Var(ε₃). Sum.
+
+## Practice
+
+Motivation is measured by **Effort1**, **StudyHmW**, and **MissSc**.
+
+```{r}
+#| include: false
+## Practice model: Motivation -> Effort1, StudyHmW, MissSc (reuses the lv_ helpers above)
+pm_boxes <- c("Effort1", "StudyHmW", "MissSc")
+pm_STEPS <- lapply(lv_STEPS, function(st) {
+  st$expr <- gsub("Var(S)", "Var(Mot)", st$expr, fixed = TRUE)
+  st
+})
+pm_diagram <- function(i) lv_diagram(i, steps = pm_STEPS, box_labels = pm_boxes,
+                                     latent = "Motivation", latent_size = 3.8, varlab = "Var(Mot)")
+pm_covmat <- function(i) lv_covmat(i, steps = pm_STEPS, labs = c("E", "H", "M"))
+```
+
+:::: {.columns}
+::: {.column width="56%"}
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3.4
+pm_diagram(0)
+```
+:::
+::: {.column width="44%"}
+```{r}
+#| echo: false
+#| fig-width: 4.4
+#| fig-height: 4.4
+pm_covmat(0)
+```
+:::
+::::
+
+::::: {.content-visible when-profile="teacher"}
+
+## Practice Trace 1 — Var(Effort1)
+
+:::: {.columns}
+::: {.column width="56%"}
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3.4
+pm_diagram(1)
+```
+:::
+::: {.column width="44%"}
+```{r}
+#| echo: false
+#| fig-width: 4.4
+#| fig-height: 4.4
+pm_covmat(1)
+```
+:::
+::::
+
+**Var(E):** up-and-back through Motivation → λ₁²·Var(Mot); plus its own residual → Var(ε₁). Sum.
+
+## Practice Trace 2 — Cov(Effort1, StudyHmW)
+
+:::: {.columns}
+::: {.column width="56%"}
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3.4
+pm_diagram(2)
+```
+:::
+::: {.column width="44%"}
+```{r}
+#| echo: false
+#| fig-width: 4.4
+#| fig-height: 4.4
+pm_covmat(2)
+```
+:::
+::::
+
+**Cov(E, H):** one route E ← Motivation → H. Multiply λ₁·λ₂, then × Var(Mot).
+
+## Practice Trace 3 — Var(StudyHmW)
+
+:::: {.columns}
+::: {.column width="56%"}
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3.4
+pm_diagram(3)
+```
+:::
+::: {.column width="44%"}
+```{r}
+#| echo: false
+#| fig-width: 4.4
+#| fig-height: 4.4
+pm_covmat(3)
+```
+:::
+::::
+
+**Var(H):** up-and-back through Motivation → λ₂²·Var(Mot); plus its own residual → Var(ε₂). Sum.
+
+## Practice Trace 4 — Cov(Effort1, MissSc)
+
+:::: {.columns}
+::: {.column width="56%"}
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3.4
+pm_diagram(4)
+```
+:::
+::: {.column width="44%"}
+```{r}
+#| echo: false
+#| fig-width: 4.4
+#| fig-height: 4.4
+pm_covmat(4)
+```
+:::
+::::
+
+**Cov(E, M):** one route E ← Motivation → M. Multiply λ₁·λ₃, then × Var(Mot).
+
+## Practice Trace 5 — Cov(StudyHmW, MissSc)
+
+:::: {.columns}
+::: {.column width="56%"}
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3.4
+pm_diagram(5)
+```
+:::
+::: {.column width="44%"}
+```{r}
+#| echo: false
+#| fig-width: 4.4
+#| fig-height: 4.4
+pm_covmat(5)
+```
+:::
+::::
+
+**Cov(H, M):** one route H ← Motivation → M. Multiply λ₂·λ₃, then × Var(Mot).
+
+## Practice Trace 6 — Var(MissSc)
+
+:::: {.columns}
+::: {.column width="56%"}
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3.4
+pm_diagram(6)
+```
+:::
+::: {.column width="44%"}
+```{r}
+#| echo: false
+#| fig-width: 4.4
+#| fig-height: 4.4
+pm_covmat(6)
+```
+:::
+::::
+
+**Var(M):** up-and-back through Motivation → λ₃²·Var(Mot); plus its own residual → Var(ε₃). Sum.
+
+:::::
+
+## Practice: system of equations
+
+Write the system of equations for the Motivation model.
+
+$$
+\begin{aligned}
+\text{Effort1} &= \underline{\phantom{\lambda_1}} + \underline{\phantom{\lambda_1}}\,\underline{\phantom{\text{Motivation}}} + \underline{\phantom{\lambda_1}} \\
+\text{StudyHmW} &= \underline{\phantom{\lambda_1}} + \underline{\phantom{\lambda_1}}\,\underline{\phantom{\text{Motivation}}} + \underline{\phantom{\lambda_1}} \\
+\text{MissSc} &= \underline{\phantom{\lambda_1}} + \underline{\phantom{\lambda_1}}\,\underline{\phantom{\text{Motivation}}} + \underline{\phantom{\lambda_1}}
+\end{aligned}
+$$
+
+::: {.content-visible when-profile="teacher"}
+## Practice: system of equations (answers)
+
+$$
+\begin{aligned}
+\text{Effort1} &= \tau_1 + \lambda_1\,\text{Motivation} + \varepsilon_1 \\
+\text{StudyHmW} &= \tau_2 + \lambda_2\,\text{Motivation} + \varepsilon_2 \\
+\text{MissSc} &= \tau_3 + \lambda_3\,\text{Motivation} + \varepsilon_3
+\end{aligned}
+$$
+:::
+
+# Implications
+
+## Residuals & Random Measurement Error 
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 7.5
+#| fig-height: 4.8
+library(ggplot2)
+
+oNG <- "#E07B1A"; BLU <- "#2C6FB5"; MAG <- "#C81E7A"; LIM <- "#6FA80F"; dk <- "#3A3A3A"
+ar <- grid::arrow(length = grid::unit(0.22, "cm"), type = "closed")
+
+circle <- function(x, y, r = 0.5) {
+  t <- seq(0, 2 * pi, length.out = 60)
+  data.frame(x = x + r * cos(t), y = y + r * sin(t))
+}
+box <- function(x, y, label) list(
+  annotate("rect", xmin = x - 1.15, xmax = x + 1.15, ymin = y - 0.55, ymax = y + 0.55, fill = dk),
+  annotate("text", x = x, y = y, label = label, colour = "white", size = 5, lineheight = 0.9)
+)
+
+r_ses <- 1.1
+bx <- 6
+ys <- c(2.4, 0, -2.4)
+cols <- c(oNG, BLU, LIM)
+lam <- c("lambda[1]", "lambda[2]", "lambda[3]")
+eps <- c("epsilon[1]", "epsilon[2]", "epsilon[3]")
+th <- atan2(ys, bx - 1.15)
+x0 <- r_ses * cos(th)
+y0 <- r_ses * sin(th)
+x1 <- rep(bx - 1.15, 3)
+
+ggplot() +
+  geom_polygon(data = circle(0, 0, r_ses), aes(x, y), fill = dk) +
+  annotate("text", x = 0, y = 0, label = "SES", colour = "white", size = 6) +
+  # shared variance: loadings, one colour each
+  annotate("segment", x = x0, xend = x1, y = y0, yend = ys,
+           colour = cols, linewidth = 1.8, arrow = ar) +
+  annotate("text", x = 0.55 * x1 + 0.45 * x0, y = 0.55 * ys + 0.45 * y0 + 0.5,
+           label = lam, parse = TRUE, colour = cols, size = 6, fontface = "italic") +
+  # unique variance: residuals (magenta), drawn outside the loadings so nothing overlaps
+  annotate("segment", x = bx + 3.2, xend = bx + 1.15, y = ys, yend = ys,
+           colour = MAG, linewidth = 1.8, arrow = ar) +
+  annotate("text", x = bx + 3.8, y = ys, label = eps, parse = TRUE, colour = MAG, size = 5) +
+  annotate("text", x = 2.2, y = 4.1, label = "Shared variance",
+           colour = dk, size = 4.6, fontface = "bold") +
+  annotate("text", x = bx + 2.2, y = 4.1, label = "Unique variance (residuals)",
+           colour = MAG, size = 4.6, fontface = "bold") +
+  box(bx, ys[1], "Parent\neducation") +
+  box(bx, ys[2], "Books at\nhome") +
+  box(bx, ys[3], "Technology\nat home") +
+  coord_equal(clip = "off") +
+  expand_limits(x = c(-1.5, 11), y = c(-3.3, 4.6)) +
+  theme_void()
+```
+
+
+## Shared Variance & Residuals
+
+- Shared variance: predicted or caused by the latent variable
+- Residuals: 
+  - Random measurement error: specific to the indicator & not shared
+  - True variance caused by other things
+
+✅ Pros: Random measurement error is isolated in the indicator, not in the latent variable.
+
+🤔 Caution: Latent variables are still succeptible to error (ex: confounding factors, reporting error)
+
+
+::: {.content-visible when-profile="teacher"}
+
+only shared variance among the indicators is captured by the latent variable. Random measurement error is specific to its indicator (not across indicators nor factors) and so not captured in the shared variance. Therefore, the random measurement error is isolated in the measured variable residuals. Which is not to say that the latent variable is perfect. there can be other effects related to poor research design. Additionally, not all the residuals of the measured variables is necessarily random measurement error.
+::: 
+
+## Scale 
+
+- What is 100 SES? 
+- What is 50 Motivation?
+
+## Scale
+
+Latent variables have no natural scale, so we need to give them one. 
+
+- Option 1: set the latent variable's variance to 1
+  - each indicator is interpreted in terms of 1-SD change in the latent variable
+- Option 2: set the first loading to 1
+  - each indicator is interpreted in terms of the first variable
+
+## Degrees of Freedom
+
+## Information
+
+Remember from MVPA: 
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+p(p+1)/2 
+
+- Where p = the number of variables
+- Number of cells in one triangle of the var-cov matrix
+:::
+:::
+
+## Parameters (q) to be estimated {.smaller}
+
+| Path analysis (measured) | CFA | CFA Matrix | CFA n (guide)
+|---|---|---|---|
+| Path coefficients (→ between measured vars | Path Coefficients* (factor → indicator) | Λ lambda p x k | often p |
+| Variance/cov of exo var | **Factor variances/cov** | Ψ psi k x k | max of k(k+1)/2; k = n latent var |
+| Disturbance variances of endo var | **Residual variances** of indicators | Θ theta p x p | p + 1 for residual cov|
+
+*Traditionally called loadings but not in the sense of EFA/PCA or eigen decomposition. 
+
+## Parameters to be estimated
+
+q = sum of free parameters in Λ, Ψ, Θ
+
+- Don't count fixed paths/variances (i.e. when scaling)
+
+## Example
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 7.5
+#| fig-height: 3.8
+library(ggplot2)
+
+oNG <- "#E07B1A"; BLU <- "#2C6FB5"; MAG <- "#C81E7A"; LIM <- "#6FA80F"; dk <- "#3A3A3A"
+ar <- grid::arrow(length = grid::unit(0.22, "cm"), type = "closed")
+ar2 <- grid::arrow(length = grid::unit(0.18, "cm"), ends = "both", type = "closed")
+
+circle <- function(x, y, r = 0.5) {
+  t <- seq(0, 2 * pi, length.out = 60)
+  data.frame(x = x + r * cos(t), y = y + r * sin(t))
+}
+box <- function(x, y, label) list(
+  annotate("rect", xmin = x - 1.15, xmax = x + 1.15, ymin = y - 0.55, ymax = y + 0.55, fill = dk),
+  annotate("text", x = x, y = y, label = label, colour = "white", size = 5, lineheight = 0.9)
+)
+
+r_ses <- 1.1
+bx <- 6
+ys <- c(2.4, 0, -2.4)
+cols <- c(oNG, BLU, LIM)
+lam <- c("lambda[1]", "lambda[2]", "lambda[3]")
+eps <- c("epsilon[1]", "epsilon[2]", "epsilon[3]")
+th <- atan2(ys, bx - 1.15)
+x0 <- r_ses * cos(th)
+y0 <- r_ses * sin(th)
+x1 <- rep(bx - 1.15, 3)
+
+ggplot() +
+  geom_polygon(data = circle(0, 0, r_ses), aes(x, y), fill = dk) +
+  annotate("text", x = 0, y = 0, label = "SES", colour = "white", size = 6) +
+  # variance of the latent factor (self-loop)
+  annotate("curve", x = -0.5, y = 1.0, xend = 0.5, yend = 1.0,
+           colour = dk, linewidth = 0.9, curvature = -1.4, arrow = ar2, linetype = "dashed") +
+  annotate("text", x = 0, y = 2.25, label = "Var = 1", colour = dk, size = 4.6, fontface = "italic") +
+  # loadings, one colour each
+  annotate("segment", x = x0, xend = x1, y = y0, yend = ys,
+           colour = cols, linewidth = 1.8, arrow = ar) +
+  annotate("text", x = 0.55 * x1 + 0.45 * x0, y = 0.55 * ys + 0.45 * y0 + 0.5,
+           label = lam, parse = TRUE, colour = cols, size = 6, fontface = "italic") +
+  # unique variance: residuals (magenta), drawn outside the loadings so nothing overlaps
+  annotate("segment", x = bx + 3.2, xend = bx + 1.15, y = ys, yend = ys,
+           colour = MAG, linewidth = 1.8, arrow = ar) +
+  annotate("text", x = bx + 3.8, y = ys, label = eps, parse = TRUE, colour = MAG, size = 5) +
+  box(bx, ys[1], "Parent\neducation") +
+  box(bx, ys[2], "Books at\nhome") +
+  box(bx, ys[3], "Technology\nat home") +
+  coord_equal(clip = "off") +
+  expand_limits(x = c(-1.5, 11), y = c(-3.3, 3)) +
+  theme_void()
+```
+
+Information: 3(3+1) / 2 = 6 pieces of information
+
+Parameters to estimate = 3 + 3 = 6
+
+- path estimates: $\lambda_1, \lambda_2, \lambda_3$
+- Residual variances: $\theta_{11}, \theta_{22}, \theta_{33}$
+- Factor variance $\psi_{11}$ is fixed to 1 to scale the factor (not estimated)
+
+## Practice
+
+Calculate degrees of freedom for the SES model
+
+## CFA Example 2 latent variables
+
+```{r}
+#| echo: false
+#| fig-width: 10
+#| fig-height: 4.6
+#| fig-align: center
+library(ggplot2)
+
+oNG <- "#E07B1A"; BLU <- "#2C6FB5"; MAG <- "#C81E7A"; dk <- "#3A3A3A"
+ar <- grid::arrow(length = grid::unit(0.2, "cm"), type = "closed")
+ar2 <- grid::arrow(length = grid::unit(0.18, "cm"), ends = "both", type = "closed")
+
+ex_circle <- function(x, y, r) {
+  t <- seq(0, 2 * pi, length.out = 60)
+  data.frame(x = x + r * cos(t), y = y + r * sin(t))
+}
+
+ex_names <- c("PARENTED", "BOOKSHOME", "TECHHOME", "IMMIG", "WORKPAY", "WORKHOME",
+              "EFFORT1", "STUDYHMW", "MISSSC")
+ex_fac <- c(1, 1, 1, 1, 1, 1, 2, 2, 2)            # which factor each indicator loads on
+ex_x <- 1.8 * (seq_along(ex_names) - 1)           # indicator positions
+ex_fx <- c(mean(ex_x[1:6]), mean(ex_x[7:9]))      # factor positions
+ex_fy <- 4.2
+ex_r <- 1.0
+ex_col <- c(oNG, BLU)[ex_fac]
+
+# loadings: from the factor circle edge to the top of each indicator box
+ex_dx <- ex_x - ex_fx[ex_fac]
+ex_dy <- 0.55 - ex_fy
+ex_len <- sqrt(ex_dx^2 + ex_dy^2)
+ex_x0 <- ex_fx[ex_fac] + ex_r * ex_dx / ex_len
+ex_y0 <- ex_fy + ex_r * ex_dy / ex_len
+
+ggplot() +
+  # factors
+  geom_polygon(data = ex_circle(ex_fx[1], ex_fy, ex_r), aes(x, y), fill = dk) +
+  geom_polygon(data = ex_circle(ex_fx[2], ex_fy, ex_r), aes(x, y), fill = dk) +
+  annotate("text", x = ex_fx[1], y = ex_fy, label = "SES", colour = "white", size = 5) +
+  annotate("text", x = ex_fx[2], y = ex_fy, label = "Student\nmotivation", colour = "white",
+           size = 2.9, lineheight = 0.9) +
+  # factor variances (self-loops)
+  annotate("curve", x = ex_fx[1] - 0.45, y = ex_fy + 0.9, xend = ex_fx[1] + 0.45, yend = ex_fy + 0.9,
+           colour = dk, linewidth = 0.8, curvature = -1.4, arrow = ar2) +
+  annotate("curve", x = ex_fx[2] - 0.45, y = ex_fy + 0.9, xend = ex_fx[2] + 0.45, yend = ex_fy + 0.9,
+           colour = dk, linewidth = 0.8, curvature = -1.4, arrow = ar2) +
+  # factor covariance (curved double-headed arrow)
+  annotate("curve", x = ex_fx[1] + ex_r + 0.1, y = ex_fy, xend = ex_fx[2] - ex_r - 0.1, yend = ex_fy,
+           colour = dk, linewidth = 1, curvature = 0.25, arrow = ar2) +
+  annotate("text", x = mean(ex_fx), y = ex_fy - 1.7, label = "Cov", colour = dk,
+           size = 4.2, fontface = "italic") +
+  # loadings
+  annotate("segment", x = ex_x0, xend = ex_x, y = ex_y0, yend = 0.55,
+           colour = ex_col, linewidth = 1, arrow = ar) +
+  annotate("text", x = 0.45 * ex_x0 + 0.55 * ex_x + 0.35, y = 0.45 * ex_y0 + 0.55 * 0.55 + 0.1,
+           label = paste0("lambda[", 1:9, "]"), parse = TRUE, colour = ex_col, size = 3.6) +
+  # residuals
+  annotate("segment", x = ex_x, xend = ex_x, y = -1.9, yend = -0.55, colour = MAG, arrow = ar) +
+  annotate("text", x = ex_x, y = -2.3, label = paste0("epsilon[", 1:9, "]"), parse = TRUE,
+           colour = MAG, size = 3.8) +
+  # indicators
+  annotate("rect", xmin = ex_x - 0.8, xmax = ex_x + 0.8, ymin = -0.55, ymax = 0.55, fill = dk) +
+  annotate("text", x = ex_x, y = 0, label = ex_names, colour = "white", size = 2.9) +
+  coord_equal(clip = "off") +
+  expand_limits(x = c(-1, 15.4), y = c(-2.7, 6)) +
+  theme_void()
+```
+
+<!--
+SES > PARENTED, BOOKSHOME, TECHHOME, IMMIG, WORKPAY, WORKHOME
+STUDENT MOTIVATION: EFFORT1, STUDYHMW, MISSSC,
+-->
+
+## Answers
+
+Information: 9(9+1) / 2 = 45 pieces of information
+
+Parameters to estimate (factor variances fixed to 1):
+
+- path estimates: $\lambda_1, \dots, \lambda_9$ = 9
+- Residual variances: $\theta_{11}, \dots, \theta_{99}$ = 9
+- Factor covariance (a correlation, since variances are 1): $\psi_{21}$ = 1
+- Total: 9 + 9 + 1 = 19
+
+Degrees of freedom: 45 - 19 = 26
+
+## CFA Example 3 latent variables
+
+```{r}
+#| echo: false
+#| fig-width: 11
+#| fig-height: 5
+#| fig-align: center
+library(ggplot2)
+
+oNG <- "#E07B1A"; BLU <- "#2C6FB5"; LIM <- "#6FA80F"; MAG <- "#C81E7A"; dk <- "#3A3A3A"
+ar <- grid::arrow(length = grid::unit(0.2, "cm"), type = "closed")
+ar2 <- grid::arrow(length = grid::unit(0.18, "cm"), ends = "both", type = "closed")
+
+ex3_circle <- function(x, y, r) {
+  t <- seq(0, 2 * pi, length.out = 60)
+  data.frame(x = x + r * cos(t), y = y + r * sin(t))
+}
+
+ex3_names <- c("PARENTED", "BOOKSHOME", "TECHHOME", "IMMIG", "WORKPAY", "WORKHOME",
+               "EFFORT1", "STUDYHMW", "MISSSC",
+               "READING_AVE", "MATH_AVE", "SCIENCE_AVE")
+ex3_fac <- c(rep(1, 6), rep(2, 3), rep(3, 3))      # which factor each indicator loads on
+ex3_x <- 1.8 * (seq_along(ex3_names) - 1)          # indicator positions
+ex3_fx <- c(mean(ex3_x[1:6]), mean(ex3_x[7:9]), mean(ex3_x[10:12]))
+ex3_fy <- 4.2
+ex3_r <- 1.0
+ex3_cols <- c(oNG, BLU, LIM)
+ex3_col <- ex3_cols[ex3_fac]
+ex3_fcol <- c(dk, dk, dk)
+
+# loadings: from the factor circle edge to the top of each indicator box
+ex3_dx <- ex3_x - ex3_fx[ex3_fac]
+ex3_dy <- 0.55 - ex3_fy
+ex3_len <- sqrt(ex3_dx^2 + ex3_dy^2)
+ex3_x0 <- ex3_fx[ex3_fac] + ex3_r * ex3_dx / ex3_len
+ex3_y0 <- ex3_fy + ex3_r * ex3_dy / ex3_len
+
+ggplot() +
+  # factors
+  geom_polygon(data = ex3_circle(ex3_fx[1], ex3_fy, ex3_r), aes(x, y), fill = dk) +
+  geom_polygon(data = ex3_circle(ex3_fx[2], ex3_fy, ex3_r), aes(x, y), fill = dk) +
+  geom_polygon(data = ex3_circle(ex3_fx[3], ex3_fy, ex3_r), aes(x, y), fill = dk) +
+  annotate("text", x = ex3_fx[1], y = ex3_fy, label = "SES", colour = "white", size = 5) +
+  annotate("text", x = ex3_fx[2], y = ex3_fy, label = "Student\nmotivation", colour = "white",
+           size = 2.9, lineheight = 0.9) +
+  annotate("text", x = ex3_fx[3], y = ex3_fy, label = "Student\noutcomes", colour = "white",
+           size = 2.9, lineheight = 0.9) +
+  # factor variances (self-loops)
+  annotate("curve", x = ex3_fx - 0.45, y = ex3_fy + 0.9, xend = ex3_fx + 0.45, yend = ex3_fy + 0.9,
+           colour = dk, linewidth = 0.8, curvature = -1.4, arrow = ar2) +
+  # factor covariances (curved double-headed arrows)
+  annotate("curve", x = ex3_fx[1] + ex3_r + 0.1, y = ex3_fy, xend = ex3_fx[2] - ex3_r - 0.1, yend = ex3_fy,
+           colour = dk, linewidth = 1, curvature = 0.25, arrow = ar2) +
+  annotate("curve", x = ex3_fx[2] + ex3_r + 0.1, y = ex3_fy, xend = ex3_fx[3] - ex3_r - 0.1, yend = ex3_fy,
+           colour = dk, linewidth = 1, curvature = 0.25, arrow = ar2) +
+  annotate("curve", x = ex3_fx[1] + 0.8, y = ex3_fy + 0.65, xend = ex3_fx[3] - 0.8, yend = ex3_fy + 0.65,
+           colour = dk, linewidth = 1, curvature = -0.3, arrow = ar2) +
+  annotate("text", x = c(mean(ex3_fx[1:2]), mean(ex3_fx[2:3])), y = c(ex3_fy - 1.25, ex3_fy - 0.95), label = "Cov",
+           colour = dk, size = 4.2, fontface = "italic") +
+  annotate("text", x = ex3_fx[2], y = ex3_fy + 2.85, label = "Cov", colour = dk,
+           size = 4.2, fontface = "italic") +
+  # loadings
+  annotate("segment", x = ex3_x0, xend = ex3_x, y = ex3_y0, yend = 0.55,
+           colour = ex3_col, linewidth = 1, arrow = ar) +
+  annotate("text", x = 0.45 * ex3_x0 + 0.55 * ex3_x + 0.35, y = 0.45 * ex3_y0 + 0.55 * 0.55 + 0.1,
+           label = paste0("lambda[", 1:12, "]"), parse = TRUE, colour = ex3_col, size = 3.4) +
+  # residuals
+  annotate("segment", x = ex3_x, xend = ex3_x, y = -1.9, yend = -0.55, colour = MAG, arrow = ar) +
+  annotate("text", x = ex3_x, y = -2.3, label = paste0("epsilon[", 1:12, "]"), parse = TRUE,
+           colour = MAG, size = 3.6) +
+  # indicators
+  annotate("rect", xmin = ex3_x - 0.85, xmax = ex3_x + 0.85, ymin = -0.55, ymax = 0.55, fill = dk) +
+  annotate("text", x = ex3_x, y = 0, label = ex3_names, colour = "white", size = 2.2) +
+  coord_equal(clip = "off") +
+  expand_limits(x = c(-1, 20.8), y = c(-2.7, 7.4)) +
+  theme_void()
+```
+
+<!--
+SES > PARENTED, BOOKSHOME, TECHHOME, IMMIG, WORKPAY, WORKHOME
+STUDENT MOTIVATION: EFFORT1, STUDYHMW, MISSSC,
+STUDENT OUTCOMES: READING_AVE, MATH_AVE, SCIENCE_AVE
+-->
+
+## Answers
+
+Information: 12(12+1) / 2 = 78 pieces of information
+
+Parameters to estimate (factor variances fixed to 1):
+
+- path estimates: $\lambda_1, \dots, \lambda_{12}$ = 12
+- Residual variances: $\theta_{11}, \dots, \theta_{12,12}$ = 12
+- Factor covariances (correlations): $\psi_{21}, \psi_{31}, \psi_{32}$ = 3
+- Total: 12 + 12 + 3 = 27
+
+Degrees of freedom: 78 - 27 = 51
+
+# Specifying CFA models in Lavaan
+
+## Lavaan model syntax MVPA {.smaller}
+
+| Symbol | Name | Meaning | Example |
+|:------:|:-----|:--------|:--------|
+| `~` | regression | outcome ~ predictors | `READ ~ BOOKSHOME` |
+| `:=` | define parameter | new parameter computed from labelled parameters (e.g., indirect effect) | `ind := a*b` |
+
+
+## Lavaan model syntax: symbols {.smaller}
+
+| Symbol | Name | Meaning | Example |
+|:------:|:-----|:--------|:--------|
+| `=~` | measured by | latent variable → indicators (path coefficients, $\lambda$) | `SES =~ PARENTED + BOOKSHOME` |
+| `~~` | covariance | variance, residual variance, or covariance | `SES ~~ MOTIV` |
+| `*` |  fix | fix a parameter value | `SES =~ 1*PARENTED`, `SES ~~ 1*SES` and `SES =~ NA*PARENTED`|
+| `+` | plus | separates indicators or predictors | `a + b + c` |
+| `#` | comment | ignored / doesn't run | `# SES factor`,  |
+
+: {tbl-colwidths="[10,15,40,35]"}
+
+## Lavaan model syntax: 1st path fixed to 1
+
+```r
+cfa_model <- '
+  # measurement model (first loading fixed to 1 to set the scale)
+  SES   =~ 1*PARENTED + BOOKSHOME + TECHHOME
+  MOTIV =~ 1*EFFORT1  + STUDYHMW  + MISSSC
+
+  # factor variances / covariance
+  SES   ~~ SES
+  MOTIV ~~ MOTIV
+  SES   ~~ MOTIV
+
+  # residual variances
+  PARENTED ~~ PARENTED
+  BOOKSHOME ~~ BOOKSHOME
+  TECHHOME ~~ TECHHOME
+  EFFORT1 ~~ EFFORT1
+  STUDYHMW ~~ STUDYHMW
+  MISSSC ~~ MISSSC
+'
+
+fit <- lavaan(cfa_model, data = dat)
+summary(fit, fit.measures = TRUE)
+```
+
+- Anything not specified is fixed to 0 (e.g., no `SES ~~ MOTIV` line means the factors are uncorrelated)
+
+## Lavaan model syntax: factor var fixed
+
+```r
+cfa_model2 <- '
+  # measurement model (all loadings free; NA* frees the first one)
+  SES   =~ NA*PARENTED + BOOKSHOME + TECHHOME
+  MOTIV =~ NA*EFFORT1  + STUDYHMW  + MISSSC
+
+  # factor variances fixed to 1 to set the scale
+  SES   ~~ 1*SES
+  MOTIV ~~ 1*MOTIV
+
+  # factor covariance (now a correlation)
+  SES   ~~ MOTIV
+
+  # residual variances
+  PARENTED ~~ PARENTED
+  BOOKSHOME ~~ BOOKSHOME
+  TECHHOME ~~ TECHHOME
+  EFFORT1 ~~ EFFORT1
+  STUDYHMW ~~ STUDYHMW
+  MISSSC ~~ MISSSC
+'
+
+fit2 <- lavaan(cfa_model2, data = dat)
+summary(fit2, fit.measures = TRUE)
+```
+
+- Scale is set by fixing the factor variance (`1*`), so every loading is free
+- `SES ~~ MOTIV` is now a correlation because both variances are 1
+- Same model fit and df as the marker-indicator version; only the scale of the estimates differs
+
+## Path diagram from the model syntax
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 9
+#| fig-height: 5
+library(lavaan)
+library(semPlot)
+
+dat <- read.csv("../data/w07_data_pisa22_USA_cln_cfa.csv")
+
+cfa_model <- '
+  SES   =~ 1*PARENTED + BOOKSHOME + TECHHOME
+  MOTIV =~ 1*EFFORT1  + STUDYHMW  + MISSSC
+  SES   ~~ SES
+  MOTIV ~~ MOTIV
+  SES   ~~ MOTIV
+  PARENTED ~~ PARENTED
+  BOOKSHOME ~~ BOOKSHOME
+  TECHHOME ~~ TECHHOME
+  EFFORT1 ~~ EFFORT1
+  STUDYHMW ~~ STUDYHMW
+  MISSSC ~~ MISSSC
+'
+
+# parse the model and data, but do not estimate
+fit0 <- lavaan(cfa_model, data = dat, do.fit = FALSE)
+
+semPaths(fit0, what = "path", whatLabels = "name", style = "lisrel",
+         layout = "tree", residuals = TRUE,
+         nCharNodes = 0, sizeMan = 12, sizeMan2 = 5)
+```
+
+# Rlab
+
+Go to the rlab for today. 
+
+# Up Next: 
+
+Reading on CFA Models 
