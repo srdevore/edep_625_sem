@@ -10,14 +10,12 @@ format: html
 - Connect the path diagram, the parameter matrices (Λ, Ψ, Θ), the model-implied covariance matrix, information, and degrees of freedom.
 - See how fixing a parameter to 0 changes every one of them.
 
-Open the playground below (or [on its own page](../widgets/cfa_matrix_playground.html)) and work through the steps in order.
+Open the [CFA matrix playground](../widgets/cfa_matrix_playground.html){target="_blank"} in a separate tab and work through the steps in order.
 Write your answers in this document or on paper, as your instructor directs.
-
-<iframe src="../widgets/cfa_playground.html" width="100%" height="900" style="border: 1px solid #ccc; border-radius: 6px;"></iframe>
 
 ::: {.callout-note appearance="simple"}
 **About the data.** The observed matrix is the correlation matrix of six PISA indicators from the data we used last week (N = 3,767).
-Indicators 1–3 are PARENTED, BOOKSHOME and TECHHOME (socioeconomic status). Indicators 4–6 are READING_AVE, MATH_AVE and SCIENCE_AVE (student outcomes).
+Indicators 1–3 are PARENTED, BOOKSHOME and TECHHOME, which measure SES. Indicators 4–6 are READING_AVE, MATH_AVE and SCIENCE_AVE, which measure Achievement.
 Everything is standardized, so every estimate you type is between −1 and 1. The two factor variances are fixed to 1 to set the scale.
 :::
 
@@ -43,7 +41,7 @@ Reset the playground (**Reset: all free**).
 
 Now set parameters to 0 by clicking paths in the diagram or the checkboxes in the matrices. After **each** step, record the free parameters and df.
 
-6. Fix the **cross-loadings** (indicators 1–3 on Latent 2, indicators 4–6 on Latent 1).
+6. Fix the **cross-loadings** (indicators 1–3 on Achievement, indicators 4–6 on SES).
 
    | | Free parameters | df |
    |---|---|---|
@@ -101,6 +99,11 @@ Hints:
 17. Starting again from the Part 2 model, free parameters until df = 0. List which ones you freed. Do you expect SRMR to be able to reach 0? Why?
 18. In your own words, explain why the information in the observed matrix limits how many parameters you can estimate.
 
+## Submit
+
+When you finish Part 4, put the playground in your final state (your best estimates) and click **Save as PDF**.
+Your browser's print dialog opens; choose *Save as PDF* as the destination. Submit that PDF in Lamaku with your written answers.
+
 ::: {.content-visible when-profile="teacher"}
 
 ## Answer key
@@ -119,7 +122,7 @@ Tip: opening the playground with `?preset=cfa` at the end of the URL starts it f
 
 ### Part 2
 
-6. Λ has six cells fixed to 0 (indicators 1–3 on Latent 2; indicators 4–6 on Latent 1). Free = 28, df = −7.
+6. Λ has six cells fixed to 0 (indicators 1–3 on Achievement; indicators 4–6 on SES). Free = 28, df = −7.
 7. Θ is now diagonal (15 off-diagonal cells fixed to 0). Free = 13 (6 loadings + 1 + 6 residual variances), df = 8.
 8. Examples: Cov(1, 2) shrinks to λ₁₁λ₂₁. Cov(1, 4) shrinks to λ₁₁ψ₂₁λ₄₂.
 9. By counting, df = 8 > 0, so the model has more information than parameters, which is a necessary condition. Counting alone is not sufficient, but each factor has three indicators with no cross-loadings and correlated residuals fixed to 0, so it is identified. Accept answers that name the counting rule and the three-indicators-per-factor structure.
@@ -131,7 +134,7 @@ Tip: opening the playground with `?preset=cfa` at the end of the URL starts it f
     - Cov(1, 2) = λ₁₁λ₂₁
     - Cov(1, 4) = λ₁₁ψ₂₁λ₄₂
     - Cov(4, 5) = λ₄₂λ₅₂
-11. Indicators 1 and 4 load on different factors, so the only route between them goes up Latent 1, across the factor covariance, and down Latent 2.
+11. Indicators 1 and 4 load on different factors, so the only route between them goes up SES, across the factor covariance, and down Achievement.
 12. Every between-factor cell (indicators 1–3 with indicators 4–6, nine cells) becomes 0. The model then implies no relationship between indicators that load on different factors.
 
 ### Part 4

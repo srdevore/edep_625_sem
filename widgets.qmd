@@ -3,12 +3,10 @@ title: "Widgets"
 listing:
   contents: widgets/*.qmd
   type: table
-  fields: [title, date, description]
-  field-display-names:
-    description: "Worksheet"
+  fields: [title, date]
   sort: "date desc"
   sort-ui: false
   filter-ui: false
 ---
 
-Interactive pages for exploring SEM concepts. Each one pairs with a worksheet.
+Interactive pages for exploring SEM concepts. Each widget includes its own worksheet.

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CFA matrix playground</title>
+<title>CFA matrix playground and worksheet</title>
 <style>
   :root {
     --free: #1f6fb5; --fixed: #b8b8b8; --ink: #2b2b2b; --bg: #fafafa;
@@ -71,14 +71,50 @@
   .srmr.good { color: var(--good); } .srmr.bad { color: var(--bad); }
   .note { font-size: .82rem; color: #555; }
   sub { font-size: .7em; }
+  table.ws td, table.ws th { vertical-align: middle; }
+  table.ws td { min-width: 90px; }
+  table.ws input[type=text] { width: 72px; text-align: center; font: inherit; padding: 2px 4px; border: 2px solid #999; border-radius: 4px; }
+  table.ws input.ok { border-color: var(--good); background: #e7f5ea; }
+  table.ws input.no { border-color: var(--bad); background: #fbe9e7; }
+  table.ws input.wide { width: 190px; text-align: left; }
+  table.ws td.orig { background: #f1f1f1; }
+  td.eqshow { font-size: .78rem; text-align: left; min-width: 230px; }
+  .teacherbanner { background: #fff3cd; border: 1px solid #e0c35a; border-radius: 6px; padding: 6px 12px; margin: 8px 0; font-weight: 600; }
+  .srmr.good::before { content: "\2713  "; } .srmr.bad::before { content: "\2717  "; }
+  #c-ws, #c-chal { break-before: page; } #c-chal { break-before: auto; }
+  textarea { border: 1px solid #999; border-radius: 4px; padding: 4px; }
+  .printonly { display: none; }
+  @page { size: letter landscape; margin: 0.4in; }
+  @media print {
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { background: #fff; padding: 0; font-size: 11px; }
+    .noprint, p.lead { display: none !important; }
+    .printonly { display: block; font-size: 12px; color: #444; margin-bottom: 6px; }
+    #readouts { position: static; border-bottom: 1px solid var(--line); margin: 0 0 8px; padding: 4px 0; }
+    .card { border: none; padding: 4px 0; margin-bottom: 8px; }
+    .card p.note { display: none; }
+    svg#diagram { max-width: 720px; }
+    .scroll { overflow: visible; }
+    tr { break-inside: avoid; }
+    .mats, .twocol { grid-template-columns: auto auto 1fr; gap: 10px; }
+    td.cell input[type=number] { border: none; background: transparent; width: 64px; appearance: textfield; -moz-appearance: textfield; }
+    td.cell { min-width: 70px; }
+    td.cell input[type=checkbox] { display: none; }
+    table.sigma td { min-width: 112px; font-size: 9px; padding: 2px 3px; }
+    table.sigma td .val { font-size: 11px; }
+    h2 { margin-bottom: 4px; }
+    .card#c-diagram { break-after: page; }
+    .card#c-fit { break-inside: avoid; }
+  }
 </style>
 </head>
 <body>
 
-<h1>CFA matrix playground</h1>
-<p class="lead">Two latent variables, six indicators. Every possible parameter starts out <b>free</b> (blue).
-Click a path in the diagram, or a checkbox in a matrix, to fix it to 0. Type your own estimates (standardized, between &minus;1 and 1)
-and watch the model-implied covariance matrix and the SRMR respond.</p>
+<h1>CFA matrix playground and worksheet</h1>
+
+<div id="printHeader" class="printonly"></div>
+<p class="lead">This model has two latent variables (SES and Achievement), six indicators. Every possible parameter starts out <b>free</b> (i.e. as a parameter to be estimated in blue).
+Complete the worksheet at the bottom of this page: <a href="#c-ws">Part 1</a> and <a href="#c-chal">Part 2 (challenge)</a>.</p>
 
 <div id="readouts">
   <div class="stat">Information, p(p+1)/2<b id="r-info">21</b></div>
@@ -87,12 +123,13 @@ and watch the model-implied covariance matrix and the SRMR respond.</p>
   <div class="stat">Degrees of freedom<b id="r-df">0</b></div>
   <div class="stat">SRMR<b id="r-srmr">&ndash;</b></div>
   <div class="spacer"></div>
-  <label class="chk"><input type="checkbox" id="showCov" checked> show residual covariances in diagram</label>
-  <button id="btn-reset">Reset: all free</button>
-  <button id="btn-clear">Clear estimates</button>
+  <label class="chk noprint"><input type="checkbox" id="showCov" checked> show residual covariances in diagram</label>
+  <button id="btn-reset" class="noprint">Reset: all free</button>
+  <button id="btn-clear" class="noprint">Clear estimates</button>
+  <button id="btn-pdf" class="noprint" title="Opens your browser's print dialog. Choose Save as PDF.">Save as PDF</button>
 </div>
 
-<div class="card">
+<div class="card" id="c-diagram">
   <h2>Path diagram</h2>
   <svg id="diagram" viewBox="0 0 960 600" role="img" aria-label="Two-factor CFA path diagram"></svg>
   <p class="note">Blue solid = free parameter. Gray dashed = fixed to 0. The two factor variances are fixed to 1 to set the scale. Click any path to switch it.</p>
@@ -123,7 +160,7 @@ and watch the model-implied covariance matrix and the SRMR respond.</p>
   <div class="scroll"><table class="m sigma" id="tbl-sigma"></table></div>
 </div>
 
-<div class="card">
+<div class="card" id="c-fit">
   <div class="twocol">
     <div>
       <h2>Observed correlation matrix</h2>
@@ -143,6 +180,33 @@ and watch the model-implied covariance matrix and the SRMR respond.</p>
   </div>
 </div>
 
+<div class="card" id="c-ws">
+  <h2>Part 1</h2>
+  <p>For each question, start from the <b>original</b> model (click <b>Reset: all free</b>), make the change in the playground above, and fill in that
+  question's column of the table. Each question starts over from the original model.</p>
+  <ol>
+    <li><b>Q1.</b> Remove all residual covariances, then fill out the Q1 column. </li>
+    <li><b>Q2.</b> RESET: All free. Update the model so that each indicator is predicted only by the latent variable that makes sense for it. Fill out column Q2</li>
+    <li><b>Q3.</b> RESET: All free. Remove all latent variable covariances, and fill out column Q3</li>
+    <li><b>Q4.</b> RESET: All free.: Make a theoretically well-justified model, and explain your choices in the box below the table. Fill out table Q4 (no answers)</li>
+  </ol>
+  <p class="note">For the last two rows, list every term that is <b>gone</b> compared with the original equation, written like &lambda;11&lambda;21 or &lambda;12^2
+  (you can type l11 l21, l12^2, psi21 and theta21; separate terms with commas). Type <b>none</b> if nothing is removed. Boxes turn green when correct and red when not.
+  Question 4 is not checked.</p>
+  <div class="scroll"><table class="m ws" id="tbl-ws"></table></div>
+  <p style="margin-top:10px"><b>Question 4: why does your model make theoretical sense?</b></p>
+  <textarea id="ws-q4" rows="4" style="width:100%;font:inherit"></textarea>
+</div>
+
+<div class="card" id="c-chal">
+  <h2>Part 2</h2>
+  <p>Using the model you developed in question 4, adjust the estimates for the free paramters. Get the model implied-covariance matrix as close to observed as possible. And get <b>SRMR &le; .08</b>. Note that this is standardized, so use numbers -1 to 1.</p>
+  <p id="chal-status" class="srmr bad"></p>
+  <p style="margin-bottom:4px"><b>Which parameters did you free or fix, and how did you choose your estimates?</b></p>
+  <textarea id="ws-chal" rows="4" style="width:100%;font:inherit"></textarea>
+</div>
+
+
 <script>
 (() => {
   // ---------- data ----------
@@ -156,6 +220,7 @@ and watch the model-implied covariance matrix and the SRMR respond.</p>
     [0.183, 0.424, -0.021, 0.917, 0.931, 1.000]
   ];
   const P = 6, K = 2, INFO = P * (P + 1) / 2;
+  const FAC = ["SES", "Achievement"];
 
   // ---------- parameters ----------
   // keys: lIJ (loading, indicator I on factor J), p21 (factor covariance), tIJ (residual (co)variance, I >= J)
@@ -194,7 +259,7 @@ and watch the model-implied covariance matrix and the SRMR respond.</p>
   // ---------- diagram ----------
   const svg = document.getElementById("diagram");
   const X = i => 100 + i * 152;            // indicator x (i = 0..5)
-  const FX = [252, 708], FY = 100, FR = 38; // factor centres
+  const FX = [252, 708], FY = 100, FR = 44; // factor centres
   const IY = 300, BW = 120, BH = 38;        // indicator box centre y, size
   const RY = 392, RR = 17;                  // residual node
   const pathEls = {};                       // key -> <g>
@@ -227,7 +292,7 @@ and watch the model-implied covariance matrix and the SRMR respond.</p>
       const lx = x0 + t * (x1 - x0), ly = y0 + t * (y1 - y0) - 4;
       const k = `l${i + 1}${j + 1}`;
       const g = mkPath(k, `M${x0},${y0} L${x1},${y1}`, lx, ly, "free load",
-        `Loading of indicator ${i + 1} on latent ${j + 1}`);
+        `Loading of indicator ${i + 1} on ${FAC[j]}`);
       // arrowhead
       const ang = Math.atan2(y1 - y0, x1 - x0), a = 8;
       const ah = s("path", { class: "line", d:
@@ -239,8 +304,8 @@ and watch the model-implied covariance matrix and the SRMR respond.</p>
 
   // factor covariance arc
   {
-    const d = `M${FX[0] + 30},${FY - 26} Q${(FX[0] + FX[1]) / 2},${FY - 120} ${FX[1] - 30},${FY - 26}`;
-    gDiagram.cov.appendChild(mkPath("p21", d, (FX[0] + FX[1]) / 2, FY - 62, "free", "Covariance (correlation) between the two latent variables"));
+    const d = `M${FX[0] + 30},${FY - 32} Q${(FX[0] + FX[1]) / 2},${FY - 126} ${FX[1] - 30},${FY - 32}`;
+    gDiagram.cov.appendChild(mkPath("p21", d, (FX[0] + FX[1]) / 2, FY - 65, "free", "Covariance (correlation) between SES and Achievement"));
   }
 
   // residual variances (nodes) and covariances (arcs)
@@ -268,8 +333,8 @@ and watch the model-implied covariance matrix and the SRMR respond.</p>
   // nodes
   for (let j = 0; j < K; j++) {
     gDiagram.nodes.appendChild(s("circle", { class: "node fac", cx: FX[j], cy: FY, r: FR }));
-    gDiagram.nodes.appendChild(s("text", { class: "nodeText fac", x: FX[j], y: FY - 4 }, `Latent ${j + 1}`));
-    gDiagram.nodes.appendChild(s("text", { class: "nodeText fac", x: FX[j], y: FY + 12, style: "font-size:10px;font-weight:400" }, "var = 1"));
+    gDiagram.nodes.appendChild(s("text", { class: "nodeText fac", x: FX[j], y: FY - 5, style: "font-size:12px" }, FAC[j]));
+    gDiagram.nodes.appendChild(s("text", { class: "nodeText fac", x: FX[j], y: FY + 13, style: "font-size:10px;font-weight:400" }, "var = 1"));
   }
   for (let i = 0; i < P; i++) {
     gDiagram.nodes.appendChild(s("rect", { class: "node", x: X(i) - BW / 2, y: IY - BH / 2, width: BW, height: BH, rx: 3 }));
@@ -303,7 +368,7 @@ and watch the model-implied covariance matrix and the SRMR respond.</p>
 
   {
     const t = document.getElementById("tbl-lambda");
-    const head = h("tr"); head.append(h("th"), h("th", {}, "Latent 1"), h("th", {}, "Latent 2")); t.append(head);
+    const head = h("tr"); head.append(h("th"), h("th", {}, FAC[0]), h("th", {}, FAC[1])); t.append(head);
     for (let i = 1; i <= P; i++) {
       const tr = h("tr");
       tr.append(h("th", { class: "rowh" }, `${i} ${NAMES[i - 1]}`));
@@ -313,10 +378,10 @@ and watch the model-implied covariance matrix and the SRMR respond.</p>
   }
   {
     const t = document.getElementById("tbl-psi");
-    const head = h("tr"); head.append(h("th"), h("th", {}, "Latent 1"), h("th", {}, "Latent 2")); t.append(head);
+    const head = h("tr"); head.append(h("th"), h("th", {}, FAC[0]), h("th", {}, FAC[1])); t.append(head);
     const r1 = h("tr"), r2 = h("tr");
-    r1.append(h("th", { class: "rowh" }, "Latent 1"), h("td", { class: "fixedval" }, "1<br>(fixed)"), h("td", { class: "fixedval", id: "psi12mirror" }, "&nbsp;"));
-    r2.append(h("th", { class: "rowh" }, "Latent 2"), mkCell("p21", -1, 1), h("td", { class: "fixedval" }, "1<br>(fixed)"));
+    r1.append(h("th", { class: "rowh" }, FAC[0]), h("td", { class: "fixedval" }, "1<br>(fixed)"), h("td", { class: "fixedval", id: "psi12mirror" }, "&nbsp;"));
+    r2.append(h("th", { class: "rowh" }, FAC[1]), mkCell("p21", -1, 1), h("td", { class: "fixedval" }, "1<br>(fixed)"));
     t.append(r1, r2);
   }
   {
@@ -371,12 +436,12 @@ and watch the model-implied covariance matrix and the SRMR respond.</p>
   }
 
   // implied cell: symbolic tracing equation and numeric value
-  const impliedCell = (i, j) => {
+  const impliedCell = (i, j, F = free) => {
     const terms = []; let value = 0;
     for (let k = 1; k <= K; k++) for (let l = 1; l <= K; l++) {
       const a = `l${i}${k}`, b = `l${j}${l}`;
-      if (!free[a] || !free[b]) continue;
-      if (k !== l && !free.p21) continue;
+      if (!F[a] || !F[b]) continue;
+      if (k !== l && !F.p21) continue;
       if (i === j && k > l) continue;                      // the two cross terms are equal; count once with a 2
       const coef = (i === j && k !== l) ? 2 : 1;
       let text = (coef === 2 ? "2" : "") + sym(a);
@@ -387,7 +452,7 @@ and watch the model-implied covariance matrix and the SRMR respond.</p>
       terms.push(text); value += v;
     }
     const tk = `t${i}${j}`;
-    if (free[tk]) { terms.push(sym(tk)); value += num(tk); }
+    if (F[tk]) { terms.push(sym(tk)); value += num(tk); }
     return { eq: terms.length ? terms.join(" + ") : "0", value };
   };
 
@@ -445,8 +510,75 @@ and watch the model-implied covariance matrix and the SRMR respond.</p>
     document.getElementById("r-srmr").textContent = srmr.toFixed(3);
     const line = document.getElementById("srmr-line");
     line.className = "srmr " + (srmr <= 0.08 ? "good" : "bad");
-    line.innerHTML = `SRMR = <b>${srmr.toFixed(3)}</b> ${srmr <= 0.08 ? "(good, &le; .08)" : "(not yet, &gt; .08)"}`;
+    line.innerHTML = `SRMR = <b>${srmr.toFixed(3)}</b> (Good Fit &le; .08)`;
+    updateChallenge(srmr);
   }
+
+  // ---------- worksheet ----------
+  const HASHES = {"1|df": 3365868922, "1|l0": 2746967278, "1|p0": 1320631922, "1|t0": 901937652, "1|vr": 1877799686, "1|cv": 736362766, "2|df": 2553967513, "2|l0": 1380255115, "2|p0": 2199166049, "2|t0": 3174119781, "2|vr": 3407005317, "2|cv": 3925198587, "3|df": 367949258, "3|l0": 2486855764, "3|p0": 2104667, "3|t0": 2401353580, "3|vr": 3341127860, "3|cv": 361216777};
+  const fnv = str => { let x = 0x811c9dc5; for (let i = 0; i < str.length; i++) { x ^= str.charCodeAt(i); x = Math.imul(x, 0x01000193) >>> 0; } return x >>> 0; };
+  const hashOf = (q, row, v) => fnv(`cfa8|${q}|${row}|${v}`);
+  const allFree = {}; keys.forEach(k => { allFree[k] = true; });
+  const origEq = (i, j) => impliedCell(i, j, allFree).eq;
+  // one term, typed by a student -> canonical "l11 p21 l12" (sorted tokens, coefficient ignored); null if unreadable
+  const canonTerm = raw => {
+    let t = raw.toLowerCase().replace(/[\s*·×]/g, "").replace(/lambda|λ/g, "l").replace(/psi|ψ/g, "p").replace(/theta|θ/g, "t").replace(/²/g, "^2");
+    t = t.replace(/^2(?=[lpt])/, "");
+    const sq = /\^2$/.test(t); t = t.replace(/\^2$/, "");
+    const toks = t.match(/[lpt]\d\d/g) || [];
+    if (!toks.length || toks.join("") !== t) return null;
+    if (sq) toks.push(...toks);
+    return toks.sort().join(" ");
+  };
+  const canonSet = raw => {
+    const txt = raw.trim().toLowerCase();
+    if (/^(none|nothing|0|-|—)$/.test(txt)) return "";
+    const parts = raw.split(/[,;\n+]/).map(x => x.trim()).filter(Boolean).map(canonTerm);
+    if (!parts.length || parts.includes(null)) return null;
+    return [...new Set(parts)].sort().join("|");
+  };
+  const WS_ROWS = [
+    { id: "df", label: "Degrees of freedom", orig: "&minus;13" },
+    { id: "l0", label: "Number of 0s in &Lambda;", orig: "0" },
+    { id: "p0", label: "Number of 0s in &Psi; (factor covariance)", orig: "0" },
+    { id: "t0", label: "Number of 0s in &Theta;", orig: "0" },
+    { id: "vr", label: "Terms removed from Var(PARENTED) compared with the original", eq: `Var(PARENTED) = ${origEq(1, 1)}`, paths: true },
+    { id: "cv", label: "Terms removed from Cov(PARENTED, BOOKSHOME) compared with the original", eq: `Cov(PARENTED, BOOKSHOME) = ${origEq(2, 1)}`, paths: true }
+  ];
+  {
+    const t = document.getElementById("tbl-ws");
+    const head = h("tr"); head.append(h("th"), h("th", {}, "Original"));
+    for (let q = 1; q <= 4; q++) head.append(h("th", {}, `Q${q}`));
+    t.append(head);
+    for (const r of WS_ROWS) {
+      const tr = h("tr");
+      tr.append(h("th", { class: "rowh" }, r.label));
+      tr.append(h("td", { class: "orig" + (r.eq ? " eqshow" : "") }, r.eq || r.orig));
+      for (let q = 1; q <= 4; q++) {
+        const inp = h("input", { type: "text", autocomplete: "off", spellcheck: "false", class: r.paths ? "wide" : "", "aria-label": `Q${q}: ${r.label}` });
+        if (q <= 3) {
+          const check = () => {
+            inp.classList.remove("ok", "no");
+            const txt = inp.value.trim().replace(/−/g, "-");
+            if (txt === "") return;
+            let v;
+            if (r.paths) v = canonSet(inp.value); else { const n = Number(txt); v = isNaN(n) ? null : String(n); }
+            if (v === null) { if (r.paths) inp.classList.add("no"); return; }
+            inp.classList.add(hashOf(q, r.id, v) === HASHES[`${q}|${r.id}`] ? "ok" : "no");
+          };
+          inp.addEventListener(r.paths ? "change" : "input", check);
+        }
+        const td = h("td"); td.append(inp); tr.append(td);
+      }
+      t.append(tr);
+    }
+  }
+  const chalStatus = document.getElementById("chal-status");
+  const updateChallenge = srmr => {
+    const ok = srmr <= 0.08;
+    chalStatus.className = "srmr " + (ok ? "good" : "bad");
+    chalStatus.innerHTML = ok ? `SRMR = <b>${srmr.toFixed(3)}</b>. Challenge met.` : `SRMR = <b>${srmr.toFixed(3)}</b>. Not yet at or below .08.`;
+  };
 
   // ---------- controls ----------
   document.getElementById("showCov").addEventListener("change", () => update());
@@ -455,6 +587,15 @@ and watch the model-implied covariance matrix and the SRMR respond.</p>
     keys.forEach(k => { delete val[k]; inputs[k].inp.value = free[k] ? "" : "0"; });
     update(true);
   });
+
+  // ---------- save as PDF (print dialog) ----------
+  const printHeader = document.getElementById("printHeader");
+  const stamp = () => {
+    if (document.activeElement) document.activeElement.blur();
+    printHeader.textContent = new Date().toLocaleString();
+  };
+  window.addEventListener("beforeprint", stamp);
+  document.getElementById("btn-pdf").addEventListener("click", () => { stamp(); window.print(); });
 
   // teacher shortcut: ?preset=cfa starts from the conventional two-factor CFA (cross-loadings and residual covariances fixed to 0)
   if (new URLSearchParams(location.search).get("preset") === "cfa") {
