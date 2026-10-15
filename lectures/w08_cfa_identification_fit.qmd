@@ -13,12 +13,11 @@ release: week 7
 
 # Agenda
 
-1. review
+1. Review "quiz"
 2. Global fit indices
 3. Identification & Model-implied covariance
 4. Modification Indices
-5. Rlab: model fit & interpretation
-6. qmd lab
+5. Rlab: Specifying your Mini-project model
 
 # Review
 
@@ -39,7 +38,7 @@ Rejecting the null means the model we specified is not well-aligned to observed 
 :::
 :::
 
-## Model Fit Indices Review
+## Model Fit Indices: Match
 
 ```{=html}
 <style>
@@ -66,14 +65,19 @@ Rejecting the null means the model we specified is not well-aligned to observed 
 
 ::: {.fit-table}
 
-| Index | Concept | Threshold |
-|------------|------------------------------------------------|----------------------------------------|
-| χ² | D. Is the model-implied covariance matrix different from the observed one? | 4. Non-significant p supports the hypothesis |
-| CFI | E. How much better the model is than a baseline model where nothing is related | 1. ≥ .95 good; ≥ .90 acceptable |
-| RMSEA | B. Error per degree of freedom, adjusting for model complexity | 3. ≤ .05 good; .05–.08 acceptable; ≥ .10 poor |
-| SRMR | A. Average size of the differences between observed and model-predicted correlations | 5. ≤ .08 good |
-| AIC | F. Fit penalized for complexity; fixed penalty per parameter | 2 or 6. Lower than a competing model (no absolute cutoff) |
-| BIC | C. Fit penalized for complexity; the penalty grows with sample size | 2 or 6. Lower than a competing model (no absolute cutoff) |
+```{=html}
+<table>
+<thead><tr><th>Index</th><th>Concept</th><th>Threshold</th></tr></thead>
+<tbody>
+<tr class="fragment"><td>χ²</td><td>D. Is the model-implied covariance matrix different from the observed one?</td><td>4. Non-significant p supports the hypothesis</td></tr>
+<tr class="fragment"><td>CFI</td><td>E. How much better the model is than a baseline model where nothing is related</td><td>1. ≥ .95 good; ≥ .90 acceptable</td></tr>
+<tr class="fragment"><td>RMSEA</td><td>B. Error per degree of freedom, adjusting for model complexity</td><td>3. ≤ .05 good; .05–.08 acceptable; ≥ .10 poor</td></tr>
+<tr class="fragment"><td>SRMR</td><td>A. Average size of the differences between observed and model-predicted correlations</td><td>5. ≤ .08 good</td></tr>
+<tr class="fragment"><td>AIC</td><td>F. Fit penalized for complexity; fixed penalty per parameter</td><td>2 or 6. Lower than a competing model (no absolute cutoff)</td></tr>
+<tr class="fragment"><td>BIC</td><td>C. Fit penalized for complexity; the penalty grows with sample size</td><td>2 or 6. Lower than a competing model (no absolute cutoff)</td></tr>
+</tbody>
+</table>
+```
 
 :::
 :::
@@ -298,8 +302,8 @@ knitr::kable(res_fmt, align = "r")
 ```
 
 - Almost every residual is near 0.
-- The x3–x4 residual (.047) stands out. That is the misfit we built into the data: a relationship between x3 and x4 that our model ignores.
-- SRMR summarizes these residuals in one number; the matrix shows **where** the model misses.
+- x3–x4 residual (.047) stands out.
+- The matrix shows **where** the model misses.I
 
 ## Pause & Recap
 

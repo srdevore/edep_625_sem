@@ -1,0 +1,83 @@
+---
+title: "W08 Lab: Specify your own CFA model (mini-project prep)"
+date: today
+description: '<a href="rlab-downloads/w08_rlab_own_model.qmd" download="w08_rlab_own_model.qmd">Download .qmd</a>'
+data: '<a href="rlab-downloads/w08_data_pisa22_USA_cln_cfa.csv" download="w08_data_pisa22_USA_cln_cfa.csv">w08_data_pisa22_USA_cln_cfa.csv</a>'
+format: html
+# The chunks below need your data and your model, so they do not run when you render yet.
+# Run them yourself with the green play button as you go. When everything works,
+# change `eval: false` to `eval: true` to include the results when you render.
+execute:
+  eval: false
+---
+
+## Purpose
+
+- Read your own data into R.
+- Write the `lavaan` syntax for a CFA model that follows from your theory, research question, and data.
+- Generate the path diagram to check that the model is the one you meant.
+- Count information, free parameters and degrees of freedom **before** fitting anything.
+
+
+## Setup
+
+```{r}
+#| message: false
+library(tidyverse)
+library(lavaan)
+library(semPlot)
+```
+
+## Step 1: Read in your data
+
+Put your data file in the same folder as this `.qmd`, then edit the file name. (`read_csv()` is for `.csv`; for Excel use `readxl::read_excel()`, for SPSS `haven::read_sav()`.)
+
+```{r}
+#| label: read-data
+dat <- read_csv("<your file here>",   # EDIT: your file name
+                show_col_types = FALSE)
+
+```
+
+
+1. Which of your variables will serve as **indicators**? Write their exact column names below. (Spelling and capitalization must match.)
+2. What latent variables are theoretically likely to predict each indicator
+
+
+
+## Step 2: Write your model
+
+Review the `lavaan` syntax from lecture 7. 
+
+```{r}
+#| label: model
+model <- '
+  # EDIT: your model. lavaan() only includes what you write, so write everything.
+
+'
+```
+
+
+## Step 3: Generate the path diagram
+
+
+```{r}
+#| label: diagram
+#| warning: false
+#| fig-width: 9
+#| fig-height: 5
+fit0 <- lavaan(model, data = dat, do.fit = FALSE)
+
+semPaths(fit0, what = "path", whatLabels = "name", style = "lisrel",
+         layout = "tree", rotation = 1, residuals = TRUE, intercepts = FALSE,
+         nCharNodes = 0, sizeMan = 9, sizeMan2 = 4, sizeLat = 9,
+         edge.label.cex = 0.9, edge.color = "black",
+         color = list(lat = "lightblue", man = "white"), mar = c(4, 4, 4, 4))
+```
+
+3. Does the diagram match the model you intended? Check each latent variable, each loading, and any covariances.
+
+4. How is the model identification? 
+
+
+
