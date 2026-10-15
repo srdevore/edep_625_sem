@@ -113,8 +113,10 @@
 <h1>CFA matrix playground and worksheet</h1>
 
 <div id="printHeader" class="printonly"></div>
-<p class="lead">This model has two latent variables (SES and Achievement), six indicators. Every possible parameter starts out <b>free</b> (i.e. as a parameter to be estimated in blue).
-Complete the worksheet at the bottom of this page: <a href="#c-ws">Part 1</a> and <a href="#c-chal">Part 2 (challenge)</a>.</p>
+<p class="lead">Two latent variables (SES and Achievement), six indicators. Every possible parameter starts out <b>free</b> (blue).
+Click a path in the diagram, or a checkbox in a matrix, to fix it to 0. Type your own estimates (standardized, between &minus;1 and 1)
+and watch the model-implied covariance matrix and the SRMR respond.
+The worksheet is at the bottom of this page: <a href="#c-ws">Part 1</a> and <a href="#c-chal">Part 2 (challenge)</a>.</p>
 
 <div id="readouts">
   <div class="stat">Information, p(p+1)/2<b id="r-info">21</b></div>
@@ -181,26 +183,26 @@ Complete the worksheet at the bottom of this page: <a href="#c-ws">Part 1</a> an
 </div>
 
 <div class="card" id="c-ws">
-  <h2>Part 1</h2>
+  <h2>Worksheet, Part 1</h2>
   <p>For each question, start from the <b>original</b> model (click <b>Reset: all free</b>), make the change in the playground above, and fill in that
   question's column of the table. Each question starts over from the original model.</p>
   <ol>
-    <li><b>Q1.</b> Remove all residual covariances, then fill out the Q1 column. </li>
-    <li><b>Q2.</b> RESET: All free. Update the model so that each indicator is predicted only by the latent variable that makes sense for it. Fill out column Q2</li>
-    <li><b>Q3.</b> RESET: All free. Remove all latent variable covariances, and fill out column Q3</li>
-    <li><b>Q4.</b> RESET: All free.: Make a theoretically well-justified model, and explain your choices in the box below the table. Fill out table Q4 (no answers)</li>
+    <li><b>Q1.</b> Remove all residual covariances.</li>
+    <li><b>Q2.</b> Update the model so that each indicator is predicted only by the latent variable that makes sense for it.</li>
+    <li><b>Q3.</b> Remove all latent variable covariances.</li>
+    <li><b>Q4.</b> Explain the relationship between specification, path diagram, information, parameters (&lambda;, &psi;, &theta; matrices), degrees of freedom, model-implied covariance, observed covariance, and model fit. Write your answer in the box below the table.</li>
   </ol>
   <p class="note">For the last two rows, list every term that is <b>gone</b> compared with the original equation, written like &lambda;11&lambda;21 or &lambda;12^2
   (you can type l11 l21, l12^2, psi21 and theta21; separate terms with commas). Type <b>none</b> if nothing is removed. Boxes turn green when correct and red when not.
-  Question 4 is not checked.</p>
+  The table covers Q1&ndash;Q3; Q4 is a written answer and is not checked.</p>
   <div class="scroll"><table class="m ws" id="tbl-ws"></table></div>
-  <p style="margin-top:10px"><b>Question 4: why does your model make theoretical sense?</b></p>
-  <textarea id="ws-q4" rows="4" style="width:100%;font:inherit"></textarea>
+  <p style="margin-top:10px"><b>Question 4:</b> Explain the relationship between specification, path diagram, information, parameters (&lambda;, &psi;, &theta; matrices), degrees of freedom, model-implied covariance, observed covariance, and model fit.</p>
+  <textarea id="ws-q4" rows="10" style="width:100%;font:inherit"></textarea>
 </div>
 
 <div class="card" id="c-chal">
-  <h2>Part 2</h2>
-  <p>Using the model you developed in question 4, adjust the estimates for the free paramters. Get the model implied-covariance matrix as close to observed as possible. And get <b>SRMR &le; .08</b>. Note that this is standardized, so use numbers -1 to 1.</p>
+  <h2>Worksheet, Part 2: challenge</h2>
+  <p>Choose which parameters are free, then type your own estimates so that <b>SRMR &le; .08</b>. You decide the model and the numbers; nothing is estimated for you.</p>
   <p id="chal-status" class="srmr bad"></p>
   <p style="margin-bottom:4px"><b>Which parameters did you free or fix, and how did you choose your estimates?</b></p>
   <textarea id="ws-chal" rows="4" style="width:100%;font:inherit"></textarea>
@@ -548,15 +550,15 @@ Complete the worksheet at the bottom of this page: <a href="#c-ws">Part 1</a> an
   {
     const t = document.getElementById("tbl-ws");
     const head = h("tr"); head.append(h("th"), h("th", {}, "Original"));
-    for (let q = 1; q <= 4; q++) head.append(h("th", {}, `Q${q}`));
+    for (let q = 1; q <= 3; q++) head.append(h("th", {}, `Q${q}`));
     t.append(head);
     for (const r of WS_ROWS) {
       const tr = h("tr");
       tr.append(h("th", { class: "rowh" }, r.label));
       tr.append(h("td", { class: "orig" + (r.eq ? " eqshow" : "") }, r.eq || r.orig));
-      for (let q = 1; q <= 4; q++) {
+      for (let q = 1; q <= 3; q++) {
         const inp = h("input", { type: "text", autocomplete: "off", spellcheck: "false", class: r.paths ? "wide" : "", "aria-label": `Q${q}: ${r.label}` });
-        if (q <= 3) {
+        {
           const check = () => {
             inp.classList.remove("ok", "no");
             const txt = inp.value.trim().replace(/−/g, "-");

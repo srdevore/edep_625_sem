@@ -96,7 +96,7 @@ def key_html():
 <div class="card" id="c-key">
   <h2>Teacher answer key</h2>
   <table class="m"><tr><th></th>{head}</tr>{body}</table>
-  <p class="note">Path answers are accepted in any order, with or without the coefficient 2, and typed as l11 l21, psi21, theta21 or with Greek letters. Q4 and the Part 2 challenge are not auto-checked.</p>
+  <p class="note">Path answers are accepted in any order, with or without the coefficient 2, and typed as l11 l21, psi21, theta21 or with Greek letters. Q4 (written explanation) and the Part 2 challenge are not auto-checked.</p>
   <p class="note"><b>Challenge reference.</b> Cross-loadings and residual covariances fixed to 0 (13 free, df = 8), ML estimates (listwise N = 3,767):
   &lambda;<sub>11</sub> .335, &lambda;<sub>21</sub> .824, &lambda;<sub>31</sub> .089, &lambda;<sub>42</sub> .935, &lambda;<sub>52</sub> .949, &lambda;<sub>62</sub> .980, &psi;<sub>21</sub> .536,
   &theta;<sub>11</sub> .887, &theta;<sub>22</sub> .321, &theta;<sub>33</sub> .992, &theta;<sub>44</sub> .126, &theta;<sub>55</sub> .099, &theta;<sub>66</sub> .039; SRMR &approx; .027.

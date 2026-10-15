@@ -8,6 +8,7 @@ format:
     slide-number: true
     embed-resources: true
     self-contained-math: true
+release: week 7
 ---
 
 # Agenda
@@ -28,7 +29,7 @@ Lamaku > quiz > w08
 ## Null hypothesis in SEM 🤸
 
 ::: {.content-visible when-profile="teacher"}
-::: {.notes}
+::: {.fragment}
 
 H0: The model-implied covariance matrix equals the observed covariance matrix
 
@@ -40,41 +41,22 @@ Rejecting the null means the model we specified is not well-aligned to observed 
 
 ## Model Fit Indices Review
 
+```{=html}
+<style>
+.fit-table td:nth-child(n+2) { font-size: 0.6em; }
+</style>
+```
 
-::: {.columns}
+::: {.fit-table}
 
-::: {.column width="12%"}
-**Index**
-
-- χ²
-- CFI
-- RMSEA
-- SRMR
-- AIC
-- BIC
-:::
-
-::: {.column width="48%" .smaller}
-**Concept**
-
-- A. Ave size of the differences btw observed and model-predicted correlations
-- B. Error per df, adjusting for model complexity
-- C. Fit penalized for complexity; penalty grows with sample size
-- D. Is the model-implied covariance matrix different from observed?
-- E. How much better the model is than a baseline model where nothing is related
-- F. Fit penalized for complexity; fixed penalty per parameter
-:::
-
-::: {.column width="40%" .smaller}
-**Thresholds**
-
-1. ≥ .95 good; ≥ .90 acceptable
-2. < competing model
-3. ≤ .05 good; .05–.08 acceptable; ≥ .10 poor
-4. Non-significant p supports hypothesis
-5. ≤ .08 good
-6. < competing model
-:::
+| Index | Concept | Threshold |
+|------------|------------------------------------------------|----------------------------------------|
+| χ² | A. Ave size of the differences btw observed and model-predicted correlations | 1. ≥ .95 good; ≥ .90 acceptable |
+| CFI | B. Error per df, adjusting for model complexity | 2. < competing model |
+| RMSEA | C. Fit penalized for complexity; penalty grows with sample size | 3. ≤ .05 good; .05–.08 acceptable; ≥ .10 poor |
+| SRMR | D. Is the model-implied covariance matrix different from observed? | 4. Non-significant p supports hypothesis |
+| AIC | E. How much better the model is than a baseline model where nothing is related | 5. ≤ .08 good |
+| BIC | F. Fit penalized for complexity; fixed penalty per parameter | 6. < competing model |
 
 :::
 
@@ -82,13 +64,7 @@ Rejecting the null means the model we specified is not well-aligned to observed 
 
 ## Activity: Answer key
 
-```{=html}
-<style>
-.answer-key td:nth-child(n+2) { font-size: 0.7em; }
-</style>
-```
-
-::: {.answer-key}
+::: {.fit-table}
 
 | Index | Concept | Threshold |
 |------------|------------------------------------------------|----------------------------------------|
@@ -105,7 +81,7 @@ Rejecting the null means the model we specified is not well-aligned to observed 
 
 # Global Fit: Why we need many 
 
-We'll compare some different scenarios to dig into what each tells us.
+We'll compare some different scenarios to dig into what each model fit index tells us.
 
 ## Chi2: Same matrix, different N
 
@@ -158,12 +134,12 @@ knitr::kable(tab, row.names = FALSE, align = "lrr")
 ```
 
 
-## X2: Takeaway
+## χ²: Takeaway
 
 - Same relationships among the variables (same var/cov matrix), same model.
   - actual fit doesn't change. Only N
 - χ² flipped from "supported" to "not supported"
-- χ² is very sensitive to N, so can't tell us whether the model is a good one. 
+- χ² is sensitive to N, so can't difinitively tell us whether the model is a good one. 
 
 ## CFI: Grading on a curve
 
@@ -197,11 +173,11 @@ knitr::kable(cfi_tab, row.names = FALSE, align = "lrr")
 
 ## CFI Shortcomings
 
-What if the baseline changes? 
+- What if the baseline changes? 
+- How can the baseline change? 
+  - Variables are more strongly correlated.
 
 ## CFI Shortcomings 2
-
-How can the baseline change? Variables are more strongly correlated.
 
 ```{r}
 #| label: cmp-setup
@@ -237,8 +213,8 @@ cfi_cmp <- data.frame(
 knitr::kable(cfi_cmp, row.names = FALSE, align = "lrr")
 ```
 
-- If we only look at CFI, it looks like the model performs well on both original and strong correlations. 
-- Reality: there's just a ton more misfit in the strong model. 
+- CFI suggests that model performs well on both. 
+- Reality: there's a lot more misfit in the strong model 
 
 ## CFI Takeaway
 
@@ -247,8 +223,6 @@ knitr::kable(cfi_cmp, row.names = FALSE, align = "lrr")
 - Large baseline misfit means even a very mediocre model can look good
 
 Is CFI merely an effect of a large baseline mismatch? 
-
-## RMSEA 
 
 ## RMSEA: Ave misfit / DF
 
@@ -269,25 +243,15 @@ knitr::kable(all_cmp, row.names = FALSE, align = "lrr")
 
 - RMSEA goes from good to acceptable, indicating worse fit
 
-::: {.content-visible when-profile="teacher"}
-::: {.notes}
-Next up: SRMR, the average residual in correlation units. It is about .012 vs. .011 here, since the leftover misfit (the x3-x4 residual) is the same in both matrices.
-:::
-:::
 
 ## RMSEA 
 
 RMSEA (Root Mean Square Error of Approximation)
 
-- Does **not** use a baseline model, so it can't be propped up by a large baseline misfit.
-- Based on the model's own misfit per degree of freedom: how far off is the model, adjusting for how simple or complex it is.
-- Divides by N, which removes the sample-size inflation we saw with χ².
-
-$$RMSEA = \sqrt{\frac{\max(\chi^2_M - df_M,\ 0)}{df_M\,(N - 1)}}$$
-
-- Lower is better: ≤ .05 good; .05–.08 acceptable; ≥ .10 poor
-
-## SRMR
+- Does not use a baseline model.
+- Based on the model's own misfit per DF: 
+  - how far off is the model, adjusting for how simple or complex it is.
+- less sensitive to sample size
 
 ## SRMR: a residual you can read
 
@@ -295,20 +259,10 @@ SRMR (Standardized Root Mean Square Residual)
 
 - The typical size of the differences between observed and model-implied **correlations**.
 - In correlation units: SRMR = .05 means "our model's correlations are off by about .05, typically."
-- Compare RMSEA, which is χ²-based and has no direct units.
-- Lower is better; ≤ .08 indicates good fit.
-
-Caveats:
-
 - No penalty for model complexity.
 - Like RMSEA, can be shaky with small N or low loadings.
-- A typical size can hide one large residual.
+- Average residual size can hide one large one.
 
-::: {.content-visible when-profile="teacher"}
-::: {.notes}
-SRMR is a root-mean-square, so "typical size" is a safer phrase than "average". The loading-size caveat is general and literature-based; our demo does not show SRMR moving with loadings (.012 vs. .011), unlike RMSEA (.019 vs. .061).
-:::
-:::
 
 ## Original vs. strong: RMSEA and SRMR
 
@@ -327,13 +281,10 @@ srmr_cmp <- data.frame(
 knitr::kable(srmr_cmp, row.names = FALSE, align = "lrrl")
 ```
 
-- SRMR is easy to say out loud: the model-implied correlations are off by about .01 in **both** cases, well under the .08 cutoff.
-- RMSEA flags the strong matrix as worse, but the number itself is harder to interpret.
-- Both are useful: RMSEA is a χ²-based absolute check, SRMR tells us how big the differences actually are.
+- SRMR is easy to interpret: the model-implied correlations are off by about .01.
+- RMSEA flags the strong matrix as worse.
 
-## SRMR: where is the misfit?
-
-Residual correlations (observed − model-implied) for the original data:
+## SRMR: Residual Correlations
 
 ```{r}
 #| label: srmr-resid
@@ -352,8 +303,8 @@ knitr::kable(res_fmt, align = "r")
 
 ## Pause & Recap
 
-Conceptually what do X2, CFI, RMSEA, and SRMR tell us about a model's fit. 
-What are the shortcomings of each (why do we need so many)? 
+- Conceptually what do X2, CFI, RMSEA, and SRMR contribute to our understanding of a model's fit. 
+- What are the shortcomings of each (why do we need so many)? 
 
 ## Application
 
@@ -368,4 +319,83 @@ Today's reading had 3 models. Look at the model fit indices. As an author,
 How are the following related in CFA?
 
 Specification, path diagram, information, information, parameters (lambda, psi, theta matrices), degrees of freedom, model implied covariance, observed covariance, model fit
+
+# What if model fit is poor?
+
+- Before you run the model, define alternative models that are theory driven
+
+## Modification Indices
+
+- A data (not theory) driven approach
+- tells us how much freeing paramters in the model would decrease x2
+- Useful as a guide, but MUST be supported by theory
+
+## Modification indices example
+
+```{r}
+#| label: mi-model
+#| echo: false
+library(lavaan)
+library(semPlot)
+library(tidyverse)
+
+mi_dat <- read_csv("../rlabs/w08_data_pisa22_USA_cln_cfa.csv",
+                   show_col_types = FALSE) |>
+  select(PARENTED, BOOKSHOME, TECHHOME,
+         READING_AVE, MATH_AVE, SCIENCE_AVE) |>
+  drop_na() |>
+  mutate(across(everything(), \(x) as.numeric(scale(x))))
+
+mi_model <- '
+  ses =~ PARENTED + BOOKSHOME + TECHHOME
+  ach =~ READING_AVE + MATH_AVE + SCIENCE_AVE
+'
+mi_fit <- cfa(mi_model, data = mi_dat, std.lv = TRUE)
+```
+
+```{r}
+#| label: mi-diagram
+#| echo: false
+#| fig-width: 10
+#| fig-height: 5
+#| fig-align: center
+semPaths(cfa(mi_model, data = mi_dat, std.lv = TRUE, do.fit = FALSE),
+         what = "path", whatLabels = "name", style = "lisrel",
+         layout = "tree", rotation = 1, residuals = TRUE, intercepts = FALSE,
+         nCharNodes = 0, sizeMan = 11, sizeMan2 = 5, sizeLat = 10,
+         edge.label.cex = 1, edge.color = "black",
+         color = list(lat = "lightblue", man = "white"), mar = c(4, 4, 4, 4))
+```
+
+## Modification Indices Outputs
+
+```{r}
+#| label: mi-table
+#| echo: false
+mi_tab <- modindices(mi_fit, sort. = TRUE, maximum.number = 10) |>
+  select(lhs, op, rhs, mi, epc, sepc.all)
+knitr::kable(mi_tab, digits = 3, col.names = c("lhs", "op", "rhs", "MI", "EPC", "std EPC"))
+```
+
+```{=html}
+<style>
+#modification-indices-outputs table { font-size: 0.55em; }
+</style>
+```
+
+# Up Next: 
+
+- CFA Interpretation
+
+2 Weeks: 
+
+- CFA Methods Walkthrough: Caroline,	Deepinder,	Madi,	Juri,	Maria, 	Sydney
+
+Announcement: 
+
+Dec 3 and Dec 10 classes will be online (synchronous)
+
+- zoom link will be shared
+- Same time, live class
+
 
