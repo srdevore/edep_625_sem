@@ -1,0 +1,7 @@
+---
+title: "CFA matrix playground"
+date: 2026-10-14
+page-layout: full
+---
+
+<iframe src="cfa_playground.html" width="100%" height="1100" style="border: 1px solid #ccc; border-radius: 6px;"></iframe>

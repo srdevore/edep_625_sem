@@ -1,0 +1,266 @@
+---
+title: "W08 Lab: Writing up a CFA in a .qmd (renders to Word)"
+author: "Your name here"
+date: today
+description: '<a href="rlab-downloads/w08_rlab_qmd_template.qmd" download="w08_rlab_qmd_template.qmd">Download .qmd</a>'
+data: '<a href="rlab-downloads/w08_data_pisa22_USA_cln_cfa.csv" download="w08_data_pisa22_USA_cln_cfa.csv">w08_data_pisa22_USA_cln_cfa.csv</a>'
+format:
+  docx:
+    toc: true
+    fig-dpi: 300
+  html:
+    toc: true
+execute:
+  warning: false
+  message: false
+---
+
+::: {.callout-tip}
+## How to use this file
+
+This file is a **template** for the mini-project write-up, filled in with the same CFA you explored in the widget this week. Everything is already written out as an example, so you can render it right away:
+
+1. Put this file and `w08_data_pisa22_USA_cln_cfa.csv` in the **same folder** (an RStudio project is easiest).
+2. Click **Render** in RStudio. You will get a Word document (`.docx`) next to the `.qmd`.
+3. Read the two together. The boxes like this one explain what each piece of the `.qmd` does. **Delete them** from your own write-up.
+4. Replace the placeholder text ("my first point", "my second point") and the example model with your own.
+:::
+
+::: {.callout-tip}
+## What is a .qmd?
+
+A `.qmd` is a plain text file with three kinds of content:
+
+- **The header** between the two `---` lines at the very top (YAML). This sets the title, the date, and the output format. Here `format:` asks for Word (`docx`) and also an HTML page. The first one listed is what **Render** produces.
+- **Text** written in Markdown. A line starting with `#` is a heading (`##` is a sub-heading), and `*` or `-` makes a bullet. `**bold**` and `*italics*` work as you would expect.
+- **Code chunks** that run R and put the output in the document (see Section 5).
+:::
+
+## 1. Theoretical Background
+
+- My first point: socioeconomic status (SES) shows up in several observable family resources.
+- My second point: achievement across school subjects tends to move together.
+- My third point: SES and achievement are expected to be positively related.
+
+## 2. Research Question
+
+My one research question goes here: are SES and achievement distinct but related latent variables?
+
+## 3. Data
+
+- The data are PISA 2022, U.S. students.
+- SES is measured by parental education (`PARENTED`), books at home (`BOOKSHOME`) and technology at home (`TECHHOME`).
+- Achievement is measured by reading, math and science scores (`READING_AVE`, `MATH_AVE`, `SCIENCE_AVE`).
+- I will fit a two-factor CFA to these six indicators.
+
+```{r}
+#| label: setup
+#| echo: false
+# Packages: these must be installed once (install.packages("lavaan"), etc.)
+library(tidyverse)
+library(lavaan)
+library(semPlot)
+library(knitr)
+
+# Read in the data (the .csv sits in the same folder as this .qmd)
+pisa <- read_csv("w08_data_pisa22_USA_cln_cfa.csv", show_col_types = FALSE)
+
+# Keep the six indicators, drop students with any missing value,
+# and standardize so every variable is on the same scale.
+dat <- pisa |>
+  select(PARENTED, BOOKSHOME, TECHHOME, READING_AVE, MATH_AVE, SCIENCE_AVE) |>
+  drop_na() |>
+  mutate(across(everything(), \(x) as.numeric(scale(x))))
+```
+
+::: {.callout-tip}
+## Putting R results inside a sentence
+
+The chunk above ran with `echo: false`, so it does its work without printing its code. That means you can quote its results inside your text. This sentence is written with inline code: after dropping missing values, the sample is **`{r} nrow(dat)`** students. In the `.qmd` the number is not typed in. It is written as `` `{r} nrow(dat)` ``, so it updates if the data change.
+:::
+
+## 4. Model Specification
+
+Diagrams & tables only, so no words.
+
+```{r}
+#| label: fig-model
+#| echo: false
+#| fig-cap: "Two-factor CFA: SES and Achievement"
+#| fig-width: 8
+#| fig-height: 4.5
+#| fig-align: center
+
+model <- '
+  ses =~ PARENTED + BOOKSHOME + TECHHOME
+  ach =~ READING_AVE + MATH_AVE + SCIENCE_AVE
+'
+fit <- cfa(model, data = dat, std.lv = TRUE)
+
+semPaths(fit, what = "path", whatLabels = "name", style = "lisrel",
+         layout = "tree", rotation = 2, residuals = TRUE, intercepts = FALSE,
+         nCharNodes = 0, sizeMan = 9, sizeMan2 = 4, sizeLat = 9,
+         edge.label.cex = 0.9, edge.color = "black",
+         color = list(lat = "lightblue", man = "white"), mar = c(4, 6, 4, 6))
+```
+
+The system of equations, for indicator $i$ on latent variable $j$:
+
+$$x_i = \lambda_{ij}\,\eta_j + \varepsilon_i$$
+
+The model-implied covariance matrix, with two examples of the tracing rules:
+
+$$\Sigma = \Lambda \Psi \Lambda' + \Theta$$
+
+$$\begin{aligned}
+\mathrm{Cov}(\text{PARENTED}, \text{BOOKSHOME}) &= \lambda_{11}\lambda_{21} \\
+\mathrm{Cov}(\text{PARENTED}, \text{READING\_AVE}) &= \lambda_{11}\,\psi_{21}\,\lambda_{42}
+\end{aligned}$$
+
+::: {.callout-tip}
+## Math, figures and cross-references
+
+- Put math between `$ ... $` (inside a sentence) or `$$ ... $$` (on its own line). Word turns it into real equations.
+- A chunk that makes a plot becomes a figure. `fig-cap` is the caption, and `fig-width` / `fig-height` (in inches) set its size. Give the chunk a `label` starting with `fig-` and you can refer to it in text as `@fig-model`, which prints "@fig-model" as a numbered link. The same works for tables with a `tbl-` label and `tbl-cap`.
+- Chunk options go on lines starting with `#|` at the top of the chunk. `echo: false` hides the code, `eval: false` shows the code without running it, and `include: false` runs it but shows nothing.
+:::
+
+## 5. Full R code & Outputs
+
+Everything in this section shows its code (`echo: true`). This is where you explain, in plain words, what each step does.
+
+### Reading in the data
+
+The data were read in during the setup chunk. The line that does it is:
+
+```{r}
+#| eval: false
+pisa <- read_csv("w08_data_pisa22_USA_cln_cfa.csv", show_col_types = FALSE)
+```
+
+::: {.callout-tip}
+## Working with data without rendering
+
+**Rendering reruns the whole file from the top**, which is slow while you are still figuring things out. Instead:
+
+- Run a chunk with the green **play button** (or put the cursor in it and press **Ctrl/Cmd + Enter** for a line, **Ctrl/Cmd + Shift + Enter** for the whole chunk). The results appear in the Console and your Environment, and nothing is rendered.
+- Run the `setup` chunk first. After that `pisa` and `dat` exist, and you can explore them in any other chunk.
+- The chunk above has `eval: false`, so you can see the code in the Word document, but rendering does not run it a second time.
+- If R says it cannot find the file, the file is not in your working directory. Check with `getwd()`, or use **Session > Set Working Directory > To Source File Location**.
+:::
+
+### Looking at the data
+
+```{r}
+#| label: tbl-desc
+#| tbl-cap: "Descriptive statistics for the standardized indicators"
+desc <- dat |>
+  pivot_longer(everything(), names_to = "Indicator") |>
+  summarise(Mean = mean(value), SD = sd(value), Min = min(value), Max = max(value),
+            .by = Indicator)
+kable(desc, digits = 2)
+```
+
+```{r}
+#| label: tbl-cor
+#| tbl-cap: "Correlations among the six indicators"
+kable(cor(dat), digits = 2)
+```
+
+### Fitting the model
+
+```{r}
+fit <- cfa(model, data = dat, std.lv = TRUE)
+summary(fit, fit.measures = TRUE, standardized = TRUE)
+```
+
+::: {.callout-tip}
+## Tables
+
+`kable()` (from the `knitr` package) turns a data frame into a table that Word can edit. `digits = 2` rounds the numbers. In the chunk header, `tbl-cap` gives the table a caption. The printed `summary()` above is raw console output. It is good for Section 5, but Section 6 should use the cleaned-up tables below.
+:::
+
+## 6. Results
+
+Only the key outputs necessary to answer the RQ.
+
+- My first point about fit: the model fits well by the usual cutoffs (@tbl-fit).
+- My second point about the loadings: the indicators load differently on their factors (@tbl-load).
+- My third point about the relationship: the two latent variables are positively related (@fig-std).
+
+```{r}
+#| label: tbl-fit
+#| echo: false
+#| tbl-cap: "Model fit"
+fm <- fitMeasures(fit, c("chisq", "df", "pvalue", "cfi", "tli", "rmsea", "srmr"))
+fit_tab <- tibble(
+  Index = c("Chi-square", "df", "p", "CFI", "TLI", "RMSEA", "SRMR"),
+  Value = c(round(fm[1], 1), fm[2], round(fm[3], 3), round(fm[4:7], 3)),
+  `Rule of thumb` = c("p > .05 (but sensitive to N)", "", "", ">= .95", ">= .95", "<= .06", "<= .08")
+)
+kable(fit_tab)
+```
+
+```{r}
+#| label: tbl-load
+#| echo: false
+#| tbl-cap: "Standardized loadings"
+load_tab <- standardizedSolution(fit) |>
+  filter(op == "=~") |>
+  transmute(Factor = lhs, Indicator = rhs, Loading = est.std, SE = se, p = pvalue)
+kable(load_tab, digits = 3)
+```
+
+```{r}
+#| label: fig-std
+#| echo: false
+#| fig-cap: "Standardized estimates"
+#| fig-width: 8
+#| fig-height: 4.5
+#| fig-align: center
+semPaths(fit, what = "std", whatLabels = "std", style = "lisrel",
+         layout = "tree", rotation = 2, residuals = TRUE, intercepts = FALSE,
+         nCharNodes = 0, sizeMan = 9, sizeMan2 = 4, sizeLat = 9,
+         edge.label.cex = 1, edge.color = "black",
+         color = list(lat = "lightblue", man = "white"), mar = c(4, 6, 4, 6))
+```
+
+::: {.callout-tip}
+## Making diagrams look good
+
+`semPaths()` has many options, and these are the ones that matter most:
+
+- `what` and `whatLabels`: `"path"` / `"name"` shows parameter names (use this in Section 4); `"std"` / `"std"` shows standardized estimates (use this in Section 6).
+- `rotation = 2` puts the latent variables on the left and the indicators on the right. Leave it off to put them at the top and bottom.
+- `nCharNodes = 0` stops long variable names being cut short, and `sizeMan` / `sizeMan2` set the width and height of the boxes.
+- `residuals = TRUE` draws the error terms, and `intercepts = FALSE` hides the intercepts.
+- `mar` adds blank margin so labels are not clipped. If the figure looks squashed, change `fig-width` and `fig-height` in the chunk header instead of shrinking the nodes.
+:::
+
+## 7. Discussion
+
+- My first point: answer the research question in one sentence.
+- My second point: connect the loadings back to the theory.
+- My third point: connect the factor relationship back to the theory.
+
+## 8. Limitations
+
+- My first limitation: cross-sectional data.
+- My second limitation: only three indicators per factor.
+
+## 9. Uncertainties
+
+| Uncertainty | My decision | Why |
+|-------------|-------------|-----|
+| My first uncertainty | What I chose | My reason |
+| My second uncertainty | What I chose | My reason |
+
+::: {.callout-tip}
+## Lists and tables by hand
+
+Bullets start with `-`, numbered lists with `1.`. The table above is typed with `|` between columns and a row of dashes under the header. For anything computed from data, use a chunk and `kable()` instead.
+:::
+
+## 10. AI use
+
+- How I used AI, if I did, goes here.

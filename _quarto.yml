@@ -3,6 +3,9 @@ project:
   output-dir: _site
   pre-render: pre-render.R
   post-render: post-render.R
+  # Standalone interactive pages (not .qmd) that Quarto must copy to _site.
+  resources:
+    - "widgets/*.html"
   # Every course page is a .qmd. Listing them explicitly keeps maintainer
   # notes like commands.md off the student site -- Quarto auto-ignores
   # README.md and anything starting with "_", but not other .md files.
@@ -24,6 +27,8 @@ website:
         text: Lectures
       - href: labs.qmd
         text: R Labs
+      - href: widgets.qmd
+        text: Widgets
       - href: methods_walk_through.qmd
         text: Methods Walk Through
       - href: fin_proj.qmd
@@ -34,4 +39,6 @@ format:
   html:
     theme: darkly
     toc: true
-    code-tools: true
+    # View Source would embed the raw .qmd, including teacher-only answer blocks.
+    code-tools:
+      source: false

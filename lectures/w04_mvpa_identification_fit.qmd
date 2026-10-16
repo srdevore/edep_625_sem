@@ -11,9 +11,12 @@ format:
 
 ---
 
-# notes
 
 ::: {.content-visible when-profile="teacher"}
+
+# notes
+
+move recursive to earlier in semester
 
 :::
 

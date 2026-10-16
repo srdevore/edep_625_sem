@@ -183,3 +183,44 @@ When the page is ready, reverse it: delete its lines from `.gitignore` and
 rm -rf lectures/_freeze lectures/.quarto lectures/w05_mvpa_interpretation_files
 quarto render lectures/w05_mvpa_interpretation.qmd --profile teacher --cache-refresh
 
+
+## Fixing a push rejected for a file over 100 MB
+
+GitHub rejects any push containing a file over 100 MB
+(`GH001: Large files detected`), *even if the file was deleted in a later
+commit*, because it is still in the unpushed history. Example: 
+`data/pisa22_USA_GBR_KSV.csv` (104.7 MB).
+
+1. **Ignore it** -- make sure the path is in `.gitignore`.
+
+2. **Untrack it** (keeps your local copy on disk):
+
+    ```{bash}
+    git rm --cached data/pisa22_USA_GBR_KSV.csv
+    ```
+
+3. **Remove it from the unpushed commits.** Pick one:
+
+    Option A -- rewrite only the unpushed commits:
+
+    ```{bash}
+    git filter-branch --index-filter \
+      'git rm --cached --ignore-unmatch data/pisa22_USA_GBR_KSV.csv' \
+      origin/class_planning..HEAD
+    ```
+
+    Option B -- squash the unpushed commits into one (simpler):
+
+    ```{bash}
+    git reset --soft origin/class_planning
+    git rm --cached data/pisa22_USA_GBR_KSV.csv
+    git commit -m "w7 lecture, lab, and data updates"
+    ```
+
+4. **Push**, then open a PR from `class_planning` into `main`:
+
+    ```{bash}
+    git push
+    ```
+
+Check other data files are under 100 MB first: `ls -la data/`.

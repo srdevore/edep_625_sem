@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CFA matrix playground and worksheet</title>
+<style>
+  :root {
+    --free: #1f6fb5; --fixed: #b8b8b8; --ink: #2b2b2b; --bg: #fafafa;
+    --good: #1b7f3b; --bad: #b3261e; --card: #ffffff; --line: #dcdcdc;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink);
+         background: var(--bg); margin: 0; padding: 0 16px 48px; line-height: 1.4; }
+  h1 { font-size: 1.4rem; margin: 16px 0 4px; }
+  h2 { font-size: 1.05rem; margin: 0 0 8px; }
+  p.lead { margin: 0 0 12px; max-width: 62rem; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; }
+  .scroll { overflow-x: auto; }
+  #readouts { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: center;
+              background: #fff; border-bottom: 2px solid var(--line); padding: 8px 14px; margin: 0 -16px 14px; }
+  #readouts .stat { display: flex; flex-direction: column; font-size: .75rem; color: #555; }
+  #readouts .stat b { font-size: 1.25rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+  #readouts .spacer { flex: 1; }
+  button { font: inherit; padding: 4px 10px; border: 1px solid #999; background: #fff; border-radius: 5px; cursor: pointer; }
+  button:hover { background: #eef4fb; }
+  label.chk { font-size: .85rem; display: inline-flex; align-items: center; gap: 4px; }
+  /* diagram */
+  svg#diagram { width: 100%; max-width: 960px; height: auto; display: block; margin: 0 auto; }
+  .path { cursor: pointer; }
+  .path .line { fill: none; stroke-width: 2.2; }
+  .path.free .line { stroke: var(--free); }
+  .path.fixed .line { stroke: var(--fixed); stroke-dasharray: 5 4; stroke-width: 1.4; }
+  .path .hit { fill: none; stroke: transparent; stroke-width: 14; }
+  .path:hover .line { stroke-width: 3.6; }
+  .path text { font-size: 12px; paint-order: stroke; stroke: #fff; stroke-width: 3px; }
+  .path.free text { fill: var(--free); font-weight: 600; }
+  .path.fixed text { fill: #9a9a9a; }
+  .resid.cov.fixed .line { stroke-dasharray: 2 4; stroke: #d3d3d3; stroke-width: 1.2; }
+  .resid.cov.free .line { stroke-width: 1.4; opacity: .85; }
+  .resid.cov text { font-size: 9px; }
+  .node { fill: #fff; stroke: #555; stroke-width: 1.6; }
+  .node.fac { fill: #3a3a3a; stroke: #3a3a3a; }
+  .nodeText { font-size: 13px; text-anchor: middle; dominant-baseline: middle; fill: var(--ink); }
+  .nodeText.fac { fill: #fff; font-weight: 600; }
+  .small { font-size: 11px; fill: #666; text-anchor: middle; }
+  /* matrices */
+  .mats { display: grid; grid-template-columns: auto auto 1fr; gap: 16px; align-items: start; }
+  @media (max-width: 1100px) { .mats { grid-template-columns: 1fr; } }
+  table.m { border-collapse: collapse; font-size: .82rem; }
+  table.m th { font-weight: 600; color: #444; padding: 2px 6px; text-align: center; white-space: nowrap; }
+  table.m th.rowh { text-align: right; }
+  table.m td { border: 1px solid var(--line); padding: 3px 5px; text-align: center; vertical-align: middle; }
+  td.cell { min-width: 92px; }
+  td.cell.fixed { background: #f1f1f1; color: #999; }
+  td.cell.free { background: #eef5fc; }
+  td.cell .sym { display: block; font-size: .75rem; color: #555; }
+  td.cell input[type=number] { width: 66px; font: inherit; padding: 1px 3px; }
+  td.cell input[type=checkbox] { vertical-align: middle; }
+  td.blank { border: none; }
+  td.fixedval { background: #f1f1f1; color: #666; font-size: .78rem; }
+  /* implied matrix */
+  table.sigma td { min-width: 128px; font-size: .74rem; padding: 4px 5px; }
+  table.sigma td .eq { display: block; line-height: 1.5; }
+  table.sigma td .val { display: block; font-weight: 700; font-size: .92rem; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  table.sigma td.zero { background: #f1f1f1; color: #888; }
+  table.obs td, table.res td { min-width: 62px; font-variant-numeric: tabular-nums; }
+  .twocol { display: grid; grid-template-columns: auto auto 1fr; gap: 22px; align-items: start; }
+  @media (max-width: 1000px) { .twocol { grid-template-columns: 1fr; } }
+  .srmr { font-size: 1.1rem; }
+  .srmr.good { color: var(--good); } .srmr.bad { color: var(--bad); }
+  .note { font-size: .82rem; color: #555; }
+  sub { font-size: .7em; }
+  table.ws td, table.ws th { vertical-align: middle; }
+  table.ws td { min-width: 90px; }
+  table.ws input[type=text] { width: 72px; text-align: center; font: inherit; padding: 2px 4px; border: 2px solid #999; border-radius: 4px; }
+  table.ws input.ok { border-color: var(--good); background: #e7f5ea; }
+  table.ws input.no { border-color: var(--bad); background: #fbe9e7; }
+  table.ws input.wide { width: 190px; text-align: left; }
+  table.ws td.orig { background: #f1f1f1; }
+  td.eqshow { font-size: .78rem; text-align: left; min-width: 230px; }
+  .teacherbanner { background: #fff3cd; border: 1px solid #e0c35a; border-radius: 6px; padding: 6px 12px; margin: 8px 0; font-weight: 600; }
+  .srmr.good::before { content: "\2713  "; } .srmr.bad::before { content: "\2717  "; }
+  #c-ws, #c-chal { break-before: page; } #c-chal { break-before: auto; }
+  textarea { border: 1px solid #999; border-radius: 4px; padding: 4px; }
+  .printonly { display: none; }
+  @page { size: letter landscape; margin: 0.4in; }
+  @media print {
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { background: #fff; padding: 0; font-size: 11px; }
+    .noprint, p.lead { display: none !important; }
+    .printonly { display: block; font-size: 12px; color: #444; margin-bottom: 6px; }
+    #readouts { position: static; border-bottom: 1px solid var(--line); margin: 0 0 8px; padding: 4px 0; }
+    .card { border: none; padding: 4px 0; margin-bottom: 8px; }
+    .card p.note { display: none; }
+    svg#diagram { max-width: 720px; }
+    .scroll { overflow: visible; }
+    tr { break-inside: avoid; }
+    .mats, .twocol { grid-template-columns: auto auto 1fr; gap: 10px; }
+    td.cell input[type=number] { border: none; background: transparent; width: 64px; appearance: textfield; -moz-appearance: textfield; }
+    td.cell { min-width: 70px; }
+    td.cell input[type=checkbox] { display: none; }
+    table.sigma td { min-width: 112px; font-size: 9px; padding: 2px 3px; }
+    table.sigma td .val { font-size: 11px; }
+    h2 { margin-bottom: 4px; }
+    .card#c-diagram { break-after: page; }
+    .card#c-fit { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<h1>CFA matrix playground and worksheet</h1>
+/*TEACHERBANNER*/
+<div id="printHeader" class="printonly"></div>
+<p class="lead">Two latent variables (SES and Achievement), six indicators. Every possible parameter starts out <b>free</b> (blue).
+Click a path in the diagram, or a checkbox in a matrix, to fix it to 0. Type your own estimates (standardized, between &minus;1 and 1)
+and watch the model-implied covariance matrix and the SRMR respond.
+The worksheet is at the bottom of this page: <a href="#c-ws">Part 1</a> and <a href="#c-chal">Part 2 (challenge)</a>.</p>
+
+<div id="readouts">
+  <div class="stat">Information, p(p+1)/2<b id="r-info">21</b></div>
+  <div class="stat">Free parameters<b id="r-free">0</b></div>
+  <div class="stat">&nbsp;&nbsp;&Lambda; / &Psi; / &Theta;<b id="r-split" style="font-size:1rem">0 / 0 / 0</b></div>
+  <div class="stat">Degrees of freedom<b id="r-df">0</b></div>
+  <div class="stat">SRMR<b id="r-srmr">&ndash;</b></div>
+  <div class="spacer"></div>
+  <label class="chk noprint"><input type="checkbox" id="showCov" checked> show residual covariances in diagram</label>
+  <button id="btn-reset" class="noprint">Reset: all free</button>
+  <button id="btn-clear" class="noprint">Clear estimates</button>
+  <button id="btn-pdf" class="noprint" title="Opens your browser's print dialog. Choose Save as PDF.">Save as PDF</button>
+</div>
+
+<div class="card" id="c-diagram">
+  <h2>Path diagram</h2>
+  <svg id="diagram" viewBox="0 0 960 600" role="img" aria-label="Two-factor CFA path diagram"></svg>
+  <p class="note">Blue solid = free parameter. Gray dashed = fixed to 0. The two factor variances are fixed to 1 to set the scale. Click any path to switch it.</p>
+</div>
+
+<div class="card">
+  <h2>Parameter matrices</h2>
+  <div class="mats">
+    <div>
+      <b>&Lambda; (p &times; k = 6 &times; 2)</b>
+      <table class="m" id="tbl-lambda"></table>
+    </div>
+    <div>
+      <b>&Psi; (k &times; k = 2 &times; 2)</b>
+      <table class="m" id="tbl-psi"></table>
+    </div>
+    <div class="scroll">
+      <b>&Theta; (p &times; p = 6 &times; 6)</b>
+      <table class="m" id="tbl-theta"></table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Model-implied covariance matrix &Sigma; = &Lambda;&Psi;&Lambda;&prime; + &Theta;</h2>
+  <p class="note">Each cell shows its path-tracing equation, built from the parameters that are currently free, and the value from your estimates.
+  The factor variances equal 1, so they drop out of the equations. The matrix is symmetric, so only the lower triangle is shown.</p>
+  <div class="scroll"><table class="m sigma" id="tbl-sigma"></table></div>
+</div>
+
+<div class="card" id="c-fit">
+  <div class="twocol">
+    <div>
+      <h2>Observed correlation matrix</h2>
+      <table class="m obs" id="tbl-obs"></table>
+      <p class="note">N = 3,767 students (listwise). Standardized, so these are correlations.</p>
+    </div>
+    <div>
+      <h2>Residuals (observed &minus; implied)</h2>
+      <table class="m res" id="tbl-res"></table>
+    </div>
+    <div>
+      <h2>How close is it?</h2>
+      <p class="srmr" id="srmr-line">SRMR = &ndash;</p>
+      <p class="note">SRMR is the root mean square of the 21 residuals (diagonal included). Smaller is better; &le; .08 is good.
+      Until you enter estimates the implied matrix is all zeros, so the residuals are just the observed correlations.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card" id="c-ws">
+  <h2>Worksheet, Part 1</h2>
+  <p>For each question, start from the <b>original</b> model (click <b>Reset: all free</b>), make the change in the playground above, and fill in that
+  question's column of the table. Each question starts over from the original model.</p>
+  <ol>
+    <li><b>Q1.</b> Remove all residual covariances.</li>
+    <li><b>Q2.</b> Update the model so that each indicator is predicted only by the latent variable that makes sense for it.</li>
+    <li><b>Q3.</b> Remove all latent variable covariances.</li>
+    <li><b>Q4.</b> Explain the relationship between specification, path diagram, information, parameters (&lambda;, &psi;, &theta; matrices), degrees of freedom, model-implied covariance, observed covariance, and model fit. Write your answer in the box below the table.</li>
+  </ol>
+  <p class="note">For the last two rows, list every term that is <b>gone</b> compared with the original equation, written like &lambda;11&lambda;21 or &lambda;12^2
+  (you can type l11 l21, l12^2, psi21 and theta21; separate terms with commas). Type <b>none</b> if nothing is removed. Boxes turn green when correct and red when not.
+  The table covers Q1&ndash;Q3; Q4 is a written answer and is not checked.</p>
+  <div class="scroll"><table class="m ws" id="tbl-ws"></table></div>
+  <p style="margin-top:10px"><b>Question 4:</b> Explain the relationship between specification, path diagram, information, parameters (&lambda;, &psi;, &theta; matrices), degrees of freedom, model-implied covariance, observed covariance, and model fit.</p>
+  <textarea id="ws-q4" rows="10" style="width:100%;font:inherit"></textarea>
+</div>
+
+<div class="card" id="c-chal">
+  <h2>Worksheet, Part 2: challenge</h2>
+  <p>Choose which parameters are free, then type your own estimates so that <b>SRMR &le; .08</b>. You decide the model and the numbers; nothing is estimated for you.</p>
+  <p id="chal-status" class="srmr bad"></p>
+  <p style="margin-bottom:4px"><b>Which parameters did you free or fix, and how did you choose your estimates?</b></p>
+  <textarea id="ws-chal" rows="4" style="width:100%;font:inherit"></textarea>
+</div>
+/*TEACHERKEY*/
+
+<script>
+(() => {
+  // ---------- data ----------
+  const NAMES = ["PARENTED", "BOOKSHOME", "TECHHOME", "READING_AVE", "MATH_AVE", "SCIENCE_AVE"];
+  const R = [
+    [1.000, 0.272, 0.082, 0.163, 0.196, 0.183],
+    [0.272, 1.000, 0.084, 0.423, 0.438, 0.424],
+    [0.082, 0.084, 1.000, -0.017, -0.003, -0.021],
+    [0.163, 0.423, -0.017, 1.000, 0.886, 0.917],
+    [0.196, 0.438, -0.003, 0.886, 1.000, 0.931],
+    [0.183, 0.424, -0.021, 0.917, 0.931, 1.000]
+  ];
+  const P = 6, K = 2, INFO = P * (P + 1) / 2;
+  const FAC = ["SES", "Achievement"];
+
+  // ---------- parameters ----------
+  // keys: lIJ (loading, indicator I on factor J), p21 (factor covariance), tIJ (residual (co)variance, I >= J)
+  const keys = [];
+  const lamKeys = [], thKeys = [];
+  for (let i = 1; i <= P; i++) for (let j = 1; j <= K; j++) { lamKeys.push(`l${i}${j}`); }
+  for (let i = 1; i <= P; i++) for (let j = 1; j <= i; j++) { thKeys.push(`t${i}${j}`); }
+  keys.push(...lamKeys, "p21", ...thKeys);
+
+  const free = {}, val = {};
+  const setAllFree = () => keys.forEach(k => { free[k] = true; });
+  setAllFree();
+
+  const num = k => (free[k] ? (val[k] || 0) : 0);
+  const sym = k => {
+    const g = k[0] === "l" ? "&lambda;" : k[0] === "p" ? "&psi;" : "&theta;";
+    return `${g}<sub>${k.slice(1)}</sub>`;
+  };
+
+  // ---------- helpers ----------
+  const NS = "http://www.w3.org/2000/svg";
+  const h = (tag, attrs = {}, html = "") => {
+    const e = document.createElement(tag);
+    for (const [a, v] of Object.entries(attrs)) e.setAttribute(a, v);
+    e.innerHTML = html; return e;
+  };
+  const s = (tag, attrs = {}, text = null) => {
+    const e = document.createElementNS(NS, tag);
+    for (const [a, v] of Object.entries(attrs)) e.setAttribute(a, v);
+    if (text !== null) e.textContent = text;
+    return e;
+  };
+  const f2 = x => (Math.abs(x) < 0.0005 ? "0.000" : x.toFixed(3));
+  const sub = n => String(n);
+
+  // ---------- diagram ----------
+  const svg = document.getElementById("diagram");
+  const X = i => 100 + i * 152;            // indicator x (i = 0..5)
+  const FX = [252, 708], FY = 100, FR = 44; // factor centres
+  const IY = 300, BW = 120, BH = 38;        // indicator box centre y, size
+  const RY = 392, RR = 17;                  // residual node
+  const pathEls = {};                       // key -> <g>
+
+  const mkPath = (k, d, lx, ly, cls, tip, labelOverride) => {
+    const g = s("g", { class: `path ${cls}`, "data-k": k });
+    g.appendChild(s("title", {}, tip));
+    g.appendChild(s("path", { class: "hit", d }));
+    g.appendChild(s("path", { class: "line", d }));
+    const t = s("text", { x: lx, y: ly, "text-anchor": "middle" }, "");
+    g.appendChild(t);
+    g.addEventListener("click", () => toggle(k));
+    pathEls[k] = { g, t, lx, ly };
+    return g;
+  };
+
+  const gDiagram = {
+    resid: s("g"), loads: s("g"), cov: s("g"), nodes: s("g")
+  };
+
+  // loadings: factor j -> indicator i
+  for (let i = 0; i < P; i++) {
+    for (let j = 0; j < K; j++) {
+      const main = (i < 3 && j === 0) || (i >= 3 && j === 1);
+      const fx = FX[j], dx = X(i) - fx, dy = (IY - BH / 2) - FY;
+      const len = Math.hypot(dx, dy);
+      const x0 = fx + FR * dx / len, y0 = FY + FR * dy / len;
+      const x1 = X(i), y1 = IY - BH / 2 - 2;
+      const t = main ? 0.78 : 0.3;
+      const lx = x0 + t * (x1 - x0), ly = y0 + t * (y1 - y0) - 4;
+      const k = `l${i + 1}${j + 1}`;
+      const g = mkPath(k, `M${x0},${y0} L${x1},${y1}`, lx, ly, "free load",
+        `Loading of indicator ${i + 1} on ${FAC[j]}`);
+      // arrowhead
+      const ang = Math.atan2(y1 - y0, x1 - x0), a = 8;
+      const ah = s("path", { class: "line", d:
+        `M${x1},${y1} L${x1 - a * Math.cos(ang - 0.4)},${y1 - a * Math.sin(ang - 0.4)} M${x1},${y1} L${x1 - a * Math.cos(ang + 0.4)},${y1 - a * Math.sin(ang + 0.4)}` });
+      g.insertBefore(ah, g.querySelector("text"));
+      gDiagram.loads.appendChild(g);
+    }
+  }
+
+  // factor covariance arc
+  {
+    const d = `M${FX[0] + 30},${FY - 32} Q${(FX[0] + FX[1]) / 2},${FY - 126} ${FX[1] - 30},${FY - 32}`;
+    gDiagram.cov.appendChild(mkPath("p21", d, (FX[0] + FX[1]) / 2, FY - 65, "free", "Covariance (correlation) between SES and Achievement"));
+  }
+
+  // residual variances (nodes) and covariances (arcs)
+  for (let i = 0; i < P; i++) {
+    const x = X(i);
+    const k = `t${i + 1}${i + 1}`;
+    const g = mkPath(k, `M${x},${RY - RR} L${x},${IY + BH / 2 + 2}`, x + 26, (IY + BH / 2 + RY - RR) / 2 + 4, "free", `Residual variance of indicator ${i + 1}`);
+    const ah = s("path", { class: "line", d: `M${x},${IY + BH / 2 + 2} l-4,8 M${x},${IY + BH / 2 + 2} l4,8` });
+    g.insertBefore(ah, g.querySelector("text"));
+    gDiagram.resid.appendChild(g);
+  }
+  const arcs = [];
+  for (let i = 0; i < P; i++) for (let j = 0; j < i; j++) arcs.push([i, j]);
+  arcs.sort((a, b) => (b[0] - b[1]) - (a[0] - a[1]));      // widest first, so narrow arcs sit on top
+  const arcLayer = s("g", { id: "arcLayer" });
+  for (const [i, j] of arcs) {
+    const span = i - j, x0 = X(j), x1 = X(i), y = RY + RR;
+    const cy = y + 62 * span;                                 // control point depth
+    const d = `M${x0},${y} Q${(x0 + x1) / 2},${cy} ${x1},${y}`;
+    const k = `t${i + 1}${j + 1}`;
+    arcLayer.appendChild(mkPath(k, d, (x0 + x1) / 2, y + 31 * span + 10, "free resid cov", `Residual covariance between indicators ${j + 1} and ${i + 1}`));
+  }
+  gDiagram.cov.appendChild(arcLayer);
+
+  // nodes
+  for (let j = 0; j < K; j++) {
+    gDiagram.nodes.appendChild(s("circle", { class: "node fac", cx: FX[j], cy: FY, r: FR }));
+    gDiagram.nodes.appendChild(s("text", { class: "nodeText fac", x: FX[j], y: FY - 5, style: "font-size:12px" }, FAC[j]));
+    gDiagram.nodes.appendChild(s("text", { class: "nodeText fac", x: FX[j], y: FY + 13, style: "font-size:10px;font-weight:400" }, "var = 1"));
+  }
+  for (let i = 0; i < P; i++) {
+    gDiagram.nodes.appendChild(s("rect", { class: "node", x: X(i) - BW / 2, y: IY - BH / 2, width: BW, height: BH, rx: 3 }));
+    gDiagram.nodes.appendChild(s("text", { class: "nodeText", x: X(i), y: IY - 5, style: "font-size:11px;font-weight:600" }, `${i + 1}`));
+    gDiagram.nodes.appendChild(s("text", { class: "nodeText", x: X(i), y: IY + 9, style: "font-size:10px" }, NAMES[i]));
+    gDiagram.nodes.appendChild(s("circle", { class: "node", cx: X(i), cy: RY, r: RR }));
+    gDiagram.nodes.appendChild(s("text", { class: "nodeText", x: X(i), y: RY, style: "font-size:11px" }, `ε${i + 1}`));
+  }
+  svg.append(gDiagram.cov, gDiagram.loads, gDiagram.resid, gDiagram.nodes);
+
+  // ---------- parameter matrices ----------
+  const inputs = {};  // key -> {chk, inp}
+  const mkCell = (k, lo, hi) => {
+    const td = h("td", { class: "cell free", "data-k": k });
+    const chk = h("input", { type: "checkbox", checked: "" });
+    const label = h("span", { class: "sym" }, `${sym(k)} `);
+    label.prepend(chk);
+    const inp = h("input", { type: "number", min: lo, max: hi, step: "0.01", placeholder: "est." });
+    td.append(label, inp);
+    chk.addEventListener("change", () => toggle(k, chk.checked));
+    inp.addEventListener("input", () => {
+      let v = parseFloat(inp.value);
+      if (isNaN(v)) v = 0;
+      v = Math.max(lo, Math.min(hi, v));
+      val[k] = v;
+      update();
+    });
+    inputs[k] = { td, chk, inp, lo, hi };
+    return td;
+  };
+
+  {
+    const t = document.getElementById("tbl-lambda");
+    const head = h("tr"); head.append(h("th"), h("th", {}, FAC[0]), h("th", {}, FAC[1])); t.append(head);
+    for (let i = 1; i <= P; i++) {
+      const tr = h("tr");
+      tr.append(h("th", { class: "rowh" }, `${i} ${NAMES[i - 1]}`));
+      for (let j = 1; j <= K; j++) tr.append(mkCell(`l${i}${j}`, -1, 1));
+      t.append(tr);
+    }
+  }
+  {
+    const t = document.getElementById("tbl-psi");
+    const head = h("tr"); head.append(h("th"), h("th", {}, FAC[0]), h("th", {}, FAC[1])); t.append(head);
+    const r1 = h("tr"), r2 = h("tr");
+    r1.append(h("th", { class: "rowh" }, FAC[0]), h("td", { class: "fixedval" }, "1<br>(fixed)"), h("td", { class: "fixedval", id: "psi12mirror" }, "&nbsp;"));
+    r2.append(h("th", { class: "rowh" }, FAC[1]), mkCell("p21", -1, 1), h("td", { class: "fixedval" }, "1<br>(fixed)"));
+    t.append(r1, r2);
+  }
+  {
+    const t = document.getElementById("tbl-theta");
+    const head = h("tr"); head.append(h("th"));
+    for (let j = 1; j <= P; j++) head.append(h("th", {}, `${j}`));
+    t.append(head);
+    for (let i = 1; i <= P; i++) {
+      const tr = h("tr");
+      tr.append(h("th", { class: "rowh" }, `${i}`));
+      for (let j = 1; j <= P; j++) {
+        if (j <= i) tr.append(mkCell(`t${i}${j}`, i === j ? 0 : -1, 1));
+        else tr.append(h("td", { class: "blank" }));
+      }
+      t.append(tr);
+    }
+  }
+
+  // ---------- implied matrix, observed, residuals ----------
+  const sigmaCells = {}, resCells = {};
+  {
+    const t = document.getElementById("tbl-sigma");
+    const head = h("tr"); head.append(h("th"));
+    for (let j = 1; j <= P; j++) head.append(h("th", {}, `${j} ${NAMES[j - 1]}`));
+    t.append(head);
+    for (let i = 1; i <= P; i++) {
+      const tr = h("tr");
+      tr.append(h("th", { class: "rowh" }, `${i} ${NAMES[i - 1]}`));
+      for (let j = 1; j <= P; j++) {
+        if (j <= i) { const td = h("td"); tr.append(td); sigmaCells[`${i}${j}`] = td; }
+        else tr.append(h("td", { class: "blank" }));
+      }
+      t.append(tr);
+    }
+    const to = document.getElementById("tbl-obs"), tr2 = document.getElementById("tbl-res");
+    for (const tb of [to, tr2]) {
+      const hd = h("tr"); hd.append(h("th"));
+      for (let j = 1; j <= P; j++) hd.append(h("th", {}, `${j}`));
+      tb.append(hd);
+    }
+    for (let i = 1; i <= P; i++) {
+      const a = h("tr"), b = h("tr");
+      a.append(h("th", { class: "rowh" }, `${i}`)); b.append(h("th", { class: "rowh" }, `${i}`));
+      for (let j = 1; j <= P; j++) {
+        if (j <= i) {
+          a.append(h("td", {}, f2(R[i - 1][j - 1])));
+          const td = h("td"); b.append(td); resCells[`${i}${j}`] = td;
+        } else { a.append(h("td", { class: "blank" })); b.append(h("td", { class: "blank" })); }
+      }
+      to.append(a); tr2.append(b);
+    }
+  }
+
+  // implied cell: symbolic tracing equation and numeric value
+  const impliedCell = (i, j, F = free) => {
+    const terms = []; let value = 0;
+    for (let k = 1; k <= K; k++) for (let l = 1; l <= K; l++) {
+      const a = `l${i}${k}`, b = `l${j}${l}`;
+      if (!F[a] || !F[b]) continue;
+      if (k !== l && !F.p21) continue;
+      if (i === j && k > l) continue;                      // the two cross terms are equal; count once with a 2
+      const coef = (i === j && k !== l) ? 2 : 1;
+      let text = (coef === 2 ? "2" : "") + sym(a);
+      let v = coef * num(a) * num(b);
+      if (k !== l) { text += sym("p21"); v *= num("p21"); }
+      text += (a === b) ? "<sup>2</sup>" : sym(b);
+      if (a === b) text = text.replace(/<sup>2<\/sup>$/, "") + "<sup>2</sup>";
+      terms.push(text); value += v;
+    }
+    const tk = `t${i}${j}`;
+    if (F[tk]) { terms.push(sym(tk)); value += num(tk); }
+    return { eq: terms.length ? terms.join(" + ") : "0", value };
+  };
+
+  // ---------- state changes ----------
+  function toggle(k, force) {
+    free[k] = (typeof force === "boolean") ? force : !free[k];
+    update(true);
+  }
+
+  function syncInputs() {
+    for (const k of keys) {
+      const { td, chk, inp } = inputs[k];
+      chk.checked = !!free[k];
+      td.classList.toggle("free", !!free[k]);
+      td.classList.toggle("fixed", !free[k]);
+      inp.disabled = !free[k];
+      if (!free[k]) inp.value = "0";
+      else if (inp.value === "0" && !(val[k])) inp.value = "";
+      else if (val[k] !== undefined && document.activeElement !== inp) inp.value = val[k];
+    }
+  }
+
+  function update(structural) {
+    if (structural) syncInputs();
+    // diagram
+    const showCov = document.getElementById("showCov").checked;
+    arcLayer.style.display = showCov ? "" : "none";
+    for (const k of keys) {
+      const { g, t } = pathEls[k];
+      g.setAttribute("class", g.getAttribute("class").replace(/\b(free|fixed)\b/, free[k] ? "free" : "fixed"));
+      const label = k === "p21" ? "ψ21" : (k[0] === "l" ? "λ" : "θ") + k.slice(1);
+      t.textContent = free[k] && val[k] ? `${label} = ${val[k]}` : label;
+    }
+    document.getElementById("psi12mirror").textContent = free.p21 ? (val.p21 || 0) : "0";
+    // implied matrix
+    let ss = 0;
+    for (let i = 1; i <= P; i++) for (let j = 1; j <= i; j++) {
+      const c = impliedCell(i, j);
+      const td = sigmaCells[`${i}${j}`];
+      td.className = c.eq === "0" ? "zero" : "";
+      td.innerHTML = `<span class="eq">${c.eq}</span><span class="val">${f2(c.value)}</span>`;
+      const r = R[i - 1][j - 1] - c.value;
+      ss += r * r;
+      const rc = resCells[`${i}${j}`];
+      rc.textContent = f2(r);
+      rc.style.background = `rgba(179,38,30,${Math.min(0.45, Math.abs(r) * 1.1).toFixed(2)})`;
+    }
+    const srmr = Math.sqrt(ss / INFO);
+    // readouts
+    const nL = lamKeys.filter(k => free[k]).length, nP = free.p21 ? 1 : 0, nT = thKeys.filter(k => free[k]).length;
+    const nFree = nL + nP + nT;
+    document.getElementById("r-free").textContent = nFree;
+    document.getElementById("r-split").textContent = `${nL} / ${nP} / ${nT}`;
+    document.getElementById("r-df").textContent = INFO - nFree;
+    document.getElementById("r-srmr").textContent = srmr.toFixed(3);
+    const line = document.getElementById("srmr-line");
+    line.className = "srmr " + (srmr <= 0.08 ? "good" : "bad");
+    line.innerHTML = `SRMR = <b>${srmr.toFixed(3)}</b> (Good Fit &le; .08)`;
+    updateChallenge(srmr);
+  }
+
+  // ---------- worksheet ----------
+  const HASHES = /*HASHES*/{};
+  const fnv = str => { let x = 0x811c9dc5; for (let i = 0; i < str.length; i++) { x ^= str.charCodeAt(i); x = Math.imul(x, 0x01000193) >>> 0; } return x >>> 0; };
+  const hashOf = (q, row, v) => fnv(`cfa8|${q}|${row}|${v}`);
+  const allFree = {}; keys.forEach(k => { allFree[k] = true; });
+  const origEq = (i, j) => impliedCell(i, j, allFree).eq;
+  // one term, typed by a student -> canonical "l11 p21 l12" (sorted tokens, coefficient ignored); null if unreadable
+  const canonTerm = raw => {
+    let t = raw.toLowerCase().replace(/[\s*·×]/g, "").replace(/lambda|λ/g, "l").replace(/psi|ψ/g, "p").replace(/theta|θ/g, "t").replace(/²/g, "^2");
+    t = t.replace(/^2(?=[lpt])/, "");
+    const sq = /\^2$/.test(t); t = t.replace(/\^2$/, "");
+    const toks = t.match(/[lpt]\d\d/g) || [];
+    if (!toks.length || toks.join("") !== t) return null;
+    if (sq) toks.push(...toks);
+    return toks.sort().join(" ");
+  };
+  const canonSet = raw => {
+    const txt = raw.trim().toLowerCase();
+    if (/^(none|nothing|0|-|—)$/.test(txt)) return "";
+    const parts = raw.split(/[,;\n+]/).map(x => x.trim()).filter(Boolean).map(canonTerm);
+    if (!parts.length || parts.includes(null)) return null;
+    return [...new Set(parts)].sort().join("|");
+  };
+  const WS_ROWS = [
+    { id: "df", label: "Degrees of freedom", orig: "&minus;13" },
+    { id: "l0", label: "Number of 0s in &Lambda;", orig: "0" },
+    { id: "p0", label: "Number of 0s in &Psi; (factor covariance)", orig: "0" },
+    { id: "t0", label: "Number of 0s in &Theta;", orig: "0" },
+    { id: "vr", label: "Terms removed from Var(PARENTED) compared with the original", eq: `Var(PARENTED) = ${origEq(1, 1)}`, paths: true },
+    { id: "cv", label: "Terms removed from Cov(PARENTED, BOOKSHOME) compared with the original", eq: `Cov(PARENTED, BOOKSHOME) = ${origEq(2, 1)}`, paths: true }
+  ];
+  {
+    const t = document.getElementById("tbl-ws");
+    const head = h("tr"); head.append(h("th"), h("th", {}, "Original"));
+    for (let q = 1; q <= 3; q++) head.append(h("th", {}, `Q${q}`));
+    t.append(head);
+    for (const r of WS_ROWS) {
+      const tr = h("tr");
+      tr.append(h("th", { class: "rowh" }, r.label));
+      tr.append(h("td", { class: "orig" + (r.eq ? " eqshow" : "") }, r.eq || r.orig));
+      for (let q = 1; q <= 3; q++) {
+        const inp = h("input", { type: "text", autocomplete: "off", spellcheck: "false", class: r.paths ? "wide" : "", "aria-label": `Q${q}: ${r.label}` });
+        {
+          const check = () => {
+            inp.classList.remove("ok", "no");
+            const txt = inp.value.trim().replace(/−/g, "-");
+            if (txt === "") return;
+            let v;
+            if (r.paths) v = canonSet(inp.value); else { const n = Number(txt); v = isNaN(n) ? null : String(n); }
+            if (v === null) { if (r.paths) inp.classList.add("no"); return; }
+            inp.classList.add(hashOf(q, r.id, v) === HASHES[`${q}|${r.id}`] ? "ok" : "no");
+          };
+          inp.addEventListener(r.paths ? "change" : "input", check);
+        }
+        const td = h("td"); td.append(inp); tr.append(td);
+      }
+      t.append(tr);
+    }
+  }
+  const chalStatus = document.getElementById("chal-status");
+  const updateChallenge = srmr => {
+    const ok = srmr <= 0.08;
+    chalStatus.className = "srmr " + (ok ? "good" : "bad");
+    chalStatus.innerHTML = ok ? `SRMR = <b>${srmr.toFixed(3)}</b>. Challenge met.` : `SRMR = <b>${srmr.toFixed(3)}</b>. Not yet at or below .08.`;
+  };
+
+  // ---------- controls ----------
+  document.getElementById("showCov").addEventListener("change", () => update());
+  document.getElementById("btn-reset").addEventListener("click", () => { setAllFree(); update(true); });
+  document.getElementById("btn-clear").addEventListener("click", () => {
+    keys.forEach(k => { delete val[k]; inputs[k].inp.value = free[k] ? "" : "0"; });
+    update(true);
+  });
+
+  // ---------- save as PDF (print dialog) ----------
+  const printHeader = document.getElementById("printHeader");
+  const stamp = () => {
+    if (document.activeElement) document.activeElement.blur();
+    printHeader.textContent = new Date().toLocaleString();
+  };
+  window.addEventListener("beforeprint", stamp);
+  document.getElementById("btn-pdf").addEventListener("click", () => { stamp(); window.print(); });
+
+  // teacher shortcut: ?preset=cfa starts from the conventional two-factor CFA (cross-loadings and residual covariances fixed to 0)
+  if (new URLSearchParams(location.search).get("preset") === "cfa") {
+    keys.forEach(k => {
+      if (k[0] === "l") { const i = +k[1], j = +k[2]; free[k] = (i <= 3 && j === 1) || (i >= 4 && j === 2); }
+      if (k[0] === "t") { free[k] = k[1] === k[2]; }
+    });
+  }
+  update(true);
+})();
+</script>
+</body>
+</html>

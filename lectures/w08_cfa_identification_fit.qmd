@@ -1,0 +1,405 @@
+---
+title: "Week 8: CFA Identification & Fit"
+date: today
+description: '<a href="lectures/w08_cfa_identification_fit.pdf" download="w08_cfa_identification_fit.pdf">Download PDF</a>'
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+    embed-resources: true
+    self-contained-math: true
+release: week 7
+---
+
+# Agenda
+
+1. Review "quiz"
+2. Global fit indices
+3. Identification & Model-implied covariance
+4. Modification Indices
+5. Rlab: Specifying your Mini-project model
+
+# Review
+
+Lamaku > quiz > w08
+
+# Review Global Fit Indices
+
+## Null hypothesis in SEM 🤸
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+
+H0: The model-implied covariance matrix equals the observed covariance matrix
+
+H1: The model-implied covariance matrix does not equal the observed covariance matrix
+
+Rejecting the null means the model we specified is not well-aligned to observed data (evidence AGAINST our hypothesis)
+:::
+:::
+
+## Model Fit Indices: Match
+
+```{=html}
+<style>
+.fit-table td:nth-child(n+2) { font-size: 0.6em; }
+</style>
+```
+
+::: {.fit-table}
+
+| Index | Concept | Threshold |
+|------------|------------------------------------------------|----------------------------------------|
+| χ² | A. Ave size of the differences btw observed and model-predicted correlations | 1. ≥ .95 good; ≥ .90 acceptable |
+| CFI | B. Error per df, adjusting for model complexity | 2. < competing model |
+| RMSEA | C. Fit penalized for complexity; penalty grows with sample size | 3. ≤ .05 good; .05–.08 acceptable; ≥ .10 poor |
+| SRMR | D. Is the model-implied covariance matrix different from observed? | 4. Non-significant p supports hypothesis |
+| AIC | E. How much better the model is than a baseline model where nothing is related | 5. ≤ .08 good |
+| BIC | F. Fit penalized for complexity; fixed penalty per parameter | 6. < competing model |
+
+:::
+
+::: {.content-visible when-profile="teacher"}
+
+## Activity: Answer key
+
+::: {.fit-table}
+
+```{=html}
+<table>
+<thead><tr><th>Index</th><th>Concept</th><th>Threshold</th></tr></thead>
+<tbody>
+<tr class="fragment"><td>χ²</td><td>D. Is the model-implied covariance matrix different from the observed one?</td><td>4. Non-significant p supports the hypothesis</td></tr>
+<tr class="fragment"><td>CFI</td><td>E. How much better the model is than a baseline model where nothing is related</td><td>1. ≥ .95 good; ≥ .90 acceptable</td></tr>
+<tr class="fragment"><td>RMSEA</td><td>B. Error per degree of freedom, adjusting for model complexity</td><td>3. ≤ .05 good; .05–.08 acceptable; ≥ .10 poor</td></tr>
+<tr class="fragment"><td>SRMR</td><td>A. Average size of the differences between observed and model-predicted correlations</td><td>5. ≤ .08 good</td></tr>
+<tr class="fragment"><td>AIC</td><td>F. Fit penalized for complexity; fixed penalty per parameter</td><td>2 or 6. Lower than a competing model (no absolute cutoff)</td></tr>
+<tr class="fragment"><td>BIC</td><td>C. Fit penalized for complexity; the penalty grows with sample size</td><td>2 or 6. Lower than a competing model (no absolute cutoff)</td></tr>
+</tbody>
+</table>
+```
+
+:::
+:::
+
+
+# Global Fit: Why we need many 
+
+We'll compare some different scenarios to dig into what each model fit index tells us.
+
+## Chi2: Same matrix, different N
+
+Look at the lavaan model & draw the path diagram. 
+
+```{r}
+#| label: ex1-setup
+#| echo: true
+library(lavaan)
+
+S <- lav_getcov(c(
+  1.000,
+  0.560, 1.000,
+  0.600, 0.525, 1.000,
+  0.256, 0.224, 0.300, 1.000,
+  0.240, 0.210, 0.225, 0.600, 1.000,
+  0.224, 0.196, 0.210, 0.560, 0.525, 1.000),
+  names = paste0("x", 1:6))
+
+ex1_model <- '
+  F1 =~ x1 + x2 + x3
+  F2 =~ x4 + x5 + x6
+'
+
+fit_small <- cfa(ex1_model, sample.cov = S, sample.nobs = 100)
+fit_large <- cfa(ex1_model, sample.cov = S, sample.nobs = 5000)
+```
+
+
+
+## X2: Fit at N = 100 vs. N = 5,000
+
+```{r}
+#| label: ex1-table
+fm <- function(fit) fitMeasures(fit, c("chisq", "df", "pvalue"))
+m1 <- fm(fit_small); m2 <- fm(fit_large)
+crit <- qchisq(.95, df = m1["df"])
+fmt_p <- function(p) ifelse(p < .001, "< .001", formatC(p, digits = 3, format = "f"))
+sig <- function(p) ifelse(p < .05, "reject the null - hypothesis not supported", "fail to reject - hypothesis supported")
+
+tab <- data.frame(
+  Index = c("χ²", "df", "Critical χ² (α = .05)", "p-value", "Significant?"),
+  `N = 100` = c(sprintf("%.3f", m1["chisq"]), m1["df"], sprintf("%.3f", crit),
+                fmt_p(m1["pvalue"]), sig(m1["pvalue"])),
+  `N = 5,000` = c(sprintf("%.3f", m2["chisq"]), m2["df"], sprintf("%.3f", crit),
+                  fmt_p(m2["pvalue"]), sig(m2["pvalue"])),
+  check.names = FALSE
+)
+knitr::kable(tab, row.names = FALSE, align = "lrr")
+```
+
+
+## χ²: Takeaway
+
+- Same relationships among the variables (same var/cov matrix), same model.
+  - actual fit doesn't change. Only N
+- χ² flipped from "supported" to "not supported"
+- χ² is sensitive to N, so can't difinitively tell us whether the model is a good one. 
+
+## CFI: Grading on a curve
+
+CFI asks: how much of the misfit in a baseline model does our model remove?
+
+- χ² between baseline model & observed: χ²<sub>B</sub> 
+  - Baseline: all variables assumed uncorrelated. High misfit
+- χ² between theoretical model & observed: χ²<sub>M</sub>
+  - In theory, smaller misfit
+
+(CFI × 100) = % of the baseline misfit removed by theoretical model.
+
+## Example 1: CFI at N = 100 vs. N = 5,000
+
+```{r}
+#| label: ex1-cfi
+bm <- c("chisq", "df", "baseline.chisq", "baseline.df", "cfi")
+cfi_tab <- data.frame(
+  Index = c("Baseline χ²", "Baseline df", "Model χ²", "Model df", "CFI"),
+  `N = 100`   = fitMeasures(fit_small, bm)[c(3, 4, 1, 2, 5)],
+  `N = 5,000` = fitMeasures(fit_large, bm)[c(3, 4, 1, 2, 5)],
+  check.names = FALSE
+)
+cfi_tab[, 2:3] <- lapply(cfi_tab[, 2:3], function(x) formatC(x, digits = 3, format = "f"))
+cfi_tab[c(2, 4), 2:3] <- c("15", "15", "8", "8")
+knitr::kable(cfi_tab, row.names = FALSE, align = "lrr")
+```
+
+- Same verdict at n = 100 & n = 5000
+  - addresses χ² problem
+
+## CFI Shortcomings
+
+- What if the baseline changes? 
+- How can the baseline change? 
+  - Variables are more strongly correlated.
+
+## CFI Shortcomings 2
+
+```{r}
+#| label: cmp-setup
+S_strong <- lav_getcov(c(
+  1.000,
+  0.765, 1.000,
+  0.792, 0.748, 1.000,
+  0.486, 0.459, 0.535, 1.000,
+  0.475, 0.449, 0.465, 0.792, 1.000,
+  0.459, 0.434, 0.449, 0.765, 0.748, 1.000),
+  names = paste0("x", 1:6))
+
+fit_orig   <- cfa(ex1_model, sample.cov = S,        sample.nobs = 1000)
+fit_strong <- cfa(ex1_model, sample.cov = S_strong, sample.nobs = 1000)
+
+cm <- c("chisq", "df", "pvalue", "baseline.chisq", "cfi", "rmsea")
+a <- fitMeasures(fit_orig, cm); b <- fitMeasures(fit_strong, cm)
+f3 <- function(x) formatC(x, digits = 3, format = "f")
+f1 <- function(x) formatC(x, digits = 1, format = "f")
+f2 <- function(x) formatC(x, digits = 2, format = "f")
+fmt_p <- function(p) ifelse(p < .001, "< .001", f3(p))
+```
+
+```{r}
+#| label: cmp-cfi-table
+cfi_cmp <- data.frame(
+  Index = c("Range of correlations", "Baseline χ² (max misfit)", "Model χ² (df = 8)", "CFI"),
+  Original = c(paste(f2(min(S[lower.tri(S)])), "–", f2(max(S[lower.tri(S)]))),
+               f1(a["baseline.chisq"]), f1(a["chisq"]), f3(a["cfi"])),
+  Strong   = c(paste(f2(min(S_strong[lower.tri(S_strong)])), "–", f2(max(S_strong[lower.tri(S_strong)]))),
+               f1(b["baseline.chisq"]), f1(b["chisq"]), f3(b["cfi"]))
+)
+knitr::kable(cfi_cmp, row.names = FALSE, align = "lrr")
+```
+
+- CFI suggests that model performs well on both. 
+- Reality: there's a lot more misfit in the strong model 
+
+## CFI Takeaway
+
+- Baseline assumes no correlation between variables 
+- If variables are actually correlated, misfit is inflated
+- Large baseline misfit means even a very mediocre model can look good
+
+Is CFI merely an effect of a large baseline mismatch? 
+
+## RMSEA: Ave misfit / DF
+
+Can it distinguish between the original & strongly correlated models?
+
+
+## Original vs. strong: χ², CFI, and RMSEA
+
+```{r}
+#| label: cmp-all-table
+all_cmp <- data.frame(
+  Index = c("Baseline χ²", "Model χ²", "CFI", "RMSEA"),
+  Original = c(f1(a["baseline.chisq"]), f1(a["chisq"]), f3(a["cfi"]), f3(a["rmsea"])),
+  Strong   = c(f1(b["baseline.chisq"]), f1(b["chisq"]), f3(b["cfi"]), f3(b["rmsea"]))
+)
+knitr::kable(all_cmp, row.names = FALSE, align = "lrr")
+```
+
+- RMSEA goes from good to acceptable, indicating worse fit
+
+
+## RMSEA 
+
+RMSEA (Root Mean Square Error of Approximation)
+
+- Does not use a baseline model.
+- Based on the model's own misfit per DF: 
+  - how far off is the model, adjusting for how simple or complex it is.
+- less sensitive to sample size
+
+## SRMR: a residual you can read
+
+SRMR (Standardized Root Mean Square Residual)
+
+- The typical size of the differences between observed and model-implied **correlations**.
+- In correlation units: SRMR = .05 means "our model's correlations are off by about .05, typically."
+- No penalty for model complexity.
+- Like RMSEA, can be shaky with small N or low loadings.
+- Average residual size can hide one large one.
+
+
+## Original vs. strong: RMSEA and SRMR
+
+```{r}
+#| label: cmp-srmr-table
+cs <- c("rmsea", "srmr")
+a2 <- fitMeasures(fit_orig, cs); b2 <- fitMeasures(fit_strong, cs)
+srmr_cmp <- data.frame(
+  Index = c("RMSEA", "SRMR"),
+  Original = c(f3(a2["rmsea"]), f3(a2["srmr"])),
+  Strong   = c(f3(b2["rmsea"]), f3(b2["srmr"])),
+  `How to read it` = c("χ²-based misfit per df; no direct units",
+                       "Typical residual correlation: off by about .01"),
+  check.names = FALSE
+)
+knitr::kable(srmr_cmp, row.names = FALSE, align = "lrrl")
+```
+
+- SRMR is easy to interpret: the model-implied correlations are off by about .01.
+- RMSEA flags the strong matrix as worse.
+
+## SRMR: Residual Correlations
+
+```{r}
+#| label: srmr-resid
+res <- as.matrix(lavResiduals(fit_orig, type = "cor")$cov)
+res_fmt <- matrix(formatC(res, digits = 3, format = "f"), nrow(res),
+                  dimnames = dimnames(res))
+res_fmt[upper.tri(res_fmt, diag = TRUE)] <- ""
+big <- lower.tri(res) & abs(res) >= .03
+res_fmt[big] <- paste0("**", res_fmt[big], "**")
+knitr::kable(res_fmt, align = "r")
+```
+
+- Almost every residual is near 0.
+- x3–x4 residual (.047) stands out.
+- The matrix shows **where** the model misses.I
+
+## Pause & Recap
+
+- Conceptually what do X2, CFI, RMSEA, and SRMR contribute to our understanding of a model's fit. 
+- What are the shortcomings of each (why do we need so many)? 
+
+## Application
+
+Today's reading had 3 models. Look at the model fit indices. As an author, 
+
+- What would you claim about how good the model fit of each is?
+- Is any model a good fit?
+- Why/why not?  
+
+# Identification
+
+How are the following related in CFA?
+
+Specification, path diagram, information, information, parameters (lambda, psi, theta matrices), degrees of freedom, model implied covariance, observed covariance, model fit
+
+# What if model fit is poor?
+
+- Before you run the model, define alternative models that are theory driven
+
+## Modification Indices
+
+- A data (not theory) driven approach
+- tells us how much freeing paramters in the model would decrease x2
+- Useful as a guide, but MUST be supported by theory
+
+## Modification indices example
+
+```{r}
+#| label: mi-model
+#| echo: false
+library(lavaan)
+library(semPlot)
+library(tidyverse)
+
+mi_dat <- read_csv("../rlabs/w08_data_pisa22_USA_cln_cfa.csv",
+                   show_col_types = FALSE) |>
+  select(PARENTED, BOOKSHOME, TECHHOME,
+         READING_AVE, MATH_AVE, SCIENCE_AVE) |>
+  drop_na() |>
+  mutate(across(everything(), \(x) as.numeric(scale(x))))
+
+mi_model <- '
+  ses =~ PARENTED + BOOKSHOME + TECHHOME
+  ach =~ READING_AVE + MATH_AVE + SCIENCE_AVE
+'
+mi_fit <- cfa(mi_model, data = mi_dat, std.lv = TRUE)
+```
+
+```{r}
+#| label: mi-diagram
+#| echo: false
+#| fig-width: 10
+#| fig-height: 5
+#| fig-align: center
+semPaths(cfa(mi_model, data = mi_dat, std.lv = TRUE, do.fit = FALSE),
+         what = "path", whatLabels = "name", style = "lisrel",
+         layout = "tree", rotation = 1, residuals = TRUE, intercepts = FALSE,
+         nCharNodes = 0, sizeMan = 11, sizeMan2 = 5, sizeLat = 10,
+         edge.label.cex = 1, edge.color = "black",
+         color = list(lat = "lightblue", man = "white"), mar = c(4, 4, 4, 4))
+```
+
+## Modification Indices Outputs
+
+```{r}
+#| label: mi-table
+#| echo: false
+mi_tab <- modindices(mi_fit, sort. = TRUE, maximum.number = 10) |>
+  select(lhs, op, rhs, mi, epc, sepc.all)
+knitr::kable(mi_tab, digits = 3, col.names = c("lhs", "op", "rhs", "MI", "EPC", "std EPC"))
+```
+
+```{=html}
+<style>
+#modification-indices-outputs table { font-size: 0.55em; }
+</style>
+```
+
+# Up Next: 
+
+- CFA Interpretation
+
+2 Weeks: 
+
+- CFA Methods Walkthrough: Caroline,	Deepinder,	Madi,	Juri,	Maria, 	Sydney
+
+Announcement: 
+
+Dec 3 and Dec 10 classes will be online (synchronous)
+
+- zoom link will be shared
+- Same time, live class
+
+
