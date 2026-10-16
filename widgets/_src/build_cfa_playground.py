@@ -60,6 +60,8 @@ SCEN = {
     1: scenario(lambda k: k[0] == "t" and k[1] != k[2]),                        # residual covariances
     2: scenario(lambda k: k[0] == "l" and ((int(k[1]) <= 3) != (k[2] == "1"))),  # cross-loadings
     3: scenario(lambda k: k == "p21"),                                          # factor covariance
+    4: scenario(lambda k: (k[0] == "t" and k[1] != k[2])                        # logically specified:
+                or (k[0] == "l" and ((int(k[1]) <= 3) != (k[2] == "1")))),      # no cross-loadings, no residual covs
 }
 PLAIN = {q: answers(F) for q, F in SCEN.items()}
 
@@ -70,11 +72,14 @@ assert PLAIN[2] == {"df": -7, "l0": 6, "p0": 0, "t0": 0,
                     "vr": "l11 l12 p21|l12 l12", "cv": "l11 l22 p21|l12 l21 p21|l12 l22"}
 assert PLAIN[3] == {"df": -12, "l0": 0, "p0": 1, "t0": 0, "vr": "l11 l12 p21", "cv": "l11 l22 p21|l12 l21 p21"}
 
+assert PLAIN[4] == {"df": 8, "l0": 6, "p0": 0, "t0": 15, "vr": "l11 l12 p21|l12 l12",
+                    "cv": "l11 l22 p21|l12 l21 p21|l12 l22|t21"}
+
 hashes = {f"{q}|{r}": hash_of(q, r, v) for q, d in PLAIN.items() for r, v in d.items()}
 
 ROWS = [("df", "Degrees of freedom"), ("l0", "0s in &Lambda;"), ("p0", "0s in &Psi;"), ("t0", "0s in &Theta;"),
         ("vr", "Terms removed, Var(PARENTED)"), ("cv", "Terms removed, Cov(PARENTED, BOOKSHOME)")]
-QN = {1: "Q1. No residual covariances", 2: "Q2. No cross-loadings", 3: "Q3. No factor covariance"}
+QN = {1: "Q1. No residual covariances", 2: "Q2. No cross-loadings", 3: "Q3. No factor covariance", 4: "Q4. Logically specified model"}
 
 import re
 def pretty(c, var=False):
@@ -96,7 +101,7 @@ def key_html():
 <div class="card" id="c-key">
   <h2>Teacher answer key</h2>
   <table class="m"><tr><th></th>{head}</tr>{body}</table>
-  <p class="note">Path answers are accepted in any order, with or without the coefficient 2, and typed as l11 l21, psi21, theta21 or with Greek letters. Q4 (written explanation) and the Part 2 challenge are not auto-checked.</p>
+  <p class="note">Path answers are accepted in any order, with or without the coefficient 2, and typed as l11 l21, psi21, theta21 or with Greek letters. Q5 (written explanation) and the Part 2 challenge are not auto-checked.</p>
   <p class="note"><b>Challenge reference.</b> Cross-loadings and residual covariances fixed to 0 (13 free, df = 8), ML estimates (listwise N = 3,767):
   &lambda;<sub>11</sub> .335, &lambda;<sub>21</sub> .824, &lambda;<sub>31</sub> .089, &lambda;<sub>42</sub> .935, &lambda;<sub>52</sub> .949, &lambda;<sub>62</sub> .980, &psi;<sub>21</sub> .536,
   &theta;<sub>11</sub> .887, &theta;<sub>22</sub> .321, &theta;<sub>33</sub> .992, &theta;<sub>44</sub> .126, &theta;<sub>55</sub> .099, &theta;<sub>66</sub> .039; SRMR &approx; .027.

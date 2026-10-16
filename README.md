@@ -224,3 +224,20 @@ commit*, because it is still in the unpushed history. Example:
     ```
 
 Check other data files are under 100 MB first: `ls -la data/`.
+
+## Running the CFA playground widget (teacher version)
+
+From the repo root, serve the teacher version locally:
+
+```{bash}
+python3 -m http.server 8000 --directory widgets/_src
+```
+
+Then open `cfa_playground_teacher.html` on port 8000 (Codespaces: Ports tab or
+Simple Browser). Add `?preset=cfa` to the URL to start from the two-factor CFA.
+
+To regenerate the student and teacher versions after editing the template:
+
+```{bash}
+python3 widgets/_src/build_cfa_playground.py
+```
