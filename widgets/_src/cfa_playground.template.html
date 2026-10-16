@@ -190,14 +190,15 @@ The worksheet is at the bottom of this page: <a href="#c-ws">Part 1</a> and <a h
     <li><b>Q1.</b> Remove all residual covariances.</li>
     <li><b>Q2.</b> Update the model so that each indicator is predicted only by the latent variable that makes sense for it.</li>
     <li><b>Q3.</b> Remove all latent variable covariances.</li>
-    <li><b>Q4.</b> Explain the relationship between specification, path diagram, information, parameters (&lambda;, &psi;, &theta; matrices), degrees of freedom, model-implied covariance, observed covariance, and model fit. Write your answer in the box below the table.</li>
+    <li><b>Q4.</b> Create a logically specified model.</li>
+    <li><b>Q5.</b> Explain the relationship between specification, path diagram, information, parameters (&lambda;, &psi;, &theta; matrices), degrees of freedom, model-implied covariance, observed covariance, and model fit. Write your answer in the box below the table.</li>
   </ol>
   <p class="note">For the last two rows, list every term that is <b>gone</b> compared with the original equation, written like &lambda;11&lambda;21 or &lambda;12^2
   (you can type l11 l21, l12^2, psi21 and theta21; separate terms with commas). Type <b>none</b> if nothing is removed. Boxes turn green when correct and red when not.
-  The table covers Q1&ndash;Q3; Q4 is a written answer and is not checked.</p>
+  The table covers Q1&ndash;Q4; Q5 is a written answer and is not checked.</p>
   <div class="scroll"><table class="m ws" id="tbl-ws"></table></div>
-  <p style="margin-top:10px"><b>Question 4:</b> Explain the relationship between specification, path diagram, information, parameters (&lambda;, &psi;, &theta; matrices), degrees of freedom, model-implied covariance, observed covariance, and model fit.</p>
-  <textarea id="ws-q4" rows="10" style="width:100%;font:inherit"></textarea>
+  <p style="margin-top:10px"><b>Question 5:</b> Explain the relationship between specification, path diagram, information, parameters (&lambda;, &psi;, &theta; matrices), degrees of freedom, model-implied covariance, observed covariance, and model fit.</p>
+  <textarea id="ws-q5" rows="10" style="width:100%;font:inherit"></textarea>
 </div>
 
 <div class="card" id="c-chal">
@@ -550,13 +551,13 @@ The worksheet is at the bottom of this page: <a href="#c-ws">Part 1</a> and <a h
   {
     const t = document.getElementById("tbl-ws");
     const head = h("tr"); head.append(h("th"), h("th", {}, "Original"));
-    for (let q = 1; q <= 3; q++) head.append(h("th", {}, `Q${q}`));
+    for (let q = 1; q <= 4; q++) head.append(h("th", {}, `Q${q}`));
     t.append(head);
     for (const r of WS_ROWS) {
       const tr = h("tr");
       tr.append(h("th", { class: "rowh" }, r.label));
       tr.append(h("td", { class: "orig" + (r.eq ? " eqshow" : "") }, r.eq || r.orig));
-      for (let q = 1; q <= 3; q++) {
+      for (let q = 1; q <= 4; q++) {
         const inp = h("input", { type: "text", autocomplete: "off", spellcheck: "false", class: r.paths ? "wide" : "", "aria-label": `Q${q}: ${r.label}` });
         {
           const check = () => {
