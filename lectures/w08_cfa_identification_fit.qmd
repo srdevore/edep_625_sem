@@ -314,7 +314,9 @@ knitr::kable(res_fmt, align = "r")
 
 Today's reading had 3 models. Look at the model fit indices. As an author, 
 
-- What would you claim about how good the model fit of each is?
+- Interpret specifically what the model fit tells us about the model.
+  - ❌ x2 is good.
+  - ✅ X2 tells us that the difference between the observed and model-implied table is ___. 
 - Is any model a good fit?
 - Why/why not?  
 
