@@ -1,0 +1,520 @@
+---
+title: "W09 Lab: Fitting & Interpreting CFA Models"
+date: today
+description: '<a href="rlab-downloads/w09_rlab_cfa_interpretation.qmd" download="w09_rlab_cfa_interpretation.qmd">Download .qmd</a>'
+format: html
+code-fold: true
+code-summary: "Show code"
+---
+
+## Purpose
+
+Practice specifying CFA models in lavaan, and interpreting the results.
+
+[**NOTE:** This is all fake data, specifically generated to highlight specific aspects of the lavaan model]{style="color:red;"}
+
+Each scenario below gives you a research question, a description of the data,
+and the sample covariance matrix. 
+
+In this rlab, for each scenario:
+
+1. Write the CFA model in lavaan syntax.
+2. Fit the model and examine the global fit.
+3. Interpret the results: the global fit, the standardized loadings, residual variances, and the factor correlation (if there is more than one factor).
+4. Compare your results to the solutions.
+5. Iterate until you get the same answers (or can make an argument for why yours are justified)
+
+## Setup
+
+```{r}
+#| message: false
+#| code-fold: false
+library(tidyverse)
+library(lavaan)
+library(semPlot)
+```
+
+::: {.content-visible when-profile="teacher"}
+```{r}
+#| include: false
+# Teacher-only helpers. They live in a teacher block so they are stripped
+# from the student .qmd download.
+global_fit <- function(fit) {
+  round(fitMeasures(fit, c("chisq", "df", "pvalue", "cfi", "tli",
+                           "rmsea", "srmr")), 3)
+}
+path_diagram <- function(fit) {
+  semPaths(fit, what = "path", whatLabels = "std", style = "lisrel",
+           layout = "tree", rotation = 1, residuals = TRUE,
+           intercepts = FALSE, nCharNodes = 0, sizeMan = 8, sizeMan2 = 4,
+           sizeLat = 9, edge.label.cex = 1, edge.color = "black",
+           color = list(lat = "lightblue", man = "white"),
+           mar = c(4, 4, 4, 4))
+}
+```
+:::
+
+## Default model
+
+Every scenario below uses the same `lavaan()` call. The arguments are already
+set up in the templates:
+
+- `sample_cov`, `sample_nobs` -- the data are a covariance matrix and a sample size.
+- `auto_var = TRUE` -- freely estimate the variances (factor variances & residual variances).
+- `auto_fix_first = TRUE` -- the first loading of each factor is fixed to 1 to set the scale.
+- `auto_cov_lv_x = TRUE` -- factors are allowed to covary.
+- `bad_marker_crit = 0` -- keep lavaan from swapping out the first indicator as the marker.
+
+What you need to write is the model.
+
+---
+
+# Scenario 1
+
+**Research question.** Do four subtests from a district mathematics assessment
+reflect a single underlying **math proficiency**?
+
+**The data.** A district gave **N = 350** 8th graders an assessment with four
+subtests. Scores are on a 0--100 scale.
+
+| Variable | Subtest                    |
+|----------|----------------------------|
+| `arith`  | Arithmetic computation     |
+| `frac`   | Fractions & ratios         |
+| `word`   | Word problems              |
+| `estim`  | Estimation                 |
+
+```{r}
+#| code-fold: false
+v1 <- c("arith", "frac", "word", "estim")
+cov1 <- matrix(c(
+   91.064,  62.996,  50.171,  40.210,
+   62.996,  98.691,  51.044,  42.335,
+   50.171,  51.044,  75.403,  32.401,
+   40.210,  42.335,  32.401,  58.991),
+  nrow = 4, byrow = TRUE, dimnames = list(v1, v1))
+
+cov1
+```
+
+```{r}
+#| eval: false
+#| code-fold: false
+# YOUR TURN
+model1 <- "
+  # ...your model here...
+"
+fit1 <- lavaan(model1,
+                sample_cov = cov1, sample_nobs = 350,
+                auto_var = TRUE, auto_fix_first = TRUE,
+                auto_cov_lv_x = TRUE, bad_marker_crit = 0)
+
+summary(fit1, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.callout-tip collapse="true" title="Model answer: lavaan code (teacher)"}
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: false
+model1 <- "
+  math =~ arith + frac + word + estim
+"
+fit1 <- lavaan(model1,
+                sample_cov = cov1, sample_nobs = 350,
+                auto_var = TRUE, auto_fix_first = TRUE,
+                auto_cov_lv_x = TRUE, bad_marker_crit = 0)
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer: lavaan output (teacher)"}
+```{r}
+#| code-fold: false
+summary(fit1, standardized = TRUE, rsquare = TRUE)
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer: global fit (teacher)"}
+```{r}
+#| code-fold: false
+global_fit(fit1)
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer: path diagram (teacher)"}
+```{r}
+#| echo: false
+#| fig-width: 9
+#| fig-height: 5
+#| fig-align: center
+path_diagram(fit1)
+```
+:::
+:::
+
+---
+
+# Scenario 2
+
+**Research question.** Are second-language (L2) learners' **motivation** to
+learn English and their **anxiety** about using it two distinct, related
+constructs?
+
+**The data.** **N = 300** university English-as-a-foreign-language learners
+answered six Likert items (1 = strongly disagree, 5 = strongly agree).
+
+| Variable | Item                                                    |
+|----------|---------------------------------------------------------|
+| `m1`     | "I enjoy learning English"                              |
+| `m2`     | "I want to become fluent in English"                    |
+| `m3`     | "I put a lot of effort into my English classes"         |
+| `a1`     | "I get nervous when I have to speak English in class"   |
+| `a2`     | "I worry about making mistakes when I speak English"    |
+| `a3`     | "I feel tense when I use English with native speakers"  |
+
+```{r}
+#| code-fold: false
+v2 <- c("m1", "m2", "m3", "a1", "a2", "a3")
+cov2 <- matrix(c(
+    1.393,   0.756,   0.843,  -0.389,  -0.336,  -0.417,
+    0.756,   0.999,   0.637,  -0.303,  -0.248,  -0.419,
+    0.843,   0.637,   1.468,  -0.323,  -0.262,  -0.382,
+   -0.389,  -0.303,  -0.323,   1.232,   0.589,   0.815,
+   -0.336,  -0.248,  -0.262,   0.589,   0.856,   0.511,
+   -0.417,  -0.419,  -0.382,   0.815,   0.511,   1.310),
+  nrow = 6, byrow = TRUE, dimnames = list(v2, v2))
+
+cov2
+```
+
+```{r}
+#| eval: false
+#| code-fold: false
+# YOUR TURN
+model2 <- "
+  # ...your model here...
+"
+fit2 <- lavaan(model2,
+                sample_cov = cov2, sample_nobs = 300,
+                auto_var = TRUE, auto_fix_first = TRUE,
+                auto_cov_lv_x = TRUE, bad_marker_crit = 0)
+
+summary(fit2, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.callout-tip collapse="true" title="Model answer: lavaan code (teacher)"}
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: false
+model2 <- "
+  motiv =~ m1 + m2 + m3
+  anx   =~ a1 + a2 + a3
+"
+fit2 <- lavaan(model2,
+                sample_cov = cov2, sample_nobs = 300,
+                auto_var = TRUE, auto_fix_first = TRUE,
+                auto_cov_lv_x = TRUE, bad_marker_crit = 0)
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer: lavaan output (teacher)"}
+```{r}
+#| code-fold: false
+summary(fit2, standardized = TRUE, rsquare = TRUE)
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer: global fit (teacher)"}
+```{r}
+#| code-fold: false
+global_fit(fit2)
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer: path diagram (teacher)"}
+```{r}
+#| echo: false
+#| fig-width: 9
+#| fig-height: 5
+#| fig-align: center
+path_diagram(fit2)
+```
+:::
+:::
+
+---
+
+# Scenario 3
+
+**Research question.** Are **transformational leadership** and **team
+psychological safety** two distinct, related constructs in work teams?
+
+**The data.** A business-management researcher surveyed **N = 400** employees
+about their manager and their team. All items are 1--5 agreement ratings, and
+the matrix below is based on the responses as recorded. The researchers
+developed the items for **leadership** (four items) and **safety** (three items).
+
+| Variable | Item                                                        | Construct  |
+|----------|-------------------------------------------------------------|------------|
+| `l1`     | "My manager communicates a clear vision for the team"       | Leadership |
+| `l2`     | "My manager inspires me to do more than expected"           | Leadership |
+| `l3`     | "My manager coaches me to develop my strengths"             | Leadership |
+| `l4`     | "My manager is on-site most days"                           | Leadership |
+| `s1`     | "Team members can bring up problems and tough issues"       | Safety     |
+| `s2`     | "It is safe to take a risk on this team"                    | Safety     |
+| `s3`     | "It is difficult to ask other members of this team for help"| Safety     |
+
+```{r}
+#| code-fold: false
+v3 <- c("l1", "l2", "l3", "l4", "s1", "s2", "s3")
+cov3 <- matrix(c(
+    0.979,   0.617,   0.584,   0.187,   0.417,   0.328,  -0.372,
+    0.617,   1.206,   0.610,   0.270,   0.399,   0.302,  -0.378,
+    0.584,   0.610,   0.985,   0.151,   0.332,   0.233,  -0.355,
+    0.187,   0.270,   0.151,   1.627,   0.196,   0.158,  -0.203,
+    0.417,   0.399,   0.332,   0.196,   1.027,   0.580,  -0.615,
+    0.328,   0.302,   0.233,   0.158,   0.580,   0.817,  -0.497,
+   -0.372,  -0.378,  -0.355,  -0.203,  -0.615,  -0.497,   1.282),
+  nrow = 7, byrow = TRUE, dimnames = list(v3, v3))
+
+cov3
+```
+
+```{r}
+#| eval: false
+#| code-fold: false
+# YOUR TURN
+model3 <- "
+  # ...your model here...
+"
+fit3 <- lavaan(model3,
+                sample_cov = cov3, sample_nobs = 400,
+                auto_var = TRUE, auto_fix_first = TRUE,
+                auto_cov_lv_x = TRUE, bad_marker_crit = 0)
+
+summary(fit3, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.callout-tip collapse="true" title="Model answer: lavaan code (teacher)"}
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: false
+model3 <- "
+  lead =~ l1 + l2 + l3 + l4
+  safe =~ s1 + s2 + s3
+"
+fit3 <- lavaan(model3,
+                sample_cov = cov3, sample_nobs = 400,
+                auto_var = TRUE, auto_fix_first = TRUE,
+                auto_cov_lv_x = TRUE, bad_marker_crit = 0)
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer: lavaan output (teacher)"}
+```{r}
+#| code-fold: false
+summary(fit3, standardized = TRUE, rsquare = TRUE)
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer: global fit (teacher)"}
+```{r}
+#| code-fold: false
+global_fit(fit3)
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer: path diagram (teacher)"}
+```{r}
+#| echo: false
+#| fig-width: 9
+#| fig-height: 5
+#| fig-align: center
+path_diagram(fit3)
+```
+:::
+:::
+
+---
+
+# Scenario 4
+
+**Research question.** Are **depressive symptoms** and **anxiety symptoms**
+distinct, related dimensions of distress among clinic patients?
+
+**The data.** A clinical psychologist collected self-report data from
+**N = 450** outpatients. Each item asks how often the symptom bothered the
+patient over the last two weeks (0 = not at all, 3 = nearly every day). The
+items were written to measure **depressive symptoms** (four items) and
+**anxiety symptoms** (four items).
+
+| Variable    | Item                                       | Construct  |
+|-------------|--------------------------------------------|------------|
+| `sad`       | Feeling down or sad                        | Depression |
+| `anhed`     | Little interest or pleasure in activities  | Depression |
+| `hopeless`  | Feeling hopeless about the future          | Depression |
+| `worthless` | Feeling worthless or like a failure        | Depression |
+| `nervous`   | Feeling nervous, anxious, or on edge       | Anxiety    |
+| `uncontrol` | Not being able to stop or control worrying | Anxiety    |
+| `toomuch`   | Worrying too much about different things   | Anxiety    |
+| `relax`     | Trouble relaxing                           | Anxiety    |
+
+```{r}
+#| code-fold: false
+v4 <- c("sad", "anhed", "hopeless", "worthless", "nervous", "uncontrol", "toomuch", "relax")
+cov4 <- matrix(c(
+    0.635,   0.469,   0.385,   0.321,   0.217,   0.216,   0.214,   0.217,
+    0.469,   0.873,   0.434,   0.366,   0.251,   0.203,   0.203,   0.196,
+    0.385,   0.434,   0.622,   0.276,   0.234,   0.188,   0.180,   0.199,
+    0.321,   0.366,   0.276,   0.466,   0.194,   0.155,   0.143,   0.168,
+    0.217,   0.251,   0.234,   0.194,   0.630,   0.387,   0.367,   0.289,
+    0.216,   0.203,   0.188,   0.155,   0.387,   0.857,   0.748,   0.326,
+    0.214,   0.203,   0.180,   0.143,   0.367,   0.748,   0.815,   0.310,
+    0.217,   0.196,   0.199,   0.168,   0.289,   0.326,   0.310,   0.585),
+  nrow = 8, byrow = TRUE, dimnames = list(v4, v4))
+
+cov4
+```
+
+**Step 1.** Fit the model implied by the research question.
+
+```{r}
+#| eval: false
+#| code-fold: false
+# YOUR TURN
+model4 <- "
+  # ...your model here...
+"
+fit4 <- lavaan(model4,
+                sample_cov = cov4, sample_nobs = 450,
+                auto_var = TRUE, auto_fix_first = TRUE,
+                auto_cov_lv_x = TRUE, bad_marker_crit = 0)
+
+summary(fit4, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
+```
+
+**Step 2.** Use modification indices to examine the model. Run this on your model from Step 1:
+
+```{r}
+#| eval: false
+#| code-fold: false
+modindices(fit4, sort. = TRUE, minimum.value = 10)
+```
+
+**Step 3.** Decide whether to free a parameter based on the modification indices. If you do, write the revised model, refit it, and compare to Step 1.
+
+```{r}
+#| eval: false
+#| code-fold: false
+# YOUR TURN
+model4b <- "
+  # ...your revised model here...
+"
+fit4b <- lavaan(model4b,
+                sample_cov = cov4, sample_nobs = 450,
+                auto_var = TRUE, auto_fix_first = TRUE,
+                auto_cov_lv_x = TRUE, bad_marker_crit = 0)
+
+summary(fit4b, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.callout-tip collapse="true" title="Model answer (Step 1): lavaan code (teacher)"}
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: false
+model4 <- "
+  dep =~ sad + anhed + hopeless + worthless
+  anx =~ nervous + uncontrol + toomuch + relax
+"
+fit4 <- lavaan(model4,
+                sample_cov = cov4, sample_nobs = 450,
+                auto_var = TRUE, auto_fix_first = TRUE,
+                auto_cov_lv_x = TRUE, bad_marker_crit = 0)
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer (Step 1): lavaan output (teacher)"}
+```{r}
+#| code-fold: false
+summary(fit4, standardized = TRUE, rsquare = TRUE)
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer (Step 1): global fit (teacher)"}
+```{r}
+#| code-fold: false
+global_fit(fit4)
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer (Step 1): path diagram (teacher)"}
+```{r}
+#| echo: false
+#| fig-width: 9
+#| fig-height: 5
+#| fig-align: center
+path_diagram(fit4)
+```
+:::
+:::
+
+::: {.content-visible when-profile="teacher"}
+::: {.callout-tip collapse="true" title="Model answer: modification indices (teacher)"}
+```{r}
+#| code-fold: false
+modindices(fit4, sort. = TRUE, minimum.value = 10)
+```
+:::
+:::
+
+::: {.content-visible when-profile="teacher"}
+::: {.callout-tip collapse="true" title="Model answer (Step 3, revised): lavaan code (teacher)"}
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: false
+model4b <- "
+  dep =~ sad + anhed + hopeless + worthless
+  anx =~ nervous + uncontrol + toomuch + relax
+  uncontrol ~~ toomuch
+"
+fit4b <- lavaan(model4b,
+                sample_cov = cov4, sample_nobs = 450,
+                auto_var = TRUE, auto_fix_first = TRUE,
+                auto_cov_lv_x = TRUE, bad_marker_crit = 0)
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer (Step 3, revised): lavaan output (teacher)"}
+```{r}
+#| code-fold: false
+summary(fit4b, standardized = TRUE, rsquare = TRUE)
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer (Step 3, revised): global fit (teacher)"}
+```{r}
+#| code-fold: false
+global_fit(fit4b)
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer (Step 3, revised): path diagram (teacher)"}
+```{r}
+#| echo: false
+#| fig-width: 9
+#| fig-height: 5
+#| fig-align: center
+path_diagram(fit4b)
+```
+:::
+:::
+
+---
