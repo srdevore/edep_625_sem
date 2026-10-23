@@ -77,10 +77,11 @@ It matches what theory predicts:
 :::: {.columns}
 
 ::: {.column width="34%"}
-**Core interpretation**
+**Simple Structure**
 
 - Path coefficients/loadings
 - Residual variances
+- Residual correlations
 - AVE
 - Reliability
 :::
@@ -90,8 +91,7 @@ It matches what theory predicts:
 
 - Factor correlations
 - Cross loadings
-- Modification indices
-- Residual correlations
+
 :::
 
 ::: {.column width="33%"}
@@ -103,31 +103,29 @@ It matches what theory predicts:
 
 ::::
 
-## Review: 
+## Review: {.smaller}
 
 What did path coefficients mean in MVPA?
 
 ![MVPA model](images/mvpa.png)
 
+## Review Interpretation
+
 ::: {.content-visible when-profile="teacher"}
 ::: {.fragment}
-
 - Each 1-unit increase in parent education is associated with a 0.15-unit increase in books at home, in the units of books.
 :::
 :::
 
 ::: {.content-visible when-profile="teacher"}
 ::: {.fragment}
-
 - Each 1-unit increase in books at home is associated with a 30.65-point increase in reading score, in the units of the reading score.
 :::
 :::
 
 ::: {.content-visible when-profile="teacher"}
 ::: {.fragment}
-
 - The indirect effect of parent education on reading score through books at home is 0.15 × 30.65 = 4.60. Each 1-unit increase in parent education is associated with a 4.60-point increase in reading score through books at home.
-
 :::
 :::
 
@@ -169,29 +167,6 @@ In reality
 
 Indicate problem with model or sample size
 
-## Example: Single-factor model
-
-```{r}
-#| label: ach-run
-#| echo: false
-#| message: false
-#| ref.label: ach-model
-```
-
-```{r}
-#| label: ach-diagram
-#| echo: false
-#| message: false
-#| fig-width: 10
-#| fig-height: 5
-#| fig-align: center
-library(semPlot)
-semPaths(ach_fit, what = "path", whatLabels = "name", style = "lisrel",
-         layout = "tree", rotation = 1, residuals = TRUE, intercepts = FALSE,
-         nCharNodes = 0, sizeMan = 11, sizeMan2 = 5, sizeLat = 10,
-         edge.label.cex = 1, edge.color = "black",
-         color = list(lat = "lightblue", man = "white"), mar = c(4, 4, 4, 4))
-```
 
 ## Example: Single-factor model (code)
 
@@ -216,6 +191,30 @@ ach_fit <- lavaan(ach_model, data = ach_dat,
                   estimator = "ML")
 
 std_sol <- standardizedSolution(ach_fit)
+```
+
+## Example: Single-factor model
+
+```{r}
+#| label: ach-run
+#| echo: false
+#| message: false
+#| ref.label: ach-model
+```
+
+```{r}
+#| label: ach-diagram
+#| echo: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 5
+#| fig-align: center
+library(semPlot)
+semPaths(ach_fit, what = "path", whatLabels = "name", style = "lisrel",
+         layout = "tree", rotation = 1, residuals = TRUE, intercepts = FALSE,
+         nCharNodes = 0, sizeMan = 11, sizeMan2 = 5, sizeLat = 10,
+         edge.label.cex = 1, edge.color = "black",
+         color = list(lat = "lightblue", man = "white"), mar = c(4, 4, 4, 4))
 ```
 
 ## Example: Global fit {.smaller .scrollable}
@@ -352,14 +351,17 @@ ave <- mean(loadings^2)
 ```{r}
 #| label: ach-ave-out
 #| echo: false
-loadings^2
-ave
+cat("squared loadings (one per indicator):\n")
+print(round(loadings^2, 3))
+cat("\nAVE = mean of squared loadings =", round(ave, 3), "\n")
 ```
 
 - AVE = `r sprintf("%.3f", ave)`, well above the 0.5 benchmark
 - The factor captures about `r round(100 * ave)`% of the indicators' variance
 
 ## Example: Reliability (code)
+
+ω = proportion of total spread that comes from differences on the construct
 
 $$\omega = \frac{(\sum \lambda_i)^2}{(\sum \lambda_i)^2 + \sum \theta_i}$$
 
@@ -378,9 +380,12 @@ omega <- sum(loadings)^2 / (sum(loadings)^2 + sum(resid_var))
 ```{r}
 #| label: ach-omega-out
 #| echo: false
-sum(loadings)^2
-sum(resid_var)
-omega
+cat("(sum of loadings)^2 =", round(sum(loadings)^2, 3),
+    "\n  -> variance from the factor (true score)\n")
+cat("sum of residual variances =", round(sum(resid_var), 3),
+    "\n  -> variance from error/indicator-specific\n")
+cat("omega =", round(omega, 3),
+    "\n  -> factor / (factor + error)\n")
 ```
 
 - $\omega$ = `r sprintf("%.3f", omega)`, above the common 0.70 benchmark
@@ -388,29 +393,6 @@ omega
 
 # Interpretation: More complicated model
 
-## Example: Two-factor model (path diagram)
-
-```{r}
-#| label: two-run
-#| echo: false
-#| message: false
-#| ref.label: two-model
-```
-
-```{r}
-#| label: two-diagram
-#| echo: false
-#| message: false
-#| fig-width: 10
-#| fig-height: 5
-#| fig-align: center
-library(semPlot)
-semPaths(two_fit, what = "path", whatLabels = "name", style = "lisrel",
-         layout = "tree", rotation = 1, residuals = TRUE, intercepts = FALSE,
-         nCharNodes = 0, sizeMan = 11, sizeMan2 = 5, sizeLat = 10,
-         edge.label.cex = 1, edge.color = "black",
-         color = list(lat = "lightblue", man = "white"), mar = c(4, 4, 4, 4))
-```
 
 ## Example: Two-factor model (code)
 
@@ -441,6 +423,32 @@ two_fit <- lavaan(two_model, data = ses_dat,
 two_std <- standardizedSolution(two_fit)
 ```
 
+
+## Example: Two-factor model (path diagram)
+
+```{r}
+#| label: two-run
+#| echo: false
+#| message: false
+#| ref.label: two-model
+```
+
+```{r}
+#| label: two-diagram
+#| echo: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 5
+#| fig-align: center
+library(semPlot)
+semPaths(two_fit, what = "path", whatLabels = "name", style = "lisrel",
+         layout = "tree", rotation = 1, residuals = TRUE, intercepts = FALSE,
+         nCharNodes = 0, sizeMan = 11, sizeMan2 = 5, sizeLat = 10,
+         edge.label.cex = 1, edge.color = "black",
+         color = list(lat = "lightblue", man = "white"), mar = c(4, 4, 4, 4))
+```
+
+
 ## Example: Global fit {.smaller .scrollable}
 
 ```{r}
@@ -449,9 +457,7 @@ two_std <- standardizedSolution(two_fit)
 summary(two_fit, fit.measures = TRUE)
 ```
 
-- $N$ = `r nobs(two_fit)`
-- $\chi^2$ is significant, but with a large $N$ that is expected
-- CFI > .95, SRMR < .08, RMSEA near .05: good fit, so we can interpret
+
 
 ## Example: Standardized path diagram
 
@@ -536,8 +542,6 @@ show_rows(standardizedSolution(two_fit), 15)
 #| output: false
 two_load <- two_std[two_std$op == "=~", ]
 two_ave <- tapply(two_load$est.std^2, two_load$lhs, mean)
-two_r2 <- two_std$est.std[two_std$op == "~~" & two_std$lhs == "ses" &
-                            two_std$rhs == "ach"]^2
 ```
 
 ## Example: AVE
@@ -546,7 +550,6 @@ two_r2 <- two_std$est.std[two_std$op == "~~" & two_std$lhs == "ses" &
 #| label: two-ave-out
 #| echo: false
 two_ave
-two_r2
 ```
 
 ## Example: Reliability (code)
@@ -633,8 +636,9 @@ If variance in first loading is fixed to 1:
 ## Modification Indices
 
 - A data (not theory) driven approach
-- tells us how much freeing paramters in the model would decrease x2
+- Tells us how much freeing paramters in the model would decrease X2 (i.e. get closer to non-significance)
 - Useful as a guide, but MUST be supported by theory
+- If you modify, must re-run modification indices to get updated results
 
 ## Modification indices example
 
