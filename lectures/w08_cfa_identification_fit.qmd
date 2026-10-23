@@ -326,68 +326,6 @@ How are the following related in CFA?
 
 Specification, path diagram, information, information, parameters (lambda, psi, theta matrices), degrees of freedom, model implied covariance, observed covariance, model fit
 
-# What if model fit is poor?
-
-- Before you run the model, define alternative models that are theory driven
-
-## Modification Indices
-
-- A data (not theory) driven approach
-- tells us how much freeing paramters in the model would decrease x2
-- Useful as a guide, but MUST be supported by theory
-
-## Modification indices example
-
-```{r}
-#| label: mi-model
-#| echo: false
-library(lavaan)
-library(semPlot)
-library(tidyverse)
-
-mi_dat <- read_csv("../rlabs/w08_data_pisa22_USA_cln_cfa.csv",
-                   show_col_types = FALSE) |>
-  select(PARENTED, BOOKSHOME, TECHHOME,
-         READING_AVE, MATH_AVE, SCIENCE_AVE) |>
-  drop_na() |>
-  mutate(across(everything(), \(x) as.numeric(scale(x))))
-
-mi_model <- '
-  ses =~ PARENTED + BOOKSHOME + TECHHOME
-  ach =~ READING_AVE + MATH_AVE + SCIENCE_AVE
-'
-mi_fit <- cfa(mi_model, data = mi_dat, std.lv = TRUE)
-```
-
-```{r}
-#| label: mi-diagram
-#| echo: false
-#| fig-width: 10
-#| fig-height: 5
-#| fig-align: center
-semPaths(cfa(mi_model, data = mi_dat, std.lv = TRUE, do.fit = FALSE),
-         what = "path", whatLabels = "name", style = "lisrel",
-         layout = "tree", rotation = 1, residuals = TRUE, intercepts = FALSE,
-         nCharNodes = 0, sizeMan = 11, sizeMan2 = 5, sizeLat = 10,
-         edge.label.cex = 1, edge.color = "black",
-         color = list(lat = "lightblue", man = "white"), mar = c(4, 4, 4, 4))
-```
-
-## Modification Indices Outputs
-
-```{r}
-#| label: mi-table
-#| echo: false
-mi_tab <- modindices(mi_fit, sort. = TRUE, maximum.number = 10) |>
-  select(lhs, op, rhs, mi, epc, sepc.all)
-knitr::kable(mi_tab, digits = 3, col.names = c("lhs", "op", "rhs", "MI", "EPC", "std EPC"))
-```
-
-```{=html}
-<style>
-#modification-indices-outputs table { font-size: 0.55em; }
-</style>
-```
 
 # Up Next: 
 

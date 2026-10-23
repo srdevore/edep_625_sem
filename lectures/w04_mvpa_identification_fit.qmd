@@ -4,7 +4,7 @@ date: today
 description: '<a href="lectures/w04_mvpa_identification_fit.pdf" download="w04_mvpa_identification_fit.pdf">Download PDF</a>'
 format:
   revealjs:
-    theme: simple
+    theme: simplehh
     slide-number: true
     embed-resources: true
     self-contained-math: true
