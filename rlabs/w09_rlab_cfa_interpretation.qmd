@@ -112,6 +112,70 @@ fit1 <- lavaan(model1,
 summary(fit1, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
 ```
 
+## Questions
+
+Type your answers in the space provided. 
+
+### Explain the model fit
+
+**1. Is the model-implied covariance matrix the same as the observed covariance matrix?**
+
+> **Your answer:**
+>
+>
+>
+
+**2. Is the model's fit the same as the baseline model's fit?**
+
+> **Your answer:**
+>
+>
+>
+
+**3. How large is the average error per degree of freedom?**
+
+> **Your answer:**
+>
+>
+>
+
+**4. How large is the typical difference between the observed and model-implied correlations?**
+
+> **Your answer:**
+>
+>
+>
+
+### Interpretation
+
+**1. How well do the indicators load onto their factors?**
+
+> **Your answer:**
+>
+>
+>
+
+**2. What does this tell you about the relationships between the indicators and the factor?**
+
+> **Your answer:**
+>
+>
+>
+
+**3. Are there indicators that don't align well with theory?**
+
+> **Your answer:**
+>
+>
+>
+
+**4. What other observations would you make about this model?**
+
+> **Your answer:**
+>
+>
+>
+
 ::: {.content-visible when-profile="teacher"}
 ::: {.callout-tip collapse="true" title="Model answer: lavaan code (teacher)"}
 ```{r}
@@ -202,6 +266,70 @@ fit2 <- lavaan(model2,
 
 summary(fit2, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
 ```
+
+## Questions
+
+Type your answers in the space provided. 
+
+### Explain the model fit
+
+**1. Is the model-implied covariance matrix the same as the observed covariance matrix?**
+
+> **Your answer:**
+>
+>
+>
+
+**2. Is the model's fit the same as the baseline model's fit?**
+
+> **Your answer:**
+>
+>
+>
+
+**3. How large is the average error per degree of freedom?**
+
+> **Your answer:**
+>
+>
+>
+
+**4. How large is the typical difference between the observed and model-implied correlations?**
+
+> **Your answer:**
+>
+>
+>
+
+### Interpretation
+
+**1. How well do the indicators load onto their factors?**
+
+> **Your answer:**
+>
+>
+>
+
+**2. What does this tell you about the relationships between the indicators and the factors, and between the factors?**
+
+> **Your answer:**
+>
+>
+>
+
+**3. Are there indicators that don't align well with theory?**
+
+> **Your answer:**
+>
+>
+>
+
+**4. What other observations would you make about this model?**
+
+> **Your answer:**
+>
+>
+>
 
 ::: {.content-visible when-profile="teacher"}
 ::: {.callout-tip collapse="true" title="Model answer: lavaan code (teacher)"}

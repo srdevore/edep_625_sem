@@ -9,7 +9,6 @@ format:
     embed-resources: true
     self-contained-math: true
 release: week 9
-draft: true
 ---
 
 # Agenda
@@ -692,6 +691,13 @@ knitr::kable(mi_tab, digits = 3, col.names = c("lhs", "op", "rhs", "MI", "EPC", 
 #modification-indices-outputs table { font-size: 0.55em; }
 </style>
 ```
+
+RLab
+
+1. Write the model to be tested 
+2. Run it
+3. Compare your results to mine
+4. Interpret the model, using the questions as a guide
 
 # Up Next
 
