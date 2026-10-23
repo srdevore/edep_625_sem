@@ -9,6 +9,7 @@ format:
     embed-resources: true
     self-contained-math: true
 release: week 9
+draft: true
 ---
 
 # Agenda
@@ -570,6 +571,41 @@ two_omega <- sum_lam^2 / (sum_lam^2 + sum_theta)
 two_omega
 ```
 
+
+# Practice
+
+Review the following examples and interpret the results. 
+
+1. How is the convergent validity? 
+2. How is the divergent validity? 
+3. Are there any variables that don't appear to align with theory? 
+
+# Practice 1: 
+
+Díaz-García, Amanda, et al. “Positive and Negative Affect Schedule (PANAS): Psychometric Properties of the Online Spanish Version in a Clinical Sample with Emotional Disorders.” BMC Psychiatry [London], vol. 20, no. 1, no. 56, February 2020, https://doi.org/10.1186/s12888-020-2472-1.
+
+- Positive and Negative Affect Schedule (PANAS), a scale to assess positive and negative affect
+- Loadings shown are standardized
+- Assume good model fit
+
+## Practice 1: Path diagram
+
+![](images/Affect_diez.png){fig-align="center"}
+
+# Practice 2: 
+
+Unfried, Alana, et al. “An Alternative to STEBI-A: Validation of the T-STEM Science Scale.” International Journal of STEM Education [Cham], vol. 9, no. 1, no. 24, March 2022, https://doi.org/10.1186/s40594-022-00339-x.
+
+- In-service teacher scale for self-efficacy
+- PSTEB: personal science teaching efficacy beliefs 
+- STOEB: science teaching outcome expectancy beliefs
+  - STOEB above-average student interest and outcome
+  - STOEB below-average student interest and outcome
+
+# Practice 2 Path diagram:
+
+![](images/stebi.png){fig-align="center"}
+
 # Unstandardized Path coefficients
 
 If variance in latent variable is fixed to 1: 
@@ -579,8 +615,6 @@ If variance in latent variable is fixed to 1:
 If variance in first loading is fixed to 1: 
 
 - LV units becomes units of what moves the indicator by one point
-
-## Example 3
 
 # CFA Assumptions
 
@@ -654,4 +688,9 @@ knitr::kable(mi_tab, digits = 3, col.names = c("lhs", "op", "rhs", "MI", "EPC", 
 #modification-indices-outputs table { font-size: 0.55em; }
 </style>
 ```
+
+# Up Next
+
+- Methods walkthrough
+
 

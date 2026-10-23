@@ -166,23 +166,23 @@ answered six Likert items (1 = strongly disagree, 5 = strongly agree).
 
 | Variable | Item                                                    |
 |----------|---------------------------------------------------------|
-| `m1`     | "I enjoy learning English"                              |
-| `m2`     | "I want to become fluent in English"                    |
-| `m3`     | "I put a lot of effort into my English classes"         |
-| `a1`     | "I get nervous when I have to speak English in class"   |
-| `a2`     | "I worry about making mistakes when I speak English"    |
-| `a3`     | "I feel tense when I use English with native speakers"  |
+| `q1`     | "I worry about making mistakes when I speak English" |
+| `q2`     | "I enjoy learning English" |
+| `q3`     | "I feel tense when I use English with native speakers" |
+| `q4`     | "I put a lot of effort into my English classes" |
+| `q5`     | "I get nervous when I have to speak English in class" |
+| `q6`     | "I want to become fluent in English" |
 
 ```{r}
 #| code-fold: false
-v2 <- c("m1", "m2", "m3", "a1", "a2", "a3")
+v2 <- c("q1", "q2", "q3", "q4", "q5", "q6")
 cov2 <- matrix(c(
-    1.393,   0.756,   0.843,  -0.389,  -0.336,  -0.417,
-    0.756,   0.999,   0.637,  -0.303,  -0.248,  -0.419,
-    0.843,   0.637,   1.468,  -0.323,  -0.262,  -0.382,
-   -0.389,  -0.303,  -0.323,   1.232,   0.589,   0.815,
-   -0.336,  -0.248,  -0.262,   0.589,   0.856,   0.511,
-   -0.417,  -0.419,  -0.382,   0.815,   0.511,   1.310),
+    0.856,  -0.336,   0.511,  -0.262,   0.589,  -0.248,
+   -0.336,   1.393,  -0.417,   0.843,  -0.389,   0.756,
+    0.511,  -0.417,   1.310,  -0.382,   0.815,  -0.419,
+   -0.262,   0.843,  -0.382,   1.468,  -0.323,   0.637,
+    0.589,  -0.389,   0.815,  -0.323,   1.232,  -0.303,
+   -0.248,   0.756,  -0.419,   0.637,  -0.303,   0.999),
   nrow = 6, byrow = TRUE, dimnames = list(v2, v2))
 
 cov2
@@ -210,8 +210,8 @@ summary(fit2, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
 #| warning: false
 #| code-fold: false
 model2 <- "
-  motiv =~ m1 + m2 + m3
-  anx   =~ a1 + a2 + a3
+  motiv =~ q2 + q6 + q4
+  anx   =~ q5 + q1 + q3
 "
 fit2 <- lavaan(model2,
                 sample_cov = cov2, sample_nobs = 300,
@@ -255,33 +255,37 @@ psychological safety** two distinct, related constructs in work teams?
 **The data.** A business-management researcher surveyed **N = 400** employees
 about their manager and their team. All items are 1--5 agreement ratings, and
 the matrix below is based on the responses as recorded. The researchers
-developed the items for **leadership** (four items) and **safety** (three items).
+developed the items for **leadership** (four items) and **safety** (four items).
 
 | Variable | Item                                                        | Construct  |
 |----------|-------------------------------------------------------------|------------|
-| `l1`     | "My manager communicates a clear vision for the team"       | Leadership |
-| `l2`     | "My manager inspires me to do more than expected"           | Leadership |
-| `l3`     | "My manager coaches me to develop my strengths"             | Leadership |
-| `l4`     | "My manager is on-site most days"                           | Leadership |
-| `s1`     | "Team members can bring up problems and tough issues"       | Safety     |
-| `s2`     | "It is safe to take a risk on this team"                    | Safety     |
-| `s3`     | "It is difficult to ask other members of this team for help"| Safety     |
+| `x1`     | "It is safe to take a risk on this team" | Safety |
+| `x2`     | "My manager coaches me to develop my strengths" | Leadership |
+| `x3`     | "I usually eat lunch at my desk" | Safety |
+| `x4`     | "My manager communicates a clear vision for the team" | Leadership |
+| `x5`     | "It is difficult to ask other members of this team for help" | Safety |
+| `x6`     | "My manager is on-site most days" | Leadership |
+| `x7`     | "Team members can bring up problems and tough issues" | Safety |
+| `x8`     | "My manager inspires me to do more than expected" | Leadership |
 
 ```{r}
 #| code-fold: false
-v3 <- c("l1", "l2", "l3", "l4", "s1", "s2", "s3")
+v3 <- c("x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8")
 cov3 <- matrix(c(
-    0.979,   0.617,   0.584,   0.187,   0.417,   0.328,  -0.372,
-    0.617,   1.206,   0.610,   0.270,   0.399,   0.302,  -0.378,
-    0.584,   0.610,   0.985,   0.151,   0.332,   0.233,  -0.355,
-    0.187,   0.270,   0.151,   1.627,   0.196,   0.158,  -0.203,
-    0.417,   0.399,   0.332,   0.196,   1.027,   0.580,  -0.615,
-    0.328,   0.302,   0.233,   0.158,   0.580,   0.817,  -0.497,
-   -0.372,  -0.378,  -0.355,  -0.203,  -0.615,  -0.497,   1.282),
-  nrow = 7, byrow = TRUE, dimnames = list(v3, v3))
+  0.821,   0.270,   0.092,   0.316,  -0.581,   0.063,   0.535,   0.333,
+  0.270,   0.895,   0.100,   0.543,  -0.320,   0.224,   0.337,   0.590,
+  0.092,   0.100,   1.427,   0.160,  -0.162,   0.066,   0.077,   0.132,
+  0.316,   0.543,   0.160,   0.943,  -0.392,   0.334,   0.401,   0.664,
+ -0.581,  -0.320,  -0.162,  -0.392,   1.231,  -0.194,  -0.610,  -0.380,
+  0.063,   0.224,   0.066,   0.334,  -0.194,   1.852,   0.185,   0.122,
+  0.535,   0.337,   0.077,   0.401,  -0.610,   0.185,   1.029,   0.391,
+  0.333,   0.590,   0.132,   0.664,  -0.380,   0.122,   0.391,   1.262),
+  nrow = 8, byrow = TRUE, dimnames = list(v3, v3))
 
 cov3
 ```
+
+**Step 1.** Fit the model implied by the research question.
 
 ```{r}
 #| eval: false
@@ -298,6 +302,105 @@ fit3 <- lavaan(model3,
 summary(fit3, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
 ```
 
+**Step 2.** Examine AVE, shared variance, reliability, and residual correlations. 
+
+```{r}
+#| eval: false
+#| code-fold: false
+std <- standardizedSolution(fit3)
+load <- std[std$op == "=~", ]
+
+# AVE for each factor
+ave <- tapply(load$est.std^2, load$lhs, mean)
+
+# Shared variance between factors (squared factor correlation)
+fcor <- std$est.std[std$op == "~~" & std$lhs != std$rhs &
+                      std$lhs %in% load$lhs]
+shared <- fcor^2
+
+# Reliability (omega) for each factor
+resid <- std[std$op == "~~" & std$lhs == std$rhs & std$lhs %in% load$rhs, ]
+theta <- resid$est.std[match(load$rhs, resid$lhs)]
+sum_lam <- tapply(load$est.std, load$lhs, sum)
+sum_theta <- tapply(theta, load$lhs, sum)
+omega <- sum_lam^2 / (sum_lam^2 + sum_theta)
+
+ave
+shared
+omega
+```
+
+```{r}
+#| eval: false
+#| code-fold: false
+resid_cor <- residuals(fit3, type = "cor")$cov
+round(resid_cor, 2)
+```
+
+## Questions
+
+Type your answers in the space provided. 
+
+### Explain the model fit
+
+**1. Is the model-implied covariance matrix the same as the observed covariance matrix?**
+
+> **Your answer:**
+>
+>
+>
+
+**2. Is the model's fit the same as the baseline model's fit?**
+
+> **Your answer:**
+>
+>
+>
+
+**3. How large is the average error per degree of freedom?**
+
+> **Your answer:**
+>
+>
+>
+
+**4. How large is the typical difference between the observed and model-implied correlations?**
+
+> **Your answer:**
+>
+>
+>
+
+### Interpretation
+
+**1. How well do the indicators load onto their factors?**
+
+> **Your answer:**
+>
+>
+>
+
+**2. What does this tell you about the relationships between the indicators and the factors, and between the factors?**
+
+> **Your answer:**
+>
+>
+>
+
+**3. Are there indicators that don't align well with theory?**
+
+> **Your answer:**
+>
+>
+>
+
+**4. What other observations would you make about this model?**
+
+> **Your answer:**
+>
+>
+>
+
 ::: {.content-visible when-profile="teacher"}
 ::: {.callout-tip collapse="true" title="Model answer: lavaan code (teacher)"}
 ```{r}
@@ -305,8 +408,8 @@ summary(fit3, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
 #| warning: false
 #| code-fold: false
 model3 <- "
-  lead =~ l1 + l2 + l3 + l4
-  safe =~ s1 + s2 + s3
+  lead =~ x4 + x8 + x2 + x6
+  safe =~ x7 + x1 + x5 + x3
 "
 fit3 <- lavaan(model3,
                 sample_cov = cov3, sample_nobs = 400,
@@ -338,6 +441,41 @@ global_fit(fit3)
 path_diagram(fit3)
 ```
 :::
+
+::: {.callout-tip collapse="true" title="Model answer: AVE, shared variance & reliability (teacher)"}
+```{r}
+#| code-fold: false
+std <- standardizedSolution(fit3)
+load <- std[std$op == "=~", ]
+
+# AVE for each factor
+ave <- tapply(load$est.std^2, load$lhs, mean)
+
+# Shared variance between factors (squared factor correlation)
+fcor <- std$est.std[std$op == "~~" & std$lhs != std$rhs &
+                      std$lhs %in% load$lhs]
+shared <- fcor^2
+
+# Reliability (omega) for each factor
+resid <- std[std$op == "~~" & std$lhs == std$rhs & std$lhs %in% load$rhs, ]
+theta <- resid$est.std[match(load$rhs, resid$lhs)]
+sum_lam <- tapply(load$est.std, load$lhs, sum)
+sum_theta <- tapply(theta, load$lhs, sum)
+omega <- sum_lam^2 / (sum_lam^2 + sum_theta)
+
+ave
+shared
+omega
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer: residual correlations (teacher)"}
+```{r}
+#| code-fold: false
+resid_cor <- residuals(fit3, type = "cor")$cov
+round(resid_cor, 2)
+```
+:::
 :::
 
 ---
@@ -350,33 +488,35 @@ distinct, related dimensions of distress among clinic patients?
 **The data.** A clinical psychologist collected self-report data from
 **N = 450** outpatients. Each item asks how often the symptom bothered the
 patient over the last two weeks (0 = not at all, 3 = nearly every day). The
-items were written to measure **depressive symptoms** (four items) and
+items were written to measure **depressive symptoms** (five items) and
 **anxiety symptoms** (four items).
 
-| Variable    | Item                                       | Construct  |
-|-------------|--------------------------------------------|------------|
-| `sad`       | Feeling down or sad                        | Depression |
-| `anhed`     | Little interest or pleasure in activities  | Depression |
-| `hopeless`  | Feeling hopeless about the future          | Depression |
-| `worthless` | Feeling worthless or like a failure        | Depression |
-| `nervous`   | Feeling nervous, anxious, or on edge       | Anxiety    |
-| `uncontrol` | Not being able to stop or control worrying | Anxiety    |
-| `toomuch`   | Worrying too much about different things   | Anxiety    |
-| `relax`     | Trouble relaxing                           | Anxiety    |
+| Variable | Item                                       | Construct  |
+|----------|--------------------------------------------|------------|
+| `p1`  | Feeling nervous, anxious, or on edge | Anxiety |
+| `p2`  | Feeling down or sad | Depression |
+| `p3`  | Difficulty finding parking at the clinic | Depression |
+| `p4`  | Worrying too much about different things | Anxiety |
+| `p5`  | Feeling hopeless about the future | Depression |
+| `p6`  | Trouble relaxing | Anxiety |
+| `p7`  | Little interest or pleasure in activities | Depression |
+| `p8`  | Feeling worthless or like a failure | Depression |
+| `p9`  | Not being able to stop or control worrying | Anxiety |
 
 ```{r}
 #| code-fold: false
-v4 <- c("sad", "anhed", "hopeless", "worthless", "nervous", "uncontrol", "toomuch", "relax")
+v4 <- c("p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9")
 cov4 <- matrix(c(
-    0.635,   0.469,   0.385,   0.321,   0.217,   0.216,   0.214,   0.217,
-    0.469,   0.873,   0.434,   0.366,   0.251,   0.203,   0.203,   0.196,
-    0.385,   0.434,   0.622,   0.276,   0.234,   0.188,   0.180,   0.199,
-    0.321,   0.366,   0.276,   0.466,   0.194,   0.155,   0.143,   0.168,
-    0.217,   0.251,   0.234,   0.194,   0.630,   0.387,   0.367,   0.289,
-    0.216,   0.203,   0.188,   0.155,   0.387,   0.857,   0.748,   0.326,
-    0.214,   0.203,   0.180,   0.143,   0.367,   0.748,   0.815,   0.310,
-    0.217,   0.196,   0.199,   0.168,   0.289,   0.326,   0.310,   0.585),
-  nrow = 8, byrow = TRUE, dimnames = list(v4, v4))
+  0.571,   0.223,   0.020,   0.324,   0.217,   0.311,   0.242,   0.178,   0.307,
+  0.223,   0.640,   0.100,   0.191,   0.438,   0.170,   0.461,   0.335,   0.191,
+  0.020,   0.100,   0.872,   0.023,   0.039,   0.043,   0.079,   0.083,   0.014,
+  0.324,   0.191,   0.023,   0.739,   0.222,   0.305,   0.221,   0.199,   0.613,
+  0.217,   0.438,   0.039,   0.222,   0.722,   0.186,   0.418,   0.358,   0.199,
+  0.311,   0.170,   0.043,   0.305,   0.186,   0.627,   0.175,   0.139,   0.317,
+  0.242,   0.461,   0.079,   0.221,   0.418,   0.175,   0.839,   0.392,   0.193,
+  0.178,   0.335,   0.083,   0.199,   0.358,   0.139,   0.392,   0.545,   0.165,
+  0.307,   0.191,   0.014,   0.613,   0.199,   0.317,   0.193,   0.165,   0.673),
+  nrow = 9, byrow = TRUE, dimnames = list(v4, v4))
 
 cov4
 ```
@@ -423,6 +563,105 @@ fit4b <- lavaan(model4b,
 summary(fit4b, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
 ```
 
+**Step 4.** Examine AVE, shared variance, reliability, and residual correlations for your final model. (If you did not change the model, use `fit4` instead of `fit4b`.)
+
+```{r}
+#| eval: false
+#| code-fold: false
+std <- standardizedSolution(fit4b)
+load <- std[std$op == "=~", ]
+
+# AVE for each factor
+ave <- tapply(load$est.std^2, load$lhs, mean)
+
+# Shared variance between factors (squared factor correlation)
+fcor <- std$est.std[std$op == "~~" & std$lhs != std$rhs &
+                      std$lhs %in% load$lhs]
+shared <- fcor^2
+
+# Reliability (omega) for each factor
+resid <- std[std$op == "~~" & std$lhs == std$rhs & std$lhs %in% load$rhs, ]
+theta <- resid$est.std[match(load$rhs, resid$lhs)]
+sum_lam <- tapply(load$est.std, load$lhs, sum)
+sum_theta <- tapply(theta, load$lhs, sum)
+omega <- sum_lam^2 / (sum_lam^2 + sum_theta)
+
+ave
+shared
+omega
+```
+
+```{r}
+#| eval: false
+#| code-fold: false
+resid_cor <- residuals(fit4b, type = "cor")$cov
+round(resid_cor, 2)
+```
+
+## Questions
+
+Type your answers in the space provided. Answer these about your final model.
+
+### Explain the model fit
+
+**1. Is the model-implied covariance matrix the same as the observed covariance matrix?**
+
+> **Your answer:**
+>
+>
+>
+
+**2. Is the model's fit the same as the baseline model's fit?**
+
+> **Your answer:**
+>
+>
+>
+
+**3. How large is the average error per degree of freedom?**
+
+> **Your answer:**
+>
+>
+>
+
+**4. How large is the typical difference between the observed and model-implied correlations?**
+
+> **Your answer:**
+>
+>
+>
+
+### Interpretation
+
+**1. How well do the indicators load onto their factors?**
+
+> **Your answer:**
+>
+>
+>
+
+**2. What does this tell you about the relationships between the indicators and the factors, and between the factors?**
+
+> **Your answer:**
+>
+>
+>
+
+**3. Are there indicators that don't align well with theory?**
+
+> **Your answer:**
+>
+>
+>
+
+**4. What other observations would you make about this model?**
+
+> **Your answer:**
+>
+>
+>
+
 ::: {.content-visible when-profile="teacher"}
 ::: {.callout-tip collapse="true" title="Model answer (Step 1): lavaan code (teacher)"}
 ```{r}
@@ -430,8 +669,8 @@ summary(fit4b, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
 #| warning: false
 #| code-fold: false
 model4 <- "
-  dep =~ sad + anhed + hopeless + worthless
-  anx =~ nervous + uncontrol + toomuch + relax
+  dep =~ p2 + p7 + p5 + p8 + p3
+  anx =~ p1 + p9 + p4 + p6
 "
 fit4 <- lavaan(model4,
                 sample_cov = cov4, sample_nobs = 450,
@@ -463,6 +702,7 @@ global_fit(fit4)
 path_diagram(fit4)
 ```
 :::
+
 :::
 
 ::: {.content-visible when-profile="teacher"}
@@ -481,9 +721,9 @@ modindices(fit4, sort. = TRUE, minimum.value = 10)
 #| warning: false
 #| code-fold: false
 model4b <- "
-  dep =~ sad + anhed + hopeless + worthless
-  anx =~ nervous + uncontrol + toomuch + relax
-  uncontrol ~~ toomuch
+  dep =~ p2 + p7 + p5 + p8 + p3
+  anx =~ p1 + p9 + p4 + p6
+  p9 ~~ p4
 "
 fit4b <- lavaan(model4b,
                 sample_cov = cov4, sample_nobs = 450,
@@ -513,6 +753,41 @@ global_fit(fit4b)
 #| fig-height: 5
 #| fig-align: center
 path_diagram(fit4b)
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer (Step 3, revised): AVE, shared variance & reliability (teacher)"}
+```{r}
+#| code-fold: false
+std <- standardizedSolution(fit4b)
+load <- std[std$op == "=~", ]
+
+# AVE for each factor
+ave <- tapply(load$est.std^2, load$lhs, mean)
+
+# Shared variance between factors (squared factor correlation)
+fcor <- std$est.std[std$op == "~~" & std$lhs != std$rhs &
+                      std$lhs %in% load$lhs]
+shared <- fcor^2
+
+# Reliability (omega) for each factor
+resid <- std[std$op == "~~" & std$lhs == std$rhs & std$lhs %in% load$rhs, ]
+theta <- resid$est.std[match(load$rhs, resid$lhs)]
+sum_lam <- tapply(load$est.std, load$lhs, sum)
+sum_theta <- tapply(theta, load$lhs, sum)
+omega <- sum_lam^2 / (sum_lam^2 + sum_theta)
+
+ave
+shared
+omega
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer (Step 3, revised): residual correlations (teacher)"}
+```{r}
+#| code-fold: false
+resid_cor <- residuals(fit4b, type = "cor")$cov
+round(resid_cor, 2)
 ```
 :::
 :::
