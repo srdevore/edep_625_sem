@@ -1,0 +1,170 @@
+#### Background
+
+Test anxiety is a situation-specific form of anxiety that can interfere with performance on exams and other evaluative tasks. Liebert and Morris (1967) distinguished between worry, the cognitive component (concern about failing, comparing oneself to others), and emotionality, the physiological component (rapid heartbeat, nausea, tension). This two-component view has shaped both research and the design of test anxiety questionnaires for several decades.  Testing professionals and school counselors need to know whether the scores they interpret reflect these separate components. If worry and emotionality are distinct but related, a student's profile can guide different interventions: cognitive strategies for worry and relaxation techniques for emotionality. If the two components cannot be separated, a single total score would be appropriate for screening and interpretation, and two subscale scores would be misleading.  The Student Test Anxiety Scale (STAS) was designed for undergraduate students. Its eight subscale scores are intended to represent four indicators of worry and four indicators of emotionality. Each subscale score is a percentage of the maximum possible score on that subscale, ranging from 0 to 100, with higher values indicating greater test anxiety. Because most students report relatively low levels of test anxiety, scores are expected to be concentrated at the lower end of the scale.  The purpose of this study was to evaluate whether the eight STAS subscale scores are consistent with the proposed two-factor structure. A confirmatory factor analysis (CFA) was used to test the structure in a sample of undergraduates.
+
+#### Research question
+
+Is the two-factor structure of the STAS (worry and emotionality) supported in a sample of undergraduate students?
+
+#### Methods
+
+**Participants and procedure**
+
+- Participants were 210 undergraduate students recruited individually from a university participant pool. Students completed the STAS once, online, in the week before a midterm exam period, and received course credit.
+- No participants were from the same class section.
+
+**Variables**
+
+- Indicators (8, all continuous): four worry subscale scores (WOR1 = fear of failure, WOR2 = social comparison, WOR3 = self-doubt, WOR4 = thoughts of consequences) and four emotionality subscale scores (EMT1 = racing heart, EMT2 = nausea, EMT3 = muscle tension, EMT4 = sweating). Each is a percentage-of-maximum score from 0 to 100 (higher = more test anxiety).
+- All 8 indicators come from a single questionnaire, the Student Test Anxiety Scale (STAS; fictional).
+- Sample size: N = 210. The rule of thumb used was at least 10 participants per indicator (8 × 10 = 80); no power analysis was conducted.
+- There were no missing data. All data were collected from participants (simulated for this exercise).
+
+**Analysis**
+
+- Analyses were run in R (R version 4.4.3 (2025-02-28)) with the lavaan package (version 0.7.2); path diagrams were drawn with semPlot (version 1.2.0).
+
+#### Results
+
+**Assumptions**
+
+- *Independent observations:* Each participant completed the questionnaire once, on their own, and participants were recruited individually (not clustered in classes, clinics, or other groups).
+
+
+::: {.content-visible when-profile="teacher"}
+- [\[assumption: linearity\]]{.missing}
+:::
+
+
+::: {.content-visible when-profile="teacher"}
+- [\[assumption: multicollinearity\]]{.missing}
+:::
+
+
+::: {.content-visible when-profile="teacher"}
+- [\[assumption: adequate sample size\]]{.missing}
+:::
+
+
+**Distributions**
+
+|Indicator | Skewness| Excess kurtosis|
+|:---------|--------:|---------------:|
+|WOR1      |     0.79|            1.16|
+|WOR2      |     0.45|            0.38|
+|WOR3      |     0.74|            0.75|
+|WOR4      |     1.11|            2.35|
+|EMT1      |     0.70|            1.03|
+|EMT2      |     1.46|            3.80|
+|EMT3      |     0.85|            1.47|
+|EMT4      |     0.74|            1.05|
+
+- Multivariate normality (Mardia's test): skewness = 14.92, χ²(120) = 522.32, p < .001; kurtosis = 100.56, z = 11.78, p < .001.
+
+- The indicators were positively skewed and heavy-tailed, and the multivariate normality tests were rejected. For this reason, a robust estimator was used (see Estimation).
+
+
+**Data summary**
+
+Sample covariance matrix (variances on the diagonal):
+
+|     |  WOR1|  WOR2|  WOR3|  WOR4|  EMT1|  EMT2|  EMT3|  EMT4|
+|:----|-----:|-----:|-----:|-----:|-----:|-----:|-----:|-----:|
+|WOR1 | 167.5|      |      |      |      |      |      |      |
+|WOR2 | 106.7| 177.3|      |      |      |      |      |      |
+|WOR3 |  92.8|  79.9| 154.2|      |      |      |      |      |
+|WOR4 | 103.8|  99.2| 112.0| 217.4|      |      |      |      |
+|EMT1 |  73.0|  63.7|  58.5| 115.5| 202.3|      |      |      |
+|EMT2 |  81.8|  74.0|  73.8|  78.7| 128.1| 223.6|      |      |
+|EMT3 |  51.9|  56.2|  34.5|  45.4| 112.0| 110.2| 180.9|      |
+|EMT4 |  65.3|  49.9|  55.1|  54.0| 106.6|  92.5|  87.6| 185.1|
+
+
+::: {.content-visible when-profile="teacher"}
+- [\[indicator means and standard descriptives\]]{.missing}
+:::
+
+
+**Specification**
+
+- Hypothesized model: a two-factor CFA (factors allowed to correlate), each indicator loading on one factor only, with no cross-loadings and no correlated residuals.
+- lavaan syntax for the hypothesized model:
+
+```r
+WORRY   =~ WOR1 + WOR2 + WOR3 + WOR4
+EMOTION =~ EMT1 + EMT2 + EMT3 + EMT4
+```
+
+- Identification: the scale of each factor was set by fixing the first loading to 1 (marker variable); factor variances were freely estimated.
+- Free parameters: 17 (6 free loadings, 8 residual variances, 2 factor variances, 1 factor covariance).
+- Unique elements in the covariance matrix: 36; degrees of freedom: 36 − 17 = 19.
+
+::: {.content-visible when-profile="teacher"}
+- [\[path diagram\]]{.missing}
+:::
+
+
+**Estimation**
+
+- Because the data were not normally distributed (see Distributions), models were estimated with robust maximum likelihood (MLR; Satorra–Bentler scaled test statistic, Huber–White standard errors) in lavaan. Scaled/robust fit indices are reported below.
+- The model converged with no warnings, and all variance estimates were positive (no Heywood cases).
+
+**Model fit**
+
+- Fit was evaluated with the chi-square test, CFI, RMSEA (90% CI), SRMR, and the cutoffs of Hu and Bentler (1999): CFI ≥ .95, RMSEA ≤ .06, SRMR ≤ .08.
+- Chi-square, CFI, and RMSEA are the scaled/robust versions.
+
+|Model                  |    χ²| df|      p|  CFI|    RMSEA [90% CI]| SRMR|
+|:----------------------|-----:|--:|------:|----:|-----------------:|----:|
+|Model 1 (hypothesized) | 72.13| 19| < .001| .920| .120 [.091, .150]| .048|
+|Model 2 (respecified)  | 31.19| 18|   .027| .980| .061 [.020, .096]| .041|
+
+- The respecified model showed acceptable fit (CFI = .980, RMSEA = .061, SRMR = .041).
+
+**Respecification**
+
+- The hypothesized model fit poorly (CFI = .920, RMSEA = .120).
+- [To improve fit, modification indices were inspected. The largest (MI = 41.9) suggested a residual covariance between WOR4 and EMT1, so this parameter was freed.]{.flawed .content-visible when-profile="teacher"}[To improve fit, modification indices were inspected. The largest (MI = 41.9) suggested a residual covariance between WOR4 and EMT1, so this parameter was freed.]{.content-hidden when-profile="teacher"}
+- [The two indicators are both about physical or mental reactions to the test, so the researchers felt the added parameter made sense.]{.flawed .content-visible when-profile="teacher"}[The two indicators are both about physical or mental reactions to the test, so the researchers felt the added parameter made sense.]{.content-hidden when-profile="teacher"}
+- The respecified model fit better: scaled Δχ²(1) = 34.15, p < .001; ΔCFI = .060. Model 2 was retained as the final model.
+
+**Estimates**
+
+Factor loadings (final model):
+
+|Factor  |Indicator |    b|   SE|     z|      p|   β|
+|:-------|:---------|----:|----:|-----:|------:|---:|
+|WORRY   |WOR1      | 1.00|    —|     —|      —| .79|
+|WORRY   |WOR2      | 0.93| 0.09| 10.52| < .001| .72|
+|WORRY   |WOR3      | 0.91| 0.08| 10.78| < .001| .75|
+|WORRY   |WOR4      | 1.07| 0.12|  9.03| < .001| .74|
+|EMOTION |EMT1      | 1.00|    —|     —|      —| .82|
+|EMOTION |EMT2      | 0.94| 0.12|  7.84| < .001| .74|
+|EMOTION |EMT3      | 0.81| 0.10|  8.08| < .001| .72|
+|EMOTION |EMT4      | 0.77| 0.10|  7.92| < .001| .67|
+
+Variances and covariances:
+
+|Parameter                        | Estimate|    SE|    z|      p| Std. estimate|
+|:--------------------------------|--------:|-----:|----:|------:|-------------:|
+|Residual covariance: WOR4 ↔ EMT1 |    47.66|  8.01| 5.95| < .001|           .58|
+|Residual variance: WOR1          |    62.11| 11.48| 5.41| < .001|           .37|
+|Residual variance: WOR2          |    85.65| 12.02| 7.13| < .001|           .49|
+|Residual variance: WOR3          |    66.99| 11.10| 6.03| < .001|           .44|
+|Residual variance: WOR4          |   100.82| 18.47| 5.46| < .001|           .46|
+|Residual variance: EMT1          |    66.49| 12.42| 5.35| < .001|           .32|
+|Residual variance: EMT2          |    99.81| 16.07| 6.21| < .001|           .45|
+|Residual variance: EMT3          |    87.21| 13.18| 6.61| < .001|           .48|
+|Residual variance: EMT4          |   102.43| 15.55| 6.59| < .001|           .56|
+|Variance: WORRY                  |   104.58| 19.05| 5.49| < .001|          1.00|
+|Variance: EMOTION                |   139.81| 25.28| 5.53| < .001|          1.00|
+|Covariance: WORRY ↔ EMOTION      |    70.63| 11.85| 5.96| < .001|           .58|
+
+
+#### Discussion
+
+- The data were consistent with a two-factor structure for the STAS, with worry and emotionality as distinct but related components of test anxiety.
+- Worry and emotionality were moderately to strongly correlated (standardized r = .58). This is in line with earlier literature that these components usually go together.
+- The final model included one residual covariance that was added after seeing the data, so the fit of the final model may be optimistic. The result should be confirmed in a new sample.
+- The sample is from one university, so claims about other student populations would be premature.
+

@@ -1,0 +1,25 @@
+**Instructions.** Review your assigned report with your team, using the [APA JARS Table 7 (quantitative reporting standards for CFA)](https://apastyle.apa.org/jars/quant-table-7.pdf) as your checklist. Then:
+
+1. Write up the substantive section of your feedback to the author (consider the Methods, Distributions, Data, Specification, Estimation, Model fit, Respecification, Estimates, and Discussion).
+2. Decide whether you **accept as-is (minor revision)** or the paper needs a **revise & resubmit**, and say why.
+
+*All reports are fictional and use simulated data. Instruments are made up.*
+
+::: {.content-visible when-profile="teacher"}
+```{=html}
+<style>
+/* Teacher-profile highlights for the CFA review activity. */
+.missing {
+  color: #ff5c5c;
+  font-weight: 700;
+  background: rgba(255, 0, 0, 0.12);
+  padding: 0 .3em;
+  border-radius: 3px;
+}
+.flawed {
+  background: rgba(255, 165, 0, 0.25);
+  border-bottom: 2px solid #ffa500;
+}
+</style>
+```
+:::

@@ -1,0 +1,24 @@
+```{=html}
+<div id="notes-box" style="margin:1.5em 0;">
+  <label for="notes-text" style="font-weight:600;">Your team's notes</label>
+  <textarea id="notes-text" rows="8" placeholder="Type your feedback to the author here..."
+    style="display:block; width:100%; min-height:10em; resize:vertical; padding:.6em; font-family:inherit; border-radius:4px;"></textarea>
+  <button id="notes-download" type="button" class="btn btn-primary" style="margin-top:.5em;">Download notes (.txt)</button>
+  <span style="margin-left:.8em; font-size:.9em; opacity:.8;">Your text stays in this browser tab only. It is not saved or sent anywhere, so download it before closing the page.</span>
+</div>
+<script>
+(function () {
+  var ta = document.getElementById("notes-text");
+  function grow() { ta.style.height = "auto"; ta.style.height = Math.max(ta.scrollHeight + 2, 160) + "px"; }
+  ta.addEventListener("input", grow);
+  document.getElementById("notes-download").addEventListener("click", function () {
+    var blob = new Blob([ta.value], { type: "text/plain;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "CFA_review_notes.txt";
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(a.href);
+  });
+})();
+</script>
+```

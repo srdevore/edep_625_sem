@@ -1,0 +1,108 @@
+---
+title: "Week 10: CFA Report & Review"
+date: today
+description: '<a href="lectures/w10_cfa_review_report.pdf" download="w10_cfa_review_report.pdf">Download PDF</a>'
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+    embed-resources: true
+    self-contained-math: true
+---
+
+
+# Agenda
+
+- Methods walk through
+- Reporting CFAs
+- qmd fileson qmd
+- Mini Project 2 discussion
+
+
+# Methods walkthrough
+
+Caroline	Deepinder	Madi	Juri	Maria 	Sydney
+
+Elevator Summaries: For those not presenting
+
+- After the presentation, you'll have 3 minutes to write a short summary of the key points of the presentation: RQ, methods highlights & key findings. 
+- feel free to take notes
+
+# Key Reporting: 
+
+- Specification & theoretical motivation
+- Assumptions: linearity, multicollinearity, 
+- Distributions: Skew, kurtosis, estimator used
+- Covariance matrix + means
+- Path diagram (can report wihtout estimates in methods, with in results)
+- Free parameters/identification
+- Standard model fit paramters
+- Path estimates, residual covariances, etc
+  - Standardized & unstandardized
+
+# Reporting CFAs
+
+Full checklist here: [APA](https://apastyle.apa.org/jars/quant-table-7.pdf)
+
+- Which items are NOT relevant to CFA? 
+
+## Reporting Workshop Part 1
+
+- Teams of 3-4 people
+- Act as reviewers: Is this report ready for publication/presentation? 
+  - each team has a different report
+  - Write a detailed review (see next slide)
+  - Make a determination: Is this paper publishable or does it need a revise & resubmit? 
+
+## Reviewing a paper for publiation
+
+1. Highlevel comments on overall quality: relevance of the question to the field; apprpriateness of the methods; any discrepancies between RQ, methods, results, discussion;  summary of things the paper does well; summary of areas for improvement.
+2. Substance
+  - line or section specific feedback: Well-organized support for the RQ, assumptions missing.  
+3. Minor typos 
+  - Mismatching numbers between tables/text, misspellings, grammar
+
+## Review Decision
+
+  - Accept: minor edits like typos; no substantive issues
+  - Revise & resubmit: Relevant to the field, conceptually the methods address the RQ; results & discussion follow logically. May be some misinterpretations, missing analyses that need done, etc. 
+  - Reject: RQ not relevant to the field, major logical problems in which the methods don't address the RQ, etc. 
+
+## Reporting workshop Part 2
+
+- 1 representative from each team
+- Each person explains their team's project (< 1 minute each)
+- Each person highlights specific feebdack to the author (Major -> minor)
+
+# Reporting Workshop Part 3
+
+- Same teams
+- Document Major & Minor feedback on google Doc
+
+# Mini Project Grades
+
+- If less than A-, 2 weeks to revise: return by 11/13
+
+# Qmd files
+
+Rlab
+
+# Up Next: 
+
+- Mini project 2 due next week. 
+- Moving to latent variable path analysis
+- Prep: 
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,174 @@
+#### Background
+
+When people decide whether to keep using a mobile app, they evaluate it on several grounds. The technology acceptance literature, following Davis (1989), distinguishes perceived ease of use (how effortless the app is to operate) from perceived usefulness (how much the app helps the user accomplish something). On one view, users form a single global impression of an app, so ease and usefulness are not separable in questionnaire responses: an app is simply evaluated more or less favorably. On another view, ease of use and usefulness are distinct judgments, and an app can be easy to use but not useful, or useful but hard to use.  The distinction matters for practice. If evaluation is unidimensional, a single score would be sufficient and design work would target overall favorability. If the two dimensions are separable, product teams could evaluate ease of use and usefulness separately and tailor improvements, for example by simplifying navigation while adding features that serve user goals.  The Mobile App Evaluation Scale (MAES) was written for adult smartphone users. It provides four subscale scores for ease of use and four for usefulness, each a percentage-of-maximum score from 0 to 100. Previous work with the MAES has not directly compared the one- and two-dimension views against each other.  The purpose of this study was to compare two competing theoretical models of the MAES prior to analyzing the data. Model 1 is a one-factor model in which all eight subscale scores reflect a general evaluation of the app. Model 2 is a two-factor model in which four subscale scores reflect ease of use and four reflect usefulness, with the factors allowed to correlate. The models were specified in advance based on the theoretical positions above, and were to be compared using the scaled chi-square difference test and the change in CFI.
+
+#### Research question
+
+Are adults' evaluations of a mobile app better represented by a one-factor model or by a two-factor model (ease of use and usefulness)?
+
+#### Methods
+
+**Participants and procedure**
+
+- Participants were 280 adult smartphone users who responded to individual invitations sent through an online research panel. Each participant evaluated the same (fictional) budgeting app after a week of use, completed the MAES once, online, and received a small payment.
+- Responses were collected individually (no group administration).
+
+**Variables**
+
+- Indicators (8, all continuous): four ease of use subscale scores (EAS1 = easy to learn, EAS2 = clear navigation, EAS3 = few errors, EAS4 = quick to operate) and four usefulness subscale scores (USE1 = saves time, USE2 = helps reach goals, USE3 = useful features, USE4 = worth recommending). Each is a percentage-of-maximum score from 0 to 100 (higher = more favorable).
+- All 8 indicators come from a single questionnaire, the Mobile App Evaluation Scale (MAES; fictional).
+- Sample size: N = 280. The rule of thumb used was at least 10 participants per indicator (8 × 10 = 80); no power analysis was conducted.
+- There were no missing data. All data were collected from participants (simulated for this exercise).
+
+**Analysis**
+
+- Analyses were run in R (R version 4.4.3 (2025-02-28)) with the lavaan package (version 0.7.2); path diagrams were drawn with semPlot (version 1.2.0).
+
+#### Results
+
+**Assumptions**
+
+- *Linearity:* Bivariate scatterplots for all pairs of indicators were inspected and showed approximately linear relationships.
+- *Multicollinearity:* The largest correlation among indicators was r = .61 (below .85) and the determinant of the correlation matrix was .095 (above .00001), so multicollinearity was not a concern.
+- *Adequate sample size:* N = 280 meets the 10-participants-per-indicator rule of thumb (minimum = 80).
+- *Independent observations:* Each participant completed the questionnaire once, on their own, and participants were recruited individually (not clustered in classes, clinics, or other groups).
+
+
+**Distributions**
+
+|Indicator | Skewness| Excess kurtosis|
+|:---------|--------:|---------------:|
+|EAS1      |     0.93|            1.76|
+|EAS2      |     0.68|            1.34|
+|EAS3      |     0.95|            2.71|
+|EAS4      |     0.74|            0.93|
+|USE1      |     0.76|            1.35|
+|USE2      |     1.33|            3.29|
+|USE3      |     0.96|            1.76|
+|USE4      |     0.84|            1.66|
+
+- Multivariate normality (Mardia's test): skewness = 11.13, χ²(120) = 519.19, p < .001; kurtosis = 100.86, z = 13.80, p < .001.
+
+- The indicators were positively skewed, and multivariate normality was rejected.
+
+
+::: {.content-visible when-profile="teacher"}
+- [\[estimator change and rationale for non-normal data\]]{.missing}
+:::
+
+
+**Data summary**
+
+
+::: {.content-visible when-profile="teacher"}
+- [\[covariance table\]]{.missing}
+:::
+
+Descriptive statistics for each indicator:
+
+|Indicator |    SD|  Min|   Max|
+|:---------|-----:|----:|-----:|
+|EAS1      | 13.91| 11.1|  95.7|
+|EAS2      | 13.87|  5.4|  91.2|
+|EAS3      | 13.65|  7.5| 100.0|
+|EAS4      | 12.50|  7.9|  85.4|
+|USE1      | 15.08|  0.0| 100.0|
+|USE2      | 14.06|  0.5| 100.0|
+|USE3      | 14.97|  0.4| 100.0|
+|USE4      | 13.76|  0.0|  88.8|
+
+
+::: {.content-visible when-profile="teacher"}
+- [\[indicator means\]]{.missing}
+:::
+
+
+**Specification**
+
+- Hypothesized model: a two-factor CFA (factors allowed to correlate), each indicator loading on one factor only, with no cross-loadings and no correlated residuals.
+- Two competing models were specified in advance (see Background): Model 1 (one factor) and Model 2 (two correlated factors).
+- lavaan syntax for the hypothesized model:
+
+```r
+EASE =~ EAS1 + EAS2 + EAS3 + EAS4
+USEF =~ USE1 + USE2 + USE3 + USE4
+```
+
+- Identification: the scale of each factor was set by fixing the first loading to 1 (marker variable); factor variances were freely estimated.
+- Free parameters: 17 (6 free loadings, 8 residual variances, 2 factor variances, 1 factor covariance (Model 2)).
+
+::: {.content-visible when-profile="teacher"}
+- [\[degrees of freedom\]]{.missing}
+:::
+
+
+![Figure 1. Hypothesized model.](/widgets/cfa_review/img/report_5_diagram.png){width=100%}
+
+
+**Estimation**
+
+- Models were estimated with maximum likelihood-based estimation in lavaan using the sample covariance matrix.
+- The model converged with no warnings, and all variance estimates were positive (no Heywood cases).
+
+**Model fit**
+
+- Fit was evaluated with the chi-square test, CFI, NA, and the cutoffs of Hu and Bentler (1999): CFI ≥ .95, RMSEA ≤ .06, SRMR ≤ .08.
+- Chi-square, CFI, and RMSEA are the scaled/robust versions.
+
+|Model                |     χ²| df|      p|  CFI| SRMR|
+|:--------------------|------:|--:|------:|----:|----:|
+|Model 1: one factor  | 168.42| 20| < .001| .764| .111|
+|Model 2: two factors |  23.69| 19|   .208| .992| .037|
+
+
+::: {.content-visible when-profile="teacher"}
+- [\[RMSEA with 90% CI\]]{.missing}
+:::
+
+- Model 2 fit the data well (CFI = .992, SRMR = .037).
+
+**Respecification**
+
+- As planned in the Background, Model 1 (one factor) and Model 2 (two correlated factors) were compared. Model 1 fit poorly (CFI = .764, SRMR = .111).
+- Scaled chi-square difference test: Δχ²(1) = 398.72, p < .001; ΔCFI = .228, in favor of Model 2. Model 2 was retained.
+
+**Estimates**
+
+![Figure 2. Final model with standardized estimates.](/widgets/cfa_review/img/report_5_estimates.png){width=60%}
+
+Factor loadings:
+
+|Factor |Indicator |    b|   SE|    z|      p|   β|
+|:------|:---------|----:|----:|----:|------:|---:|
+|EASE   |EAS1      | 1.00|    —|    —|      —| .73|
+|EASE   |EAS2      | 0.88| 0.11| 7.77| < .001| .64|
+|EASE   |EAS3      | 0.89| 0.09| 9.43| < .001| .66|
+|EASE   |EAS4      | 0.72| 0.10| 7.26| < .001| .58|
+|USEF   |USE1      | 1.00|    —|    —|      —| .82|
+|USEF   |USE2      | 0.82| 0.09| 9.44| < .001| .72|
+|USEF   |USE3      | 0.79| 0.09| 8.45| < .001| .65|
+|USEF   |USE4      | 0.73| 0.09| 8.22| < .001| .65|
+
+Variances and covariances:
+
+|Parameter               | Estimate|    SE|    z|      p| Std. estimate|
+|:-----------------------|--------:|-----:|----:|------:|-------------:|
+|Residual variance: EAS1 |    91.04| 13.24| 6.88| < .001|           .47|
+|Residual variance: EAS2 |   113.70| 15.25| 7.46| < .001|           .59|
+|Residual variance: EAS3 |   104.82| 17.80| 5.89| < .001|           .56|
+|Residual variance: EAS4 |   102.42| 12.75| 8.03| < .001|           .66|
+|Residual variance: USE1 |    74.53| 13.04| 5.72| < .001|           .33|
+|Residual variance: USE2 |    94.03| 11.27| 8.34| < .001|           .48|
+|Residual variance: USE3 |   127.98| 21.30| 6.01| < .001|           .57|
+|Residual variance: USE4 |   108.02| 13.29| 8.13| < .001|           .57|
+|Variance: EASE          |   101.70| 18.78| 5.42| < .001|          1.00|
+|Variance: USEF          |   152.03| 22.30| 6.82| < .001|          1.00|
+|Covariance: EASE ↔ USEF |    63.38| 12.51| 5.07| < .001|           .51|
+
+
+#### Discussion
+
+- [Because the two-factor model fit better than the one-factor model, ease of use causes perceived usefulness. Simplifying the interface should therefore make users find the app more useful.]{.flawed .content-visible when-profile="teacher"}[Because the two-factor model fit better than the one-factor model, ease of use causes perceived usefulness. Simplifying the interface should therefore make users find the app more useful.]{.content-hidden when-profile="teacher"}
+- [Because the model fit well, we can conclude it is the true structure of app evaluation, and the MAES measures user evaluations accurately for all apps.]{.flawed .content-visible when-profile="teacher"}[Because the model fit well, we can conclude it is the true structure of app evaluation, and the MAES measures user evaluations accurately for all apps.]{.content-hidden when-profile="teacher"}
+- [The two-factor structure was shown to be the same for younger and older users, and also across countries, so companies around the world can use the MAES subscale scores to compare users.]{.flawed .content-visible when-profile="teacher"}[The two-factor structure was shown to be the same for younger and older users, and also across countries, so companies around the world can use the MAES subscale scores to compare users.]{.content-hidden when-profile="teacher"}
+- [Product teams can use these results to guarantee that users will keep using their apps.]{.flawed .content-visible when-profile="teacher"}[Product teams can use these results to guarantee that users will keep using their apps.]{.content-hidden when-profile="teacher"}

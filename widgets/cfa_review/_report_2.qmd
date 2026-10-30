@@ -1,0 +1,180 @@
+#### Background
+
+Dörnyei's L2 Motivational Self System proposes that learning a second language (L2) is motivated by the learner's image of themselves as a future L2 user. Two components are especially prominent. The Ideal L2 Self is the person the learner would like to become, such as a fluent speaker who uses English in a satisfying career. The Ought-to L2 Self reflects attributes the learner believes they should have in order to meet expectations or avoid negative outcomes, such as disappointing family members.  Research on these constructs in many countries has used questionnaires with items that are grouped into scales for each self-guide. A common finding is that the Ideal L2 Self is more strongly related to the effort learners say they will invest in learning, while the Ought-to L2 Self is more weakly related. This pattern only makes sense if the two self-guides are empirically distinct, yet some scholars have questioned whether learners differentiate between internalized aspirations and external obligations when they respond to questionnaires.  The L2 Motivational Self Questionnaire (L2MSQ) was developed for adult learners of English enrolled in community language programs. It includes four subscale scores intended to reflect the Ideal L2 Self and four intended to reflect the Ought-to L2 Self. Because the instrument is new, evidence is needed that its scores follow the two-factor structure on which its scoring is based. A confirmatory factor analysis (CFA) tests whether the pattern of relationships among the eight subscale scores is consistent with two correlated factors.
+
+#### Research question
+
+Do the L2MSQ subscale scores reflect two correlated factors, Ideal L2 Self and Ought-to L2 Self, in a sample of adult English learners?
+
+#### Methods
+
+**Participants and procedure**
+
+- Participants were 300 adults enrolled in English classes at community language programs, recruited individually through flyers and class announcements (no more than one participant per class section was drawn from any program cohort).
+- Participants completed the L2MSQ once, online, in about 15 minutes, and received a small gift card.
+
+**Variables**
+
+- Indicators (8, all continuous): four Ideal L2 Self subscale scores (IDL1 = imagined future use, IDL2 = career goals, IDL3 = fluent future self, IDL4 = admired speaker) and four Ought-to L2 Self subscale scores (OUG1 = family expectations, OUG2 = social obligation, OUG3 = avoiding disapproval, OUG4 = sense of duty). Each is the mean of that subscale's items on a 1–6 scale (higher = stronger agreement).
+- All 8 indicators come from a single questionnaire, the L2 Motivational Self Questionnaire (L2MSQ; fictional).
+- Sample size: N = 300. The rule of thumb used was at least 10 participants per indicator (8 × 10 = 80); no power analysis was conducted.
+- There were no missing data. All data were collected from participants (simulated for this exercise).
+
+**Analysis**
+
+- Analyses were run in R (R version 4.4.3 (2025-02-28)) with the lavaan package (version 0.7.2); path diagrams were drawn with semPlot (version 1.2.0).
+
+#### Results
+
+**Assumptions**
+
+- *Linearity:* Bivariate scatterplots for all pairs of indicators were inspected and showed approximately linear relationships.
+- *Adequate sample size:* N = 300 meets the 10-participants-per-indicator rule of thumb (minimum = 80).
+- *Independent observations:* Each participant completed the questionnaire once, on their own, and participants were recruited individually (not clustered in classes, clinics, or other groups).
+
+
+::: {.content-visible when-profile="teacher"}
+- [\[assumption: multicollinearity\]]{.missing}
+:::
+
+
+**Distributions**
+
+|Indicator | Skewness|
+|:---------|--------:|
+|IDL1      |    -0.21|
+|IDL2      |     0.06|
+|IDL3      |     0.05|
+|IDL4      |     0.00|
+|OUG1      |     0.30|
+|OUG2      |     0.12|
+|OUG3      |     0.14|
+|OUG4      |     0.10|
+
+- Multivariate normality (Mardia's test): skewness = 1.96, χ²(120) = 98.15, p = .928; kurtosis = 78.20, z = -1.24, p = .217.
+
+
+::: {.content-visible when-profile="teacher"}
+- [\[univariate kurtosis\]]{.missing}
+:::
+
+
+**Data summary**
+
+Sample covariance matrix (variances on the diagonal):
+
+|     | IDL1| IDL2| IDL3| IDL4| OUG1| OUG2| OUG3| OUG4|
+|:----|----:|----:|----:|----:|----:|----:|----:|----:|
+|IDL1 | 0.90|     |     |     |     |     |     |     |
+|IDL2 | 0.53| 0.84|     |     |     |     |     |     |
+|IDL3 | 0.48| 0.47| 0.89|     |     |     |     |     |
+|IDL4 | 0.49| 0.42| 0.42| 0.79|     |     |     |     |
+|OUG1 | 0.27| 0.16| 0.15| 0.14| 1.31|     |     |     |
+|OUG2 | 0.21| 0.22| 0.15| 0.16| 0.62| 1.00|     |     |
+|OUG3 | 0.24| 0.19| 0.20| 0.15| 0.64| 0.51| 0.99|     |
+|OUG4 | 0.20| 0.16| 0.09| 0.10| 0.51| 0.39| 0.42| 0.97|
+
+Descriptive statistics:
+
+|Indicator |    M|
+|:---------|----:|
+|IDL1      | 4.36|
+|IDL2      | 4.12|
+|IDL3      | 3.92|
+|IDL4      | 4.16|
+|OUG1      | 3.07|
+|OUG2      | 3.43|
+|OUG3      | 2.92|
+|OUG4      | 3.24|
+
+
+**Specification**
+
+- Hypothesized model: a two-factor CFA (factors allowed to correlate), each indicator loading on one factor only, with no cross-loadings and no correlated residuals.
+- lavaan syntax for the hypothesized model:
+
+```r
+IDEAL =~ IDL1 + IDL2 + IDL3 + IDL4
+OUGHT =~ OUG1 + OUG2 + OUG3 + OUG4
+```
+
+- Identification: the scale of each factor was set by fixing the first loading to 1 (marker variable); factor variances were freely estimated.
+
+::: {.content-visible when-profile="teacher"}
+- [\[number of free parameters\]]{.missing}
+:::
+
+
+::: {.content-visible when-profile="teacher"}
+- [\[degrees of freedom\]]{.missing}
+:::
+
+
+![Figure 1. Hypothesized model.](/widgets/cfa_review/img/report_2_diagram.png){width=60%}
+
+
+**Estimation**
+
+- Models were estimated with maximum likelihood (ML) in lavaan, using the sample covariance matrix.
+- The model converged with no warnings, and all variance estimates were positive (no Heywood cases).
+
+**Model fit**
+
+- Fit was evaluated with the chi-square test, CFI, RMSEA (90% CI), SRMR, and the cutoffs of Hu and Bentler (1999): CFI ≥ .95, RMSEA ≤ .06, SRMR ≤ .08.
+
+|Model              |    χ²| df|    p|   CFI|    RMSEA [90% CI]| SRMR|
+|:------------------|-----:|--:|----:|-----:|-----------------:|----:|
+|Hypothesized model | 15.19| 19| .710| 1.000| .000 [.000, .039]| .024|
+
+- The model fit the data well by all indices (CFI = 1.000, RMSEA = .000, SRMR = .024).
+
+**Respecification**
+
+- No respecification was carried out; the hypothesized model was retained as specified.
+
+**Estimates**
+
+![Figure 2. Final model with standardized estimates.](/widgets/cfa_review/img/report_2_estimates.png){width=60%}
+
+Factor loadings:
+
+|Factor |Indicator |   β|
+|:------|:---------|---:|
+|IDEAL  |IDL1      | .81|
+|IDEAL  |IDL2      | .76|
+|IDEAL  |IDL3      | .69|
+|IDEAL  |IDL4      | .70|
+|OUGHT  |OUG1      | .77|
+|OUGHT  |OUG2      | .70|
+|OUGHT  |OUG3      | .73|
+|OUGHT  |OUG4      | .59|
+
+Variances and covariances:
+
+|Parameter                  | Std. estimate|
+|:--------------------------|-------------:|
+|Residual variance: IDL1    |           .34|
+|Residual variance: IDL2    |           .43|
+|Residual variance: IDL3    |           .53|
+|Residual variance: IDL4    |           .50|
+|Residual variance: OUG1    |           .41|
+|Residual variance: OUG2    |           .52|
+|Residual variance: OUG3    |           .46|
+|Residual variance: OUG4    |           .66|
+|Variance: IDEAL            |          1.00|
+|Variance: OUGHT            |          1.00|
+|Correlation: IDEAL ↔ OUGHT |           .36|
+
+
+::: {.content-visible when-profile="teacher"}
+- [\[unstandardized estimates\]]{.missing}
+:::
+
+
+#### Discussion
+
+- The data were consistent with a two-factor structure for the L2MSQ, supporting the use of separate Ideal L2 Self and Ought-to L2 Self scores in this population.
+- The factors were positively but modestly correlated (standardized r = .36), which suggests that learners distinguish their own aspirations from perceived obligations even though the two are related.
+- All indicators had substantial standardized loadings on their intended factor.
+- Limitations: self-report data from adult learners in community programs may not generalize to school-aged learners or other languages. Fit supports the model but does not rule out alternative structures.
+

@@ -28,7 +28,7 @@ website:
       - href: labs.qmd
         text: R Labs
       - href: widgets.qmd
-        text: Widgets
+        text: Activity
       - href: methods_walk_through.qmd
         text: Methods Walk Through
       - href: fin_proj.qmd
