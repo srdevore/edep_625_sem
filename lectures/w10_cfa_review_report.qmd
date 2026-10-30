@@ -15,7 +15,7 @@ format:
 
 - Methods walk through
 - Reporting CFAs
-- qmd fileson qmd
+- qmd files
 - Mini Project 2 discussion
 
 
@@ -28,19 +28,19 @@ Elevator Summaries: For those not presenting
 - After the presentation, you'll have 3 minutes to write a short summary of the key points of the presentation: RQ, methods highlights & key findings. 
 - feel free to take notes
 
-# Key Reporting: 
+## Reporting CFAs 
 
 - Specification & theoretical motivation
 - Assumptions: linearity, multicollinearity, 
 - Distributions: Skew, kurtosis, estimator used
 - Covariance matrix + means
-- Path diagram (can report wihtout estimates in methods, with in results)
+- Path diagram (with & without estimates)
 - Free parameters/identification
 - Standard model fit paramters
 - Path estimates, residual covariances, etc
   - Standardized & unstandardized
 
-# Reporting CFAs
+## Reporting CFAs
 
 Full checklist here: [APA](https://apastyle.apa.org/jars/quant-table-7.pdf)
 
@@ -54,9 +54,12 @@ Full checklist here: [APA](https://apastyle.apa.org/jars/quant-table-7.pdf)
   - Write a detailed review (see next slide)
   - Make a determination: Is this paper publishable or does it need a revise & resubmit? 
 
-## Reviewing a paper for publiation
+## Reviewing a paper for publication
 
 1. Highlevel comments on overall quality: relevance of the question to the field; apprpriateness of the methods; any discrepancies between RQ, methods, results, discussion;  summary of things the paper does well; summary of areas for improvement.
+
+## Reviewing a paper for publication
+
 2. Substance
   - line or section specific feedback: Well-organized support for the RQ, assumptions missing.  
 3. Minor typos 
@@ -79,19 +82,22 @@ Full checklist here: [APA](https://apastyle.apa.org/jars/quant-table-7.pdf)
 - Same teams
 - Document Major & Minor feedback on google Doc
 
+https://docs.google.com/document/d/1rQV3cxieY9ZEdVTv9Mp-ZrAZSvRnS6COap2CvO7hf4Y/edit?usp=sharing
+
 # Mini Project Grades
 
-- If less than A-, 2 weeks to revise: return by 11/13
+- If less than A-, 2 weeks to revise: resubmit by 11/13
 
-# Qmd files
+## Working with Quarto
 
-Rlab
+- download Quarto https://quarto.org/docs/get-started/
+- Rlab: Lamaku > rlabs > w10
 
 # Up Next: 
 
 - Mini project 2 due next week. 
+- Revise & resubmit due in 2 weeks
 - Moving to latent variable path analysis
-- Prep: 
 
 
 
