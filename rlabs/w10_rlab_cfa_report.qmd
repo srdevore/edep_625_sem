@@ -1,0 +1,342 @@
+---
+title: "W10 Lab: Writing a CFA Report with Code-Populated Text"
+date: today
+description: '<a href="rlab-downloads/w10_rlab_cfa_report.qmd" download="w10_rlab_cfa_report.qmd">Download .qmd</a>'
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-summary: "Show code"
+  docx:
+    toc: true
+    fig-format: png
+    fig-dpi: 200
+    echo: false
+execute:
+  warning: false
+  message: false
+---
+
+## Purpose
+
+[**NOTE: THE DATA, THE STUDY, AND THE REPORT BELOW ARE ALL FAKE.** The school, the questionnaire, and the participants do not exist. The data were simulated in R so that the report would have a clean, well-fitting model.]{style="color:red; font-weight:bold;"}
+
+In the W10 review activity you reviewed reports that were missing pieces. This lab shows what a **complete** version of one of them looks like (the student engagement study, Report 1 from the activity), and, more importantly, **how it is built**:
+
+1. The report is a `.qmd`, so the text and the analysis live in one file.
+2. Tables (covariances, loadings, fit) and figures (the path diagram) are produced by code chunks, not pasted in.
+3. Numbers inside sentences (N, χ², CFI, the factor correlation...) are filled in **directly from the fitted model** with inline code, so the text can never disagree with the output.
+
+Click **Show code** on any chunk to see how it is made. Then try the exercises at the end.
+
+## Setup
+
+```{r}
+#| label: setup
+#| code-fold: false
+library(lavaan)
+library(semPlot)
+library(knitr)
+```
+
+These small helper functions format numbers the APA way (for example, no leading zero for values that cannot exceed 1, and p-values reported as `< .001`). Writing them once means every number in the report is formatted consistently.
+
+```{r}
+#| label: helpers
+f   <- function(x, k = 2) formatC(x, digits = k, format = "f")          # fixed decimals
+nz  <- function(x, k = 2) sub("^(-?)0\\.", "\\1.", f(x, k))             # drop leading zero
+pf  <- function(p) ifelse(p < .001, "< .001", paste0("= ", nz(p, 3)))   # "p < .001" or "p = .032"
+```
+
+## Step 1: Make the (fake) data
+
+In a real study you would read in your data with `read.csv()`. Here we simulate 240 fake students so the lab is self-contained. Eight indicators (four behavioral engagement, four emotional engagement) come from a made-up questionnaire and are continuous, 1–7 scores.
+
+```{r}
+#| label: simulate
+pop_model <- "
+  BEHAV =~ .78*BEH1 + .72*BEH2 + .70*BEH3 + .66*BEH4
+  EMOT  =~ .80*EMO1 + .76*EMO2 + .72*EMO3 + .68*EMO4
+  BEHAV ~~ 1*BEHAV
+  EMOT  ~~ 1*EMOT
+  BEHAV ~~ .45*EMOT
+  BEH1 ~~ .3916*BEH1
+  BEH2 ~~ .4816*BEH2
+  BEH3 ~~ .5100*BEH3
+  BEH4 ~~ .5644*BEH4
+  EMO1 ~~ .3600*EMO1
+  EMO2 ~~ .4224*EMO2
+  EMO3 ~~ .4816*EMO3
+  EMO4 ~~ .5376*EMO4
+"
+set.seed(101)
+raw <- simulateData(pop_model, sample.nobs = 240)
+vars <- c(paste0("BEH", 1:4), paste0("EMO", 1:4))
+means <- c(5.1, 4.8, 4.5, 5.0, 4.6, 4.9, 4.2, 4.4)
+
+dat <- raw[, vars]
+for (j in seq_along(vars)) dat[[j]] <- pmin(7, pmax(1, round(means[j] + 0.9 * dat[[j]], 2)))
+
+N <- nrow(dat)
+p <- ncol(dat)
+anyNA(dat)   # FALSE: no missing data
+```
+
+## Step 2: Do the analysis first, quote it later
+
+Every number in the report comes from objects created here. The report text below never contains a typed-in statistic.
+
+```{r}
+#| label: analysis
+# the model
+model <- "
+  BEHAV =~ BEH1 + BEH2 + BEH3 + BEH4
+  EMOT  =~ EMO1 + EMO2 + EMO3 + EMO4
+"
+fit <- lavaan(model, data = dat, estimator = "ML",
+              auto.var = TRUE,         # estimate residual variances
+              auto.fix.first = TRUE,   # fix first loading of each factor to 1 (marker variable)
+              auto.cov.lv.x = TRUE)    # let the factors covary
+
+# fit indices, as a named vector we can index by name
+fm <- fitMeasures(fit, c("chisq", "df", "pvalue", "cfi",
+                         "rmsea", "rmsea.ci.lower", "rmsea.ci.upper",
+                         "srmr", "npar"))
+
+# parameter estimates (unstandardized and standardized)
+pe <- parameterEstimates(fit)
+ss <- standardizedSolution(fit)
+
+# assumptions and distributions
+R <- cor(dat)
+max_r <- max(abs(R[lower.tri(R)]))
+det_R <- det(R)
+
+uni_skew <- function(x) { z <- x - mean(x); mean(z^3) / mean(z^2)^1.5 }
+uni_kurt <- function(x) { z <- x - mean(x); mean(z^4) / mean(z^2)^2 - 3 }
+
+# Mardia's multivariate skewness and kurtosis, computed by hand
+X  <- scale(as.matrix(dat), scale = FALSE)
+Sn <- crossprod(X) / N
+D  <- X %*% solve(Sn) %*% t(X)
+mv_skew <- sum(D^3) / N^2
+mv_skew_chi <- N * mv_skew / 6
+mv_skew_df  <- p * (p + 1) * (p + 2) / 6
+mv_skew_p   <- pchisq(mv_skew_chi, mv_skew_df, lower.tail = FALSE)
+mv_kurt   <- mean(diag(D)^2)
+mv_kurt_z <- (mv_kurt - p * (p + 2)) / sqrt(8 * p * (p + 2) / N)
+mv_kurt_p <- 2 * pnorm(-abs(mv_kurt_z))
+
+# model-implied counts
+known <- p * (p + 1) / 2
+npar  <- fm[["npar"]]
+df    <- fm[["df"]]
+
+# the factor correlation (standardized) and its p-value
+phi <- ss[ss$op == "~~" & ss$lhs == "BEHAV" & ss$rhs == "EMOT", ]
+```
+
+::: {.callout-tip}
+## Putting R results inside a sentence
+
+Anywhere in the text you can write inline code like the line below, and Quarto replaces it with the result when you render:
+
+::: {.content-visible when-format="html"}
+<p><code>&#96;{r} nrow(dat)&#96;</code></p>
+:::
+
+::: {.content-visible unless-format="html"}
+`` `r nrow(dat)` ``
+:::
+
+For example, the sample has **`{r} N`** students and **`{r} p`** indicators, and the chi-square is **`{r} f(fm[["chisq"]], 2)`**. None of those numbers are typed. If you change `240` to `300` in Step 1 and render again, every sentence below updates.
+:::
+
+[**REMINDER: everything from here down is a FAKE report built on FAKE data.**]{style="color:red; font-weight:bold; font-size:1.2em;"}
+
+------------------------------------------------------------------------
+
+## The Report
+
+[Fake report. Fake data. Fake questionnaire.]{style="color:red; font-weight:bold;"}
+
+### Background
+
+- Student engagement is widely viewed as a key driver of achievement and school completion. Fredricks, Blumenfeld, and Paris (2004) described it as multidimensional, including at least a behavioral dimension (participating, persisting, completing work) and an emotional dimension (interest, enjoyment, belonging).
+- Treating engagement as one score can hide students who are behaviorally compliant but emotionally disconnected, or the reverse.
+- The (fictional) School Engagement Questionnaire (SEQ) proposes four subscale scores for behavioral engagement and four for emotional engagement. Before it is used for screening, this two-factor structure needs to be checked in a sample of students.
+- A confirmatory factor analysis (CFA) tests whether the pattern of relationships among the eight subscale scores is consistent with the proposed two factors.
+
+### Research question
+
+Is the proposed two-factor structure (behavioral engagement and emotional engagement) of the SEQ supported by data from secondary school students?
+
+### Methods
+
+- **Participants.** `{r} N` ninth- and tenth-grade students from one (fictional) public school district completed the SEQ on tablets during homeroom. Participation was voluntary and anonymous, and each student completed it once, individually.
+- **Variables.** `{r} p` continuous indicators from the SEQ: four behavioral engagement subscale scores (BEH1 to BEH4) and four emotional engagement subscale scores (EMO1 to EMO4), each the mean of that subscale's items on a 1 to 7 scale.
+- **Sample size.** N = `{r} N`, which meets the rule of thumb of at least 10 participants per indicator (`{r} p` × 10 = `{r} p * 10`). No power analysis was conducted.
+- **Missing data.** There were `{r} sum(is.na(dat))` missing values.
+- **Software.** R (`{r} R.version.string`), lavaan `{r} as.character(packageVersion("lavaan"))`, and semPlot `{r} as.character(packageVersion("semPlot"))`.
+
+### Results
+
+#### Assumptions
+
+- *Linearity:* scatterplots of all indicator pairs were inspected and the relationships were approximately linear.
+- *Multicollinearity:* the largest correlation among indicators was r = `{r} nz(max_r, 2)` (below .85), and the determinant of the correlation matrix was `{r} nz(det_R, 3)` (above .00001).
+- *Adequate sample size:* N = `{r} N` exceeds the minimum of `{r} p * 10`.
+- *Independent observations:* each student completed the questionnaire once and students were not clustered in classes or groups.
+
+::: {.callout-tip}
+## Which claims are code, and which are not?
+
+The multicollinearity and sample-size bullets above come from code (`max_r`, `det_R`, `N`). The linearity and independence bullets are **statements by the researcher** about what they looked at or how the data were collected. Code can fill in numbers, but it cannot check these for you. For linearity, you would actually run `pairs(dat)` and look.
+:::
+
+#### Distributions
+
+```{r}
+#| label: tbl-dist
+#| tbl-cap: "Univariate skewness and excess kurtosis"
+kable(data.frame(Indicator = vars,
+                 Skewness = f(sapply(dat, uni_skew), 2),
+                 `Excess kurtosis` = f(sapply(dat, uni_kurt), 2),
+                 check.names = FALSE),
+      align = "lrr")
+```
+
+- Skewness ranged from `{r} f(min(sapply(dat, uni_skew)), 2)` to `{r} f(max(sapply(dat, uni_skew)), 2)`, and excess kurtosis from `{r} f(min(sapply(dat, uni_kurt)), 2)` to `{r} f(max(sapply(dat, uni_kurt)), 2)`, all well within common cutoffs (|skew| < 2, |kurtosis| < 7).
+- Mardia's test of multivariate normality: skewness = `{r} f(mv_skew, 2)`, χ²(`{r} mv_skew_df`) = `{r} f(mv_skew_chi, 2)`, p `{r} pf(mv_skew_p)`; kurtosis = `{r} f(mv_kurt, 2)`, z = `{r} f(mv_kurt_z, 2)`, p `{r} pf(mv_kurt_p)`.
+- Multivariate skewness was not significant. The kurtosis test was significant, but the observed kurtosis (`{r} f(mv_kurt, 2)`) was *below* the value expected under normality (`{r} p * (p + 2)`), which means slightly lighter tails, not heavier tails. Heavy tails are what threaten ML standard errors and the chi-square test, so standard ML estimation was judged appropriate. With N = `{r} N` the test is sensitive to small departures.
+
+::: {.callout-tip}
+## Code gives the numbers, you give the judgment
+
+The test result and the expected value above are computed. The sentence that says *why a significant test is not a problem* is a researcher's judgment that code cannot write for you. Notice that a version of this report that simply said "the data were multivariate normal" would have been wrong here, and because the numbers are right there in the text, a reviewer could catch it.
+:::
+
+#### Data summary
+
+```{r}
+#| label: tbl-cov
+#| tbl-cap: "Sample covariance matrix (variances on the diagonal)"
+S <- cov(dat)
+mat <- matrix("", p, p, dimnames = list(vars, vars))
+for (i in 1:p) for (j in 1:i) mat[i, j] <- f(S[i, j], 2)
+kable(mat, align = "r")
+```
+
+```{r}
+#| label: tbl-desc
+#| tbl-cap: "Indicator means and standard deviations"
+kable(data.frame(Indicator = vars, M = f(sapply(dat, mean), 2), SD = f(sapply(dat, sd), 2)),
+      align = "lrr")
+```
+
+#### Specification
+
+- Hypothesized model: two correlated factors; each indicator loads on one factor only; no cross-loadings; no correlated residuals.
+- Identification: each factor's scale was set by fixing its first loading to 1 (marker variable); factor variances were freely estimated.
+- The covariance matrix has `{r} known` unique elements; the model has `{r} npar` free parameters (6 free loadings, 8 residual variances, 2 factor variances, 1 factor covariance); so df = `{r} known` − `{r} npar` = `{r} df`.
+
+```{r}
+#| label: fig-diagram
+#| fig-cap: "Hypothesized two-factor model."
+#| fig-width: 7
+#| fig-height: 4.5
+semPaths(fit, what = "path", whatLabels = "name", layout = "tree2",
+         style = "lisrel", residuals = TRUE, intercepts = FALSE,
+         nCharNodes = 0, sizeMan = 7, sizeLat = 9, edge.color = "grey25")
+```
+
+lavaan syntax for the model (this is the same `model` object used above, printed with `cat()`):
+
+```{r}
+#| label: show-syntax
+cat(model)
+```
+
+#### Estimation
+
+- The model was estimated with maximum likelihood (ML) in lavaan using the sample covariance matrix.
+- The model converged (`{r} lavInspect(fit, "converged")`) and all variance estimates were positive.
+
+#### Model fit
+
+- Fit was evaluated with the chi-square test, CFI, RMSEA (90% CI), and SRMR, using the cutoffs of Hu and Bentler (1999): CFI ≥ .95, RMSEA ≤ .06, SRMR ≤ .08.
+- The model fit the data well: χ²(`{r} df`) = `{r} f(fm[["chisq"]], 2)`, p `{r} pf(fm[["pvalue"]])`; CFI = `{r} nz(fm[["cfi"]], 3)`; RMSEA = `{r} nz(fm[["rmsea"]], 3)`, 90% CI [`{r} nz(fm[["rmsea.ci.lower"]], 3)`, `{r} nz(fm[["rmsea.ci.upper"]], 3)`]; SRMR = `{r} nz(fm[["srmr"]], 3)`.
+
+```{r}
+#| label: tbl-fit
+#| tbl-cap: "Global fit of the hypothesized model"
+kable(data.frame(
+  `χ²` = f(fm[["chisq"]], 2), df = df, p = ifelse(fm[["pvalue"]] < .001, "< .001", nz(fm[["pvalue"]], 3)),
+  CFI = nz(fm[["cfi"]], 3),
+  `RMSEA [90% CI]` = sprintf("%s [%s, %s]", nz(fm[["rmsea"]], 3), nz(fm[["rmsea.ci.lower"]], 3), nz(fm[["rmsea.ci.upper"]], 3)),
+  SRMR = nz(fm[["srmr"]], 3), check.names = FALSE), align = "r")
+```
+
+#### Respecification
+
+- No respecification was carried out. The hypothesized model was retained as specified.
+
+#### Estimates
+
+```{r}
+#| label: tbl-load
+#| tbl-cap: "Factor loadings: unstandardized (b, SE, z, p) and standardized (β)"
+lo <- pe[pe$op == "=~", ]
+ls <- ss[ss$op == "=~", ]
+kable(data.frame(
+  Factor = lo$lhs, Indicator = lo$rhs,
+  b  = f(lo$est, 2),
+  SE = ifelse(lo$se == 0, "—", f(lo$se, 2)),
+  z  = ifelse(is.na(lo$z), "—", f(lo$z, 2)),
+  p  = ifelse(is.na(lo$pvalue), "—", ifelse(lo$pvalue < .001, "< .001", nz(lo$pvalue, 3))),
+  `β` = nz(ls$est.std, 2), check.names = FALSE), align = "llrrrrr")
+```
+
+```{r}
+#| label: tbl-var
+#| tbl-cap: "Variances and covariance (unstandardized and standardized)"
+vv <- pe[pe$op == "~~", ]
+vs <- ss[ss$op == "~~", ]
+lab <- ifelse(vv$lhs == vv$rhs,
+              ifelse(vv$lhs %in% c("BEHAV", "EMOT"), paste("Variance:", vv$lhs), paste("Residual variance:", vv$lhs)),
+              paste("Covariance:", vv$lhs, "↔", vv$rhs))
+kable(data.frame(
+  Parameter = lab, Estimate = f(vv$est, 2), SE = f(vv$se, 2), z = f(vv$z, 2),
+  p = ifelse(vv$pvalue < .001, "< .001", nz(vv$pvalue, 3)),
+  `Std. estimate` = nz(vs$est.std, 2), check.names = FALSE), align = "lrrrrr")
+```
+
+- Marker-variable loadings were fixed to 1 and so have no standard error or test.
+- All standardized loadings were between `{r} nz(min(ls$est.std), 2)` and `{r} nz(max(ls$est.std), 2)`, and all freely estimated loadings were significant (p < .001).
+
+### Discussion
+
+- The two-factor structure proposed for the SEQ was consistent with the data: the model fit well (CFI = `{r} nz(fm[["cfi"]], 3)`, RMSEA = `{r} nz(fm[["rmsea"]], 3)`) and every indicator loaded substantially on its intended factor. This supports reporting separate behavioral and emotional engagement subscale scores.
+- The factors were positively related (standardized r = `{r} nz(phi$est.std, 2)`, p `{r} pf(phi$pvalue)`), so students who report higher behavioral engagement also tend to report higher emotional engagement, but the factors are far from redundant (they share about `{r} round(100 * phi$est.std^2)`% of their variance).
+- Good fit does not prove the model is correct; other structures might fit equally well. The sample comes from one district, so results may not generalize to other districts or grade levels.
+- A next step is to test the structure in an independent sample before the SEQ is used for screening.
+
+[End of fake report.]{style="color:red; font-weight:bold;"}
+
+------------------------------------------------------------------------
+
+## Your turn
+
+1. In Step 1, change `sample.nobs = 240` to `sample.nobs = 120`, render, and read the report. Which sentences changed on their own? Does anything in the text now need your judgment (for example, "meets the rule of thumb")?
+2. The sample-size bullet says it "meets" the rule of thumb. That claim is typed, not computed. Rewrite it as an inline expression that says "meets" or "does not meet" depending on `N >= p * 10` (hint: inline code can contain an `if (...) "a" else "b"` expression).
+3. The Model fit bullet says the model "fit the data well" no matter what. Make that phrase conditional on the Hu and Bentler cutoffs. Why is it risky to automate an *interpretation*, not just a number?
+4. Add a new bullet under Distributions that reports the single largest absolute skewness value and the name of the indicator it belongs to.
+5. Pick one of the five activity reports that had a missing piece and write the chunk (or inline code) that would have produced it.
+
+::: {.content-visible when-profile="teacher"}
+## Teacher notes
+
+- The data and model are identical to Report 1 in the "CFA Reporting: Review" activity (seed 101), except this version includes everything Report 1 omitted: assumptions, skewness, the path diagram, and standardized estimates.
+- Fit is excellent by construction because the population model is the fitted model. Exercise 1 (N = 120) will still fit well; if you want a lab where the text must change, simulate a cross-loading into the population model.
+- Exercises 2 and 3 are the point of the lab: numbers are safe to automate, but wording that interprets them still needs a human.
+:::

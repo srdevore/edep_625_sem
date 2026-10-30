@@ -1,7 +1,7 @@
 ---
 title: "Week 10: CFA Report & Review"
 date: today
-description: '<a href="lectures/w09_cfa_interpretation.pdf" download="w09_cfa_interpretation.pdf">Download PDF</a>'
+description: '<a href="lectures/w10_cfa_review_report.pdf" download="w10_cfa_review_report.pdf">Download PDF</a>'
 format:
   revealjs:
     theme: simple
@@ -13,9 +13,9 @@ format:
 
 # Agenda
 
-- Methods walk throughs
+- Methods walk through
 - Reporting CFAs
-- qmd files
+- qmd fileson qmd
 - Mini Project 2 discussion
 
 
@@ -28,9 +28,23 @@ Elevator Summaries: For those not presenting
 - After the presentation, you'll have 3 minutes to write a short summary of the key points of the presentation: RQ, methods highlights & key findings. 
 - feel free to take notes
 
+# Key Reporting: 
+
+- Specification & theoretical motivation
+- Assumptions: linearity, multicollinearity, 
+- Distributions: Skew, kurtosis, estimator used
+- Covariance matrix + means
+- Path diagram (can report wihtout estimates in methods, with in results)
+- Free parameters/identification
+- Standard model fit paramters
+- Path estimates, residual covariances, etc
+  - Standardized & unstandardized
+
 # Reporting CFAs
 
-- key things to include
+Full checklist here: [APA](https://apastyle.apa.org/jars/quant-table-7.pdf)
+
+- Which items are NOT relevant to CFA? 
 
 ## Reporting Workshop Part 1
 

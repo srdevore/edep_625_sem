@@ -1,0 +1,44 @@
+---
+title: "CFA Reporting: Review"
+date: 2026-10-29
+toc: false
+---
+
+{{< include cfa_review/_instructions.qmd >}}
+
+
+{{< include cfa_review/_notes.qmd >}}
+
+::: {.callout-note collapse="true" appearance="simple" title="Report 1"}
+
+{{< include cfa_review/_report_1.qmd >}}
+
+:::
+
+
+::: {.callout-note collapse="true" appearance="simple" title="Report 2"}
+
+{{< include cfa_review/_report_2.qmd >}}
+
+:::
+
+
+::: {.callout-note collapse="true" appearance="simple" title="Report 3"}
+
+{{< include cfa_review/_report_3.qmd >}}
+
+:::
+
+
+::: {.callout-note collapse="true" appearance="simple" title="Report 4"}
+
+{{< include cfa_review/_report_4.qmd >}}
+
+:::
+
+
+::: {.callout-note collapse="true" appearance="simple" title="Report 5"}
+
+{{< include cfa_review/_report_5.qmd >}}
+
+:::

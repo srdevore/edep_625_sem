@@ -1,5 +1,5 @@
 ---
-title: "Widgets"
+title: "Activity"
 listing:
   contents: widgets/*.qmd
   type: table
@@ -9,4 +9,4 @@ listing:
   filter-ui: false
 ---
 
-Interactive pages for exploring SEM concepts. Each widget includes its own worksheet.
+Interactive pages and in-class activities for exploring SEM concepts. Each one includes its own worksheet or instructions.

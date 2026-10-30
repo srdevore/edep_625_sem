@@ -1,0 +1,154 @@
+#### Background
+
+Team cohesion is the degree to which members of a group stick together and stay united in pursuit of shared goals. Researchers in sport psychology have long asked whether cohesion is a single quality of a team or has distinguishable parts. Carron's conceptual model separates task cohesion, the commitment of members to achieving the team's performance goals, from social cohesion, the extent to which members like each other and enjoy spending time together. Teams can be high on one and low on the other, for example a team that trains hard together but does not socialize.  Coaches and league organizers often use short questionnaires that give a score for each type of cohesion. Reporting two scores is only meaningful if the questionnaire items actually separate into two related but distinct factors. If the factors were nearly perfectly correlated, a coach would gain little from having two scores, and decisions based on the separate scores, such as whether to schedule more practices or more team events, would be unwarranted.  The Team Cohesion Scale for Recreational Sport (TCS-R) is a self-report measure designed for adult recreational leagues. It yields three task cohesion subscale scores (shared goals, commitment to practice, role clarity) and three social cohesion subscale scores (friendship, time together, team spirit). Each subscale score is the sum of five items rated from 0 (strongly disagree) to 6 (strongly agree). The measure has not yet been evaluated in the adult league players for whom it was developed. A confirmatory factor analysis (CFA) provides a direct test of whether the six subscale scores are consistent with a two-factor structure.
+
+#### Research question
+
+Are task cohesion and social cohesion on the TCS-R best represented by two correlated factors in a sample of adult recreational league players?
+
+#### Methods
+
+**Participants and procedure**
+
+- Participants were 200 adults playing in community recreational leagues (soccer, volleyball, and softball), recruited through league organizers and notices posted at community sports centers. Players on professional or collegiate teams were not eligible.
+- Each participant completed the TCS-R once, individually and confidentially, online, and received a $10 gift card.
+
+**Variables**
+
+- Indicators (6, all continuous): three task cohesion subscale scores (TSK1 = shared goals, TSK2 = commitment to practice, TSK3 = role clarity) and three social cohesion subscale scores (SOC1 = friendship, SOC2 = time together, SOC3 = team spirit). Each is the sum of five items, with possible scores from 0 to 30 (higher = stronger cohesion).
+- All 6 indicators come from a single questionnaire, the Team Cohesion Scale for Recreational Sport (TCS-R; fictional).
+- Sample size: N = 200. The rule of thumb used was at least 10 participants per indicator (6 × 10 = 60); no power analysis was conducted.
+- There were no missing data. All data were collected from participants (simulated for this exercise).
+
+**Analysis**
+
+- Analyses were run in R (R version 4.4.3 (2025-02-28)) with the lavaan package (version 0.7.2); path diagrams were drawn with semPlot (version 1.2.0).
+
+#### Results
+
+**Assumptions**
+
+- *Linearity:* Bivariate scatterplots for all pairs of indicators were inspected and showed approximately linear relationships.
+- *Multicollinearity:* The largest correlation among indicators was r = .59 (below .85) and the determinant of the correlation matrix was .149 (above .00001), so multicollinearity was not a concern.
+- *Adequate sample size:* N = 200 meets the 10-participants-per-indicator rule of thumb (minimum = 60).
+- *Independent observations:* Each participant completed the questionnaire once, on their own, and participants were recruited individually (not clustered in classes, clinics, or other groups).
+
+
+**Distributions**
+
+
+::: {.content-visible when-profile="teacher"}
+- [\[univariate skewness\]]{.missing}
+:::
+
+
+::: {.content-visible when-profile="teacher"}
+- [\[univariate kurtosis\]]{.missing}
+:::
+
+
+::: {.content-visible when-profile="teacher"}
+- [\[multivariate normality\]]{.missing}
+:::
+
+
+**Data summary**
+
+
+::: {.content-visible when-profile="teacher"}
+- [\[covariance table\]]{.missing}
+:::
+
+Descriptive statistics for each indicator:
+
+|Indicator |     M|   SD| Min| Max|
+|:---------|-----:|----:|---:|---:|
+|TSK1      |  9.82| 4.55|   0|  23|
+|TSK2      |  8.87| 4.34|   0|  23|
+|TSK3      | 10.06| 5.13|   0|  28|
+|SOC1      | 10.04| 4.93|   0|  22|
+|SOC2      |  9.31| 4.35|   0|  22|
+|SOC3      | 11.55| 5.20|   0|  25|
+
+
+**Specification**
+
+- Hypothesized model: a two-factor CFA (factors allowed to correlate), each indicator loading on one factor only, with no cross-loadings and no correlated residuals.
+- lavaan syntax for the hypothesized model:
+
+```r
+TASK =~ TSK1 + TSK2 + TSK3
+SOCL =~ SOC1 + SOC2 + SOC3
+```
+
+
+::: {.content-visible when-profile="teacher"}
+- [\[identification / scaling method\]]{.missing}
+:::
+
+- Free parameters: 13 (4 free loadings, 6 residual variances, 2 factor variances, 1 factor covariance).
+- Unique elements in the covariance matrix: 21; degrees of freedom: 21 − 13 = 8.
+
+![Figure 1. Hypothesized model.](/widgets/cfa_review/img/report_3_diagram.png){width=60%}
+
+
+**Estimation**
+
+- Models were estimated with maximum likelihood (ML) in lavaan, using the sample covariance matrix.
+- The model converged with no warnings, and all variance estimates were positive (no Heywood cases).
+
+**Model fit**
+
+- Fit was evaluated with RMSEA (90% CI), SRMR, NA, and the cutoffs of Hu and Bentler (1999): CFI ≥ .95, RMSEA ≤ .06, SRMR ≤ .08.
+
+|Model              |  CFI|    RMSEA [90% CI]| SRMR|
+|:------------------|----:|-----------------:|----:|
+|Hypothesized model | .986| .057 [.000, .110]| .034|
+
+
+::: {.content-visible when-profile="teacher"}
+- [\[chi-square test of model fit\]]{.missing}
+:::
+
+- The model showed acceptable fit (CFI = .986, RMSEA = .057, SRMR = .034).
+
+**Respecification**
+
+- No respecification was carried out; the hypothesized model was retained as specified.
+
+**Estimates**
+
+![Figure 2. Final model with standardized estimates.](/widgets/cfa_review/img/report_3_estimates.png){width=60%}
+
+Factor loadings:
+
+|Factor |Indicator |    b|   SE|    z|      p|   β|
+|:------|:---------|----:|----:|----:|------:|---:|
+|TASK   |TSK1      | 1.00|    —|    —|      —| .75|
+|TASK   |TSK2      | 0.83| 0.11| 7.52| < .001| .66|
+|TASK   |TSK3      | 1.06| 0.14| 7.81| < .001| .71|
+|SOCL   |SOC1      | 1.00|    —|    —|      —| .77|
+|SOCL   |SOC2      | 0.89| 0.10| 9.18| < .001| .77|
+|SOCL   |SOC3      | 0.97| 0.11| 8.76| < .001| .71|
+
+Variances and covariances:
+
+|Parameter               | Estimate|   SE|    z|      p| Std. estimate|
+|:-----------------------|--------:|----:|----:|------:|-------------:|
+|Residual variance: TSK1 |     8.95| 1.49| 5.99| < .001|           .43|
+|Residual variance: TSK2 |    10.63| 1.39| 7.67| < .001|           .57|
+|Residual variance: TSK3 |    13.15| 1.90| 6.92| < .001|           .50|
+|Residual variance: SOC1 |     9.91| 1.56| 6.37| < .001|           .41|
+|Residual variance: SOC2 |     7.64| 1.21| 6.31| < .001|           .41|
+|Residual variance: SOC3 |    13.43| 1.79| 7.52| < .001|           .50|
+|Variance: TASK          |    11.65| 2.21| 5.28| < .001|          1.00|
+|Variance: SOCL          |    14.25| 2.51| 5.68| < .001|          1.00|
+|Covariance: TASK ↔ SOCL |     7.84| 1.47| 5.32| < .001|           .61|
+
+
+#### Discussion
+
+- [Sport is one of the most popular leisure activities among adults, and community leagues are often run by volunteers with limited resources.]{.flawed .content-visible when-profile="teacher"}[Sport is one of the most popular leisure activities among adults, and community leagues are often run by volunteers with limited resources.]{.content-hidden when-profile="teacher"}
+- [Participation in team sport is associated with better health, stronger friendships, and a greater sense of belonging, so it is important that people have access to leagues.]{.flawed .content-visible when-profile="teacher"}[Participation in team sport is associated with better health, stronger friendships, and a greater sense of belonging, so it is important that people have access to leagues.]{.content-hidden when-profile="teacher"}
+- [Cities should consider increasing funding for community sports facilities, and coaches should continue to hold regular team events.]{.flawed .content-visible when-profile="teacher"}[Cities should consider increasing funding for community sports facilities, and coaches should continue to hold regular team events.]{.content-hidden when-profile="teacher"}
+- [Future research should examine which coaching styles work best for recreational teams.]{.flawed .content-visible when-profile="teacher"}[Future research should examine which coaching styles work best for recreational teams.]{.content-hidden when-profile="teacher"}

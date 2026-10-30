@@ -241,3 +241,82 @@ To regenerate the student and teacher versions after editing the template:
 ```{bash}
 python3 widgets/_src/build_cfa_playground.py
 ```
+
+
+I want to make an ativity for students to practice reviewing CFA Models using https://apastyle.apa.org/jars/quant-table-7.pdf. We will focus on methods, results, distributions, data, specification, estimation, model fit, respecification, estimates, discussion. Students will work on teams to review one report and there will be 5 teams, so we need 5 reports of CFA models. I want to put this activity on the website under the section called "widgets" (and I want to rename that section to "Activity"). I want you to generate 5 reports with fake data so that they have the problems specified below. The topics may be from the field of education, second language education, clinical psychology, testing. This will not be a full research paper but rather bullet points. First each report needs some background info (~300 words), and a research question, description of the data (variables, how collected, all should be continuous data). Each should be a CFA, as described below. No means structures, no group means no longitudinal, never violate the assumption of independence, no interaction effects. 
+
+Layout: I'd like all the reorts in one web page and they should be in collapsable chuncks so students don't have to scroll too much. The bckground, research, and methods for all of the reports should be reasonable but simple - all data should be 'from participatns', indicators drawn from a single questionairre, rule of thumb sample size, no power analysis, and R lavaan & Semplot. All data generated & fake data. There should be no missing data in any report. 
+
+The title should be "CFA Reporting: Review". Each report can just be labeled Report 1, Report 2, etc so that it is visible when collapsed. 
+
+The link above should be linked at the top. Instructions should be: Review each document with your team. Write up the substantive section of the feedback to the author and then decide if you accept as-is (minor revision) or if it needs a revise & resubmit. Students should be able to download only the report to which they are asigned. 
+
+I would also like a teacher version in which the missing information is highlighted in red (note that I don't want the actual answers: Ex: if the covariance table is missing just put "[covariance table]" where it should go not the actual matrix. )
+
+Report 1: 
+Straighforward 2-factor CFA, no crossloadings, no respecification
+Assumptions: none reported
+Distributions: No skew reported; kurtosis, multivariate normality reported. (all normal)
+Data Summary: covariance & means included
+Specification: No diagram
+Estimation: reported as it should be
+Model fit: reported as it should be
+Estimates: unstandardized only, misisng standardized.
+Discussion: Appropriate claims
+
+
+Report 2:
+Straighforward 2-factor CFA, no crossloadings, no respecification
+Assumptions: Missing multicollinearity assumption
+Distributions: no kurtosis reported; skew, multivariate normality reported (all normal)
+Data Summary: covariance & means included
+Specification: no df or free paramters.
+Estimation: reported as it should be
+Model fit: reported as it should be
+Estimates: standardized only, missing unstandardized
+Discussion: Appropriate claims
+
+
+Report 3: 
+Straighforward 2-factor CFA, no crossloadings, no respecification
+Assumptions: all key reported (linearity, multicolinearity, Adequate sample size, Independent observations all specified). 
+Distributions:  no skew, kurtosis or multivariate normality (all normal)
+Data Summary: no covariance, but means & standard descriptives reported
+Specification: identification not specified
+Estimation: reported as it should be
+Model fit: Missing X2
+Estimates: both standardized & unstandardized
+Discussion: weak claims/unrelated to the RQ. 
+
+Report 4: 
+Straightforward 2-factor CFA, no cross loadings; model comparison done ad-hoc based only on modification indices not specified in the background, poor theoretical backing. 
+Assumptions: Missing linearity, multicollinearity, sample size
+Distribution: skew, kurtosis or multivariate normality reported, not normal, different estimator reported
+Data Summary: covariance but no means or standard descriptives reported
+Specification: no diagram
+Estimation: reported as it should be
+Model fit: reported as it should be
+Estimates: both standardized & unstandardized
+Discussion: Appropriate claims
+
+
+Report 5: 
+Straightforward 2-factor CFA, no cross loadings; model comparison specified in the background & done appropriately. 
+Assumptions: All key assumptions reported (linearity, multicolinearity, Adequate sample size, Independent observations all specified).
+Distributions: skew, kurtosis or multivariate normality reported, not normal, but estimator change not reported. 
+Data Summary: no covariance or means reported. other descriptives (without means)
+Specification: no  DF
+Estimation: reported as it should be
+Model fit: Missing RMSEA
+Estimates: both standardized & unstandardized
+Discussion: illogical claims that don't follow from resutls. 
+
+## CFA Reporting: Review activity
+
+Source: `widgets/cfa_review.qmd` (combined page, collapsible reports) plus
+`widgets/cfa_review/report_N.qmd` (standalone per-team download pages). The
+report bodies `widgets/cfa_review/_report_N.qmd` and `img/` are generated by
+`Rscript widgets/_src/build_cfa_review.R` (seeded simulation + lavaan fits).
+Edit the report text in that script, not in the generated partials. Red
+placeholders (missing items) and orange highlights (flawed content) appear
+only in the teacher profile.

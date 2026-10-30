@@ -1,0 +1,15 @@
+---
+title: "CFA Reporting: Review — Report 5"
+toc: false
+format:
+  html:
+    embed-resources: true
+---
+
+{{< include _instructions.qmd >}}
+
+{{< include _notes.qmd >}}
+
+## Report 5
+
+{{< include _report_5.qmd >}}

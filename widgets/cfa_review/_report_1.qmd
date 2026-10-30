@@ -1,0 +1,170 @@
+#### Background
+
+Student engagement is widely viewed as a key driver of achievement and school completion. Fredricks, Blumenfeld, and Paris (2004) described engagement as a multidimensional construct that includes, at a minimum, a behavioral dimension (what students do: participating, persisting, completing work) and an emotional dimension (how students feel: interest, enjoyment, belonging). Studies that treat engagement as a single score may hide the possibility that students can be behaviorally compliant but emotionally disconnected, or vice versa.  In secondary school, engagement tends to decline from ninth grade onward, and teachers and counselors often use brief questionnaires to identify students who may need support. For such screening to be useful, a questionnaire must measure the dimensions it claims to measure. If behavioral and emotional engagement items are not empirically distinguishable, a total score would be sufficient and the two subscales would be redundant. If they are distinguishable but related, reporting two subscale scores provides more informative feedback to schools.  The School Engagement Questionnaire (SEQ) was written by a district research office to provide short subscale scores for teachers. Its developers propose that four subscale scores reflect behavioral engagement and four reflect emotional engagement. Before the district uses the SEQ in schools, the structure implied by this scoring plan needs to be checked in a sample of students. A confirmatory factor analysis (CFA) is an appropriate way to test whether the proposed two-factor structure is consistent with the observed relationships among the eight subscale scores.
+
+#### Research question
+
+Is the proposed two-factor structure (behavioral engagement and emotional engagement) of the SEQ supported by the data from secondary school students?
+
+#### Methods
+
+**Participants and procedure**
+
+- Participants were 240 ninth- and tenth-grade students from a single public school district who completed the SEQ on tablets during homeroom, with parental consent and student assent.
+- Participation was voluntary and anonymous; each student completed the questionnaire once, individually.
+
+**Variables**
+
+- Indicators (8, all continuous): four behavioral engagement subscale scores (BEH1 = class participation, BEH2 = homework completion, BEH3 = persistence, BEH4 = attention in class) and four emotional engagement subscale scores (EMO1 = interest, EMO2 = enjoyment, EMO3 = sense of belonging, EMO4 = enthusiasm). Each is the mean of that subscale's items on a 1–7 scale (higher = more engagement).
+- All 8 indicators come from a single questionnaire, the School Engagement Questionnaire (SEQ; fictional).
+- Sample size: N = 240. The rule of thumb used was at least 10 participants per indicator (8 × 10 = 80); no power analysis was conducted.
+- There were no missing data. All data were collected from participants (simulated for this exercise).
+
+**Analysis**
+
+- Analyses were run in R (R version 4.4.3 (2025-02-28)) with the lavaan package (version 0.7.2); path diagrams were drawn with semPlot (version 1.2.0).
+
+#### Results
+
+**Assumptions**
+
+
+::: {.content-visible when-profile="teacher"}
+- [\[assumptions: linearity, multicollinearity, sample size, independence\]]{.missing}
+:::
+
+
+**Distributions**
+
+|Indicator | Excess kurtosis|
+|:---------|---------------:|
+|BEH1      |           -0.62|
+|BEH2      |           -0.23|
+|BEH3      |            0.03|
+|BEH4      |           -0.29|
+|EMO1      |           -0.02|
+|EMO2      |           -0.14|
+|EMO3      |            0.10|
+|EMO4      |           -0.34|
+
+- Multivariate normality (Mardia's test): skewness = 2.19, χ²(120) = 87.77, p = .988; kurtosis = 75.84, z = -2.55, p = .011.
+
+
+::: {.content-visible when-profile="teacher"}
+- [\[univariate skewness\]]{.missing}
+:::
+
+
+**Data summary**
+
+Sample covariance matrix (variances on the diagonal):
+
+|     | BEH1| BEH2| BEH3| BEH4| EMO1| EMO2| EMO3| EMO4|
+|:----|----:|----:|----:|----:|----:|----:|----:|----:|
+|BEH1 | 0.76|     |     |     |     |     |     |     |
+|BEH2 | 0.33| 0.71|     |     |     |     |     |     |
+|BEH3 | 0.36| 0.33| 0.78|     |     |     |     |     |
+|BEH4 | 0.38| 0.26| 0.35| 0.60|     |     |     |     |
+|EMO1 | 0.17| 0.12| 0.15| 0.16| 0.76|     |     |     |
+|EMO2 | 0.15| 0.19| 0.12| 0.18| 0.43| 0.83|     |     |
+|EMO3 | 0.20| 0.22| 0.19| 0.21| 0.46| 0.43| 0.88|     |
+|EMO4 | 0.12| 0.13| 0.13| 0.09| 0.42| 0.39| 0.40| 0.79|
+
+Descriptive statistics:
+
+|Indicator |    M|
+|:---------|----:|
+|BEH1      | 5.08|
+|BEH2      | 4.86|
+|BEH3      | 4.56|
+|BEH4      | 5.07|
+|EMO1      | 4.56|
+|EMO2      | 4.88|
+|EMO3      | 4.12|
+|EMO4      | 4.32|
+
+
+**Specification**
+
+- Hypothesized model: a two-factor CFA (factors allowed to correlate), each indicator loading on one factor only, with no cross-loadings and no correlated residuals.
+- lavaan syntax for the hypothesized model:
+
+```r
+BEHAV =~ BEH1 + BEH2 + BEH3 + BEH4
+EMOT  =~ EMO1 + EMO2 + EMO3 + EMO4
+```
+
+- Identification: the scale of each factor was set by fixing the first loading to 1 (marker variable); factor variances were freely estimated.
+- Free parameters: 17 (6 free loadings, 8 residual variances, 2 factor variances, 1 factor covariance).
+- Unique elements in the covariance matrix: 36; degrees of freedom: 36 − 17 = 19.
+
+::: {.content-visible when-profile="teacher"}
+- [\[path diagram\]]{.missing}
+:::
+
+
+**Estimation**
+
+- Models were estimated with maximum likelihood (ML) in lavaan, using the sample covariance matrix.
+- The model converged with no warnings, and all variance estimates were positive (no Heywood cases).
+
+**Model fit**
+
+- Fit was evaluated with the chi-square test, CFI, RMSEA (90% CI), SRMR, and the cutoffs of Hu and Bentler (1999): CFI ≥ .95, RMSEA ≤ .06, SRMR ≤ .08.
+
+|Model              |    χ²| df|    p|  CFI|    RMSEA [90% CI]| SRMR|
+|:------------------|-----:|--:|----:|----:|-----------------:|----:|
+|Hypothesized model | 21.77| 19| .296| .995| .025 [.000, .064]| .034|
+
+- The model fit the data well by all indices (CFI = .995, RMSEA = .025, SRMR = .034).
+
+**Respecification**
+
+- No respecification was carried out; the hypothesized model was retained as specified.
+
+**Estimates**
+
+Factor loadings:
+
+|Factor |Indicator |    b|   SE|     z|      p|
+|:------|:---------|----:|----:|-----:|------:|
+|BEHAV  |BEH1      | 1.00|    —|     —|      —|
+|BEHAV  |BEH2      | 0.80| 0.10|  8.07| < .001|
+|BEHAV  |BEH3      | 0.93| 0.11|  8.82| < .001|
+|BEHAV  |BEH4      | 0.90| 0.10|  9.38| < .001|
+|EMOT   |EMO1      | 1.00|    —|     —|      —|
+|EMOT   |EMO2      | 0.94| 0.10|  9.75| < .001|
+|EMOT   |EMO3      | 1.00| 0.10| 10.09| < .001|
+|EMOT   |EMO4      | 0.88| 0.09|  9.48| < .001|
+
+Variances and covariances:
+
+|Parameter                | Estimate|   SE|    z|      p|
+|:------------------------|--------:|----:|----:|------:|
+|Residual variance: BEH1  |     0.35| 0.05| 7.54| < .001|
+|Residual variance: BEH2  |     0.45| 0.05| 9.30| < .001|
+|Residual variance: BEH3  |     0.42| 0.05| 8.55| < .001|
+|Residual variance: BEH4  |     0.27| 0.04| 7.39| < .001|
+|Residual variance: EMO1  |     0.30| 0.04| 7.08| < .001|
+|Residual variance: EMO2  |     0.43| 0.05| 8.61| < .001|
+|Residual variance: EMO3  |     0.42| 0.05| 8.16| < .001|
+|Residual variance: EMO4  |     0.43| 0.05| 8.89| < .001|
+|Variance: BEHAV          |     0.41| 0.07| 5.85| < .001|
+|Variance: EMOT           |     0.46| 0.07| 6.44| < .001|
+|Covariance: BEHAV ↔ EMOT |     0.18| 0.04| 4.53| < .001|
+
+- Marker-variable loadings were fixed to 1 and so have no standard error.
+
+
+::: {.content-visible when-profile="teacher"}
+- [\[standardized estimates\]]{.missing}
+:::
+
+
+#### Discussion
+
+- The two-factor structure proposed for the SEQ was consistent with the data from this sample, which supports reporting separate behavioral and emotional engagement subscale scores.
+- The two factors were positively related (factor covariance = 0.18, p < .001), so students who report higher behavioral engagement also tend to report higher emotional engagement, but the factors are not redundant.
+- Good fit does not prove the model is correct; other structures might fit equally well. The sample comes from one school district, so results may not generalize to other districts or grade levels.
+- Next steps include testing the structure in an independent sample before the SEQ is used for screening.
+
