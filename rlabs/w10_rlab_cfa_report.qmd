@@ -29,6 +29,19 @@ In the W10 review activity you reviewed reports that were missing pieces. This l
 
 Click **Show code** on any chunk to see how it is made. Then try the exercises at the end.
 
+## Rendering this lab as a Word document
+
+This file can be rendered to HTML or to Word. The Word version hides the code and shows only the text, tables, and figures, like a finished report. To make it, run this in the R console, from the folder that contains the file:
+
+```{r}
+#| label: render-docx
+#| eval: false
+#| code-fold: false
+quarto::quarto_render("w10_rlab_cfa_report.qmd", output_format = "docx")
+```
+
+The `.docx` is saved next to the `.qmd`. In RStudio you can also click the arrow next to **Render** and choose **Render Word**.
+
 ## Setup
 
 ```{r}
