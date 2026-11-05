@@ -1,0 +1,203 @@
+---
+title: "Week 11: LVPA: Specification"
+date: today
+description: '<a href="lectures/w11_LVPA_specification.pdf" download="w11_LVPA_specification.pdf">Download PDF</a>'
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+    embed-resources: true
+    self-contained-math: true
+---
+
+# Agenda
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Orient students to the arc of the session: equations, diagrams, covariance, implications, lavaan.
+:::
+
+# Overview
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Frame LVPA as the combination of the two pieces students already know, not a new method.
+:::
+
+## Putting the two parts together
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** State the central idea: LVPA = measurement model (CFA) + structural model (path analysis among latent variables). Same logic as before: theory-driven specification, estimate so the model-implied covariance matches the observed one. Key difference: the structural paths now connect latent variables, not measured ones.
+:::
+
+## Review: the structural part (MVPA)
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Reactivate w3 ideas: regressions among measured variables, exogenous/endogenous, disturbances. This is what will now operate on latent variables.
+:::
+
+## Review: the measurement part (CFA)
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Reactivate w7 ideas: indicators, loadings, residuals, latent variable as common cause of indicators. This is what defines the latent variables.
+:::
+
+## Reframe: research questions
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Show the kind of RQ that needs LVPA (e.g., effect of one construct on another, each measured with multiple indicators), contrasted with MVPA and CFA RQs, as w7 did.
+:::
+
+# Systems of equations
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Build the model algebraically first, as in w3 and w7, so diagrams and covariance tracing have something to map onto.
+:::
+
+## Measurement equations
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Indicators are written as functions of latent variables (intercept, loading, residual). Unchanged from CFA; reinforce that every latent variable needs its own indicators.
+:::
+
+## Structural equations
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Latent variables are written as functions of other latent variables (path coefficient, disturbance). Same form as MVPA regressions, but the variables are latent.
+:::
+
+## Combined system
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Put both sets of equations side by side so students see one model with two layers. Introduce the notation distinction (loadings vs. structural paths; residuals vs. disturbances).
+:::
+
+# Systems of equations to path diagrams
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Translate the equations into the diagram conventions students already use.
+:::
+
+## Path diagram review
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Quick retrieval of symbols: squares, circles, single-headed arrows, curved double-headed arrows.
+:::
+
+## Path diagram: structural part
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Show the structural part alone, with latent variables in circles and paths between them.
+:::
+
+## Path diagram: measurement part
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Show the measurement part alone, with indicators, loadings and residuals for each latent variable.
+:::
+
+## Path diagram: LVPA
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Merge the two diagrams into the full LVPA diagram. Students should be able to point to which arrows belong to which part.
+:::
+
+## Exogenous vs. endogenous latent variables
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Extend the w3 exogenous/endogenous distinction to latent variables. Determines which get a variance parameter and which get a disturbance.
+:::
+
+## Disturbances vs. residuals
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Prevent confusion between two kinds of error: residuals on indicators (measurement error) and disturbances on endogenous latent variables (unexplained structural variance).
+:::
+
+# Model-implied covariance matrix
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Connect specification to estimation: the model implies a covariance matrix among the indicators only, and that is what is compared to the data.
+:::
+
+## Review: path tracing rules
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Restate the tracing rules from w3 and w7 so students have them in hand before the new case.
+:::
+
+## Tracing through the measurement and structural parts
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Show that implied covariances between indicators of different latent variables run through the loadings and the structural path. Key insight: structure only shows up in the covariance between indicators of different factors.
+:::
+
+## Allowed or not allowed?
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Check understanding of valid traces in the combined model (e.g., no going through a collider, no going forward then back).
+:::
+
+## Practice
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Students derive implied covariances in a small LVPA on their own, as in the w3 and w7 practice slides.
+:::
+
+# Implications
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Spell out what the combined model means for scaling, identification and parameter counting.
+:::
+
+## Scale of latent variables
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Each latent variable still needs its scale set (marker loading or fixed variance). Note that endogenous latent variables are scaled via a marker loading, since their variance is not a free parameter.
+:::
+
+## Degrees of freedom
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Review how df = information − parameters, with information based on the indicators only. Preview that the structural part can add df.
+:::
+
+## Parameters to be estimated
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Count parameters by type (loadings, residual variances, structural paths, disturbance variances, exogenous variances) so students can see where df come from.
+:::
+
+## Measurement model first, then structure
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Introduce the logic of checking the CFA before adding structural paths: poor measurement undermines any structural interpretation. Sets up the identification and fit weeks.
+:::
+
+# Specifying LVPA models in Lavaan
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Move from diagram to code.
+:::
+
+## Lavaan syntax review
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Pull together `=~`, `~`, `~~` and `:=` from w3 and w7 in one table.
+:::
+
+## Lavaan syntax: measurement + structural
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Show one model block with a measurement section and a structural section, so students see how each part of the diagram maps to a line of code.
+:::
+
+# Rlab
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Hands-on practice specifying an LVPA in lavaan.
+:::
+
+# Up Next
+
+::: {.content-visible when-profile="teacher"}
+**Purpose:** Preview identification and fit for LVPA, and any reading to prep.
+:::
