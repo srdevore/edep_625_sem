@@ -1,0 +1,356 @@
+---
+title: "W11 Lab: Specifying LVPA models in lavaan"
+date: today
+description: '<a href="rlab-downloads/w11_rlab_lvpa_specification.qmd" download="w11_rlab_lvpa_specification.qmd">Download .qmd</a>'
+format: html
+code-fold: true
+code-summary: "Show code"
+---
+
+## Purpose
+
+- Practice writing `lavaan()` model syntax for LVPA models (measurement model **plus** structural paths)
+
+Each scenario below gives you a research question and some background.
+
+In this rlab, for each scenario:
+
+1. Decide which latent variables there are, and which indicators measure each one.
+2. Decide which latent variables are **exogenous** and which are **endogenous**, and which way the structural paths go.
+3. Write the model in lavaan syntax (just the model, we won't fit it in this class).
+  - only change the Model, nothing else.
+4. Run the `semPaths()` code to check that the diagram matches the model you intended.
+5. Refer to lecture slides for relevant symbols.
+
+::: {.callout-note appearance="simple"}
+These are **fictional scenarios**, and the data are placeholders. Because we never fit the models, the numbers do not matter, only the structure.
+:::
+
+## Setup
+
+```{r}
+#| message: false
+#| code-fold: false
+library(lavaan)
+library(semPlot)
+
+# Placeholder data: random numbers with the right column names.
+# lavaan() needs *some* data to build the model object; since we use
+# do.fit = FALSE, the values are never used.
+make_dat <- function(vars, n = 200) {
+  as.data.frame(setNames(replicate(length(vars), rnorm(n), simplify = FALSE), vars))
+}
+```
+
+::: {.content-visible when-profile="teacher"}
+```{r}
+#| include: false
+# Teacher-only: one helper that draws the answer diagram, so each scenario
+# below only has to supply its model. Stripped from the student .qmd download.
+answer_diagram <- function(model, vars) {
+  fit0 <- lavaan(model, data = make_dat(vars), do.fit = FALSE)
+  semPaths(fit0, what = "path", whatLabels = "name", style = "lisrel",
+           layout = "tree", residuals = TRUE, nCharNodes = 0,
+           sizeMan = 8, sizeMan2 = 4)
+}
+```
+:::
+
+
+---
+
+# Scenario 1
+
+**Research question.** Does a **growth mindset** predict students' **engagement in math**?
+
+**Background.**
+
+- A district surveyed 8th graders with four Likert items about how they think about ability and three items about their experience in math class (1 = strongly disagree, 5 = strongly agree).
+- Researchers believe the four mindset items are driven by one construct, growth mindset, and the three engagement items by another, math engagement.
+- Growth mindset is expected to **affect** math engagement. Nothing in the model explains growth mindset.
+- Each item also has its own unique influences (wording, mood on the day, etc.).
+- **Scaling:** set the scale of each latent variable by fixing its **first loading to 1**.
+
+| Variable | Item |
+|----------|------|
+| `develop`  | "My intelligence can be developed"        |
+| `workhard` | "Working hard makes me smarter"           |
+| `hardsubj` | "I can get better even at hard subjects"  |
+| `mistakes` | "Mistakes help me learn"                  |
+| `enjoy`    | "I enjoy math class"                      |
+| `focus`    | "I stay focused during math"              |
+| `persist`  | "I keep trying when math gets hard"       |
+
+```{r}
+#| eval: false
+#| code-fold: false
+# YOUR TURN
+vars1 <- c("develop", "workhard", "hardsubj", "mistakes", "enjoy", "focus", "persist")
+
+model1 <- "
+  # ...your model here...
+"
+fit1 <- lavaan(model1, data = make_dat(vars1), do.fit = FALSE)
+
+semPaths(fit1, what = "path", whatLabels = "name", style = "lisrel",
+         layout = "tree", residuals = TRUE, nCharNodes = 0,
+         sizeMan = 8, sizeMan2 = 4)
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.callout-tip collapse="true" title="Model answer: code (teacher)"}
+```{r}
+#| code-fold: false
+vars1 <- c("develop", "workhard", "hardsubj", "mistakes", "enjoy", "focus", "persist")
+model1 <- "
+  mindset =~ 1*develop + workhard + hardsubj + mistakes
+  engage  =~ 1*enjoy + focus + persist
+  engage  ~ mindset
+  mindset ~~ mindset
+  engage  ~~ engage
+  develop ~~ develop
+  workhard ~~ workhard
+  hardsubj ~~ hardsubj
+  mistakes ~~ mistakes
+  enjoy ~~ enjoy
+  focus ~~ focus
+  persist ~~ persist
+"
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer: diagram (teacher)"}
+```{r}
+#| echo: false
+#| fig-width: 9
+#| fig-height: 4.5
+#| fig-align: center
+answer_diagram(model1, vars1)
+```
+:::
+:::
+
+---
+
+# Scenario 2
+
+**Research question.** Does **second-language (L2) anxiety** lower **L2 proficiency**?
+
+**Background.**
+
+- Adult learners of English completed three anxiety scales and took a proficiency test with three sections (scores in points).
+- The anxiety scales are expected to reflect one construct, L2 anxiety. The three test sections are expected to reflect another, L2 proficiency.
+- Theory says anxiety **affects** proficiency. Nothing in the model explains anxiety.
+- **Scaling:** set the scale of **L2 anxiety** by fixing its **variance to 1** (so all of its loadings are free). Set the scale of **L2 proficiency** by fixing its **first loading to 1**.
+
+| Variable | Item |
+|----------|------|
+| `classroom` | classroom anxiety scale   |
+| `speaking`  | speaking anxiety scale    |
+| `testanx`   | test anxiety scale        |
+| `listening` | listening section score   |
+| `reading`   | reading section score     |
+| `writing`   | writing section score     |
+
+```{r}
+#| eval: false
+#| code-fold: false
+# YOUR TURN
+vars2 <- c("classroom", "speaking", "testanx", "listening", "reading", "writing")
+
+model2 <- "
+  # ...your model here...
+"
+fit2 <- lavaan(model2, data = make_dat(vars2), do.fit = FALSE)
+
+semPaths(fit2, what = "path", whatLabels = "name", style = "lisrel",
+         layout = "tree", residuals = TRUE, nCharNodes = 0,
+         sizeMan = 8, sizeMan2 = 4)
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.callout-tip collapse="true" title="Model answer: code (teacher)"}
+```{r}
+#| code-fold: false
+vars2 <- c("classroom", "speaking", "testanx", "listening", "reading", "writing")
+model2 <- "
+  anx  =~ NA*classroom + speaking + testanx
+  prof =~ 1*listening + reading + writing
+  prof ~ anx
+  anx  ~~ 1*anx
+  prof ~~ prof
+  classroom ~~ classroom
+  speaking ~~ speaking
+  testanx ~~ testanx
+  listening ~~ listening
+  reading ~~ reading
+  writing ~~ writing
+"
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer: diagram (teacher)"}
+```{r}
+#| echo: false
+#| fig-width: 9
+#| fig-height: 4.5
+#| fig-align: center
+answer_diagram(model2, vars2)
+```
+:::
+:::
+
+---
+
+# Scenario 3
+
+**Research question.** Does **academic motivation** predict students' **GPA**?
+
+**Background.**
+
+- High school students completed three motivation scales (scores in points). Their GPA was taken from school records.
+- The motivation scales are expected to reflect one construct, academic motivation.
+- GPA is a **single measured variable**, not a latent variable. It is **not** measured by multiple indicators.
+- Motivation is expected to **affect** GPA. Nothing in the model explains motivation.
+- Students' grade level was also collected but is not part of this research question.
+- **Scaling:** set the scale of motivation by fixing its **first loading to 1**.
+
+| Variable | Item |
+|----------|------|
+| `effort`   | effort scale                |
+| `homework` | homework completion scale   |
+| `attend`   | attendance scale            |
+| `gpa`      | grade point average         |
+| `grade`    | grade level (9-12)          |
+
+```{r}
+#| eval: false
+#| code-fold: false
+# YOUR TURN
+vars3 <- c("effort", "homework", "attend", "gpa", "grade")
+
+model3 <- "
+  # ...your model here...
+"
+fit3 <- lavaan(model3, data = make_dat(vars3), do.fit = FALSE)
+
+semPaths(fit3, what = "path", whatLabels = "name", style = "lisrel",
+         layout = "tree", residuals = TRUE, nCharNodes = 0,
+         sizeMan = 8, sizeMan2 = 4)
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.callout-tip collapse="true" title="Model answer: code (teacher)"}
+```{r}
+#| code-fold: false
+vars3 <- c("effort", "homework", "attend", "gpa", "grade")
+model3 <- "
+  # `grade` is not part of this research question, so it is left out
+  motiv =~ 1*effort + homework + attend
+  gpa   ~ motiv
+  motiv ~~ motiv
+  gpa   ~~ gpa
+  effort ~~ effort
+  homework ~~ homework
+  attend ~~ attend
+"
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer: diagram (teacher)"}
+```{r}
+#| echo: false
+#| fig-width: 8
+#| fig-height: 4.5
+#| fig-align: center
+answer_diagram(model3, vars3)
+```
+:::
+:::
+
+---
+
+# Scenario 4
+
+**Research question.** How do customers' **trust in a brand**, their **perceived product quality**, and their **purchase intention** affect one another?
+
+**Background.**
+
+- An online survey of shoppers asked a set of questions on 7-point agreement scales.
+- Theory says trust in the brand affects perceived quality, and perceived quality affects purchase intention. Trust is also expected to affect purchase intention **directly**, beyond its effect through quality.
+- Nothing in the model explains trust.
+- Two of the purchase-intention items were worded almost identically ("I plan to buy" and "I intend to buy"), so the researchers expect their unique parts (residuals) to **covary** beyond what purchase intention explains.
+- **Scaling:** set the scale of **trust** by fixing its **variance to 1** (so all of its loadings are free). Set the scale of the other two latent variables by fixing their **first loadings to 1**.
+
+| Variable | Item |
+|----------|------|
+| `reliable`   | "The product is reliable"              |
+| `buysoon`    | "I will buy this product soon"         |
+| `trustbrand` | "I trust this brand"                   |
+| `plantobuy`  | "I plan to buy this product"           |
+| `promises`   | "This brand keeps its promises"        |
+| `lasts`      | "The product lasts a long time"        |
+| `intendbuy`  | "I intend to buy this product"         |
+| `honest`     | "This brand is honest with customers"  |
+| `wellmade`   | "The product is well made"             |
+| `shopfreq`   | "I shop online at least once a week"   |
+
+```{r}
+#| eval: false
+#| code-fold: false
+# YOUR TURN
+vars4 <- c("reliable", "buysoon", "trustbrand", "plantobuy", "promises",
+           "lasts", "intendbuy", "shopfreq", "honest", "wellmade")
+
+model4 <- "
+  # ...your model here...
+"
+fit4 <- lavaan(model4, data = make_dat(vars4), do.fit = FALSE)
+
+semPaths(fit4, what = "path", whatLabels = "name", style = "lisrel",
+         layout = "tree", residuals = TRUE, nCharNodes = 0,
+         sizeMan = 8, sizeMan2 = 4)
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.callout-tip collapse="true" title="Model answer: code (teacher)"}
+```{r}
+#| code-fold: false
+vars4 <- c("reliable", "buysoon", "trustbrand", "plantobuy", "promises",
+           "lasts", "intendbuy", "shopfreq", "honest", "wellmade")
+model4 <- "
+  # `shopfreq` measures none of the three constructs, so it is left out
+  trust  =~ NA*trustbrand + promises + honest
+  qual   =~ 1*wellmade + reliable + lasts
+  intent =~ 1*buysoon + plantobuy + intendbuy
+  qual   ~ trust
+  intent ~ qual + trust
+  trust  ~~ 1*trust
+  qual   ~~ qual
+  intent ~~ intent
+  trustbrand ~~ trustbrand
+  promises ~~ promises
+  honest ~~ honest
+  wellmade ~~ wellmade
+  reliable ~~ reliable
+  lasts ~~ lasts
+  buysoon ~~ buysoon
+  plantobuy ~~ plantobuy
+  intendbuy ~~ intendbuy
+  plantobuy ~~ intendbuy
+"
+```
+:::
+
+::: {.callout-tip collapse="true" title="Model answer: diagram (teacher)"}
+```{r}
+#| echo: false
+#| fig-width: 10
+#| fig-height: 5.5
+#| fig-align: center
+answer_diagram(model4, vars4)
+```
+:::
+:::
+
+---

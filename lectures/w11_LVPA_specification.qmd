@@ -159,7 +159,7 @@ What is the effect of **latent SES** on **latent academic achievement**, when ea
 :::
 ::::
 
-# MVPA Overview
+## MVPA Overview
 
 :::: {.columns}
 ::: {.column width="50%"}
@@ -174,26 +174,29 @@ mv_box <- function(x, label) list(
   annotate("rect", xmin = x - 1.15, xmax = x + 1.15, ymin = -0.55, ymax = 0.55, fill = dk),
   annotate("text", x = x, y = 0, label = label, colour = "white", size = 3.6, lineheight = 0.9)
 )
-ggplot() +
-  annotate("segment", x = 1.25, xend = 2.75, y = 0, yend = 0, colour = oNG, linewidth = 1.3, arrow = ar) +
-  annotate("text", x = 2, y = 0.45, label = "a[1]", parse = TRUE, colour = oNG, size = 5, fontface = "italic") +
-  annotate("segment", x = 5.25, xend = 6.75, y = 0, yend = 0, colour = oNG, linewidth = 1.3, arrow = ar) +
-  annotate("text", x = 6, y = 0.45, label = "b[1]", parse = TRUE, colour = oNG, size = 5, fontface = "italic") +
-  annotate("curve", x = -0.55, y = 0.6, xend = 0.55, yend = 0.6,
-           colour = dk, linewidth = 0.9, curvature = -1.4, arrow = ar2) +
-  annotate("text", x = 0, y = 1.85, label = "Var", colour = dk, size = 4, fontface = "italic") +
-  annotate("segment", x = 4, xend = 4, y = 1.85, yend = 0.6, colour = LIM, arrow = ar) +
-  annotate("text", x = 4, y = 2.3, label = "zeta[B]", parse = TRUE, colour = LIM, size = 4) +
-  annotate("segment", x = 8, xend = 8, y = 1.85, yend = 0.6, colour = LIM, arrow = ar) +
-  annotate("text", x = 8, y = 2.3, label = "zeta[R]", parse = TRUE, colour = LIM, size = 4) +
-  mv_box(0, "Parent\neducation") + mv_box(4, "Books at\nhome") + mv_box(8, "Reading\nscore") +
-  coord_equal(clip = "off") +
-  expand_limits(x = c(-1.3, 9.3), y = c(-0.9, 3)) +
-  theme_void()
+mv_plot <- function() {
+  ggplot() +
+    annotate("segment", x = 1.25, xend = 2.75, y = 0, yend = 0, colour = oNG, linewidth = 1.3, arrow = ar) +
+    annotate("text", x = 2, y = 0.45, label = "a[1]", parse = TRUE, colour = oNG, size = 5, fontface = "italic") +
+    annotate("segment", x = 5.25, xend = 6.75, y = 0, yend = 0, colour = oNG, linewidth = 1.3, arrow = ar) +
+    annotate("text", x = 6, y = 0.45, label = "b[1]", parse = TRUE, colour = oNG, size = 5, fontface = "italic") +
+    annotate("curve", x = -0.55, y = 0.6, xend = 0.55, yend = 0.6,
+             colour = dk, linewidth = 0.9, curvature = -1.4, arrow = ar2) +
+    annotate("text", x = 0, y = 1.85, label = "Var", colour = dk, size = 4, fontface = "italic") +
+    annotate("segment", x = 4, xend = 4, y = 1.85, yend = 0.6, colour = LIM, arrow = ar) +
+    annotate("text", x = 4, y = 2.3, label = "zeta[B]", parse = TRUE, colour = LIM, size = 4) +
+    annotate("segment", x = 8, xend = 8, y = 1.85, yend = 0.6, colour = LIM, arrow = ar) +
+    annotate("text", x = 8, y = 2.3, label = "zeta[R]", parse = TRUE, colour = LIM, size = 4) +
+    mv_box(0, "Parent\neducation") + mv_box(4, "Books at\nhome") + mv_box(8, "Reading\nscore") +
+    coord_equal(clip = "off") +
+    expand_limits(x = c(-1.3, 9.3), y = c(-0.9, 3)) +
+    theme_void()
+}
+mv_plot()
 ```
 :::
 
-::: {.column width="50%"}
+::: {.column .fragment width="50%"}
 **Week 7: CFA**
 
 ```{r}
@@ -238,15 +241,6 @@ Activity template on course site > activities review quiz.
 2. Take the quiz
   - first on the same method you worked on. 
   - then on the other method
-
-## LVPA research questions across fields {.smaller}
-
-| Field | Research question | Latent predictor (indicators) | Latent outcome (indicators) |
-|:--|:----------|:------------|:------------|
-| Education | Does SES affect academic achievement? | SES (parent education, books, technology) | Achievement (reading, math, science scores) |
-| Clinical psychology | Does emotion dysregulation predict depressive symptoms? | Emotion dysregulation (awareness, impulse control, strategies subscales) | Depression (mood, sleep, anhedonia scales) |
-| Second-language studies | Does L2 anxiety lower L2 proficiency? | L2 anxiety (classroom, speaking, test anxiety scales) | L2 proficiency (listening, reading, writing scores) |
-| Business | Does employee engagement increase customer loyalty? | Engagement (vigor, dedication, absorption) | Loyalty (repurchase intent, referral, satisfaction) |
 
 
 # Latent Variable Path Analysis
@@ -336,35 +330,6 @@ Point out the two layers: blue/magenta are the measurement model, orange/lime ar
 :::
 :::
 
-## Practice: system of equations
-
-Now **SES → Motivation**. Motivation is measured by Effort, Study Homework, and Missed School.
-
-*Write the full system (measurement and structural).*
-
-$$
-\begin{aligned}
-\text{Effort} &= \underline{\phantom{\lambda_1}} + \underline{\phantom{\lambda_1}}\,\underline{\phantom{\text{Motivation}}} + \underline{\phantom{\lambda_1}} \\
-\text{StudyHmW} &= \underline{\phantom{\lambda_1}} + \underline{\phantom{\lambda_1}}\,\underline{\phantom{\text{Motivation}}} + \underline{\phantom{\lambda_1}} \\
-\text{MissSc} &= \underline{\phantom{\lambda_1}} + \underline{\phantom{\lambda_1}}\,\underline{\phantom{\text{Motivation}}} + \underline{\phantom{\lambda_1}} \\
-\text{Motivation} &= \underline{\phantom{\lambda_1}} + \underline{\phantom{\lambda_1}}\,\underline{\phantom{\text{Motivation}}} + \underline{\phantom{\lambda_1}}
-\end{aligned}
-$$
-
-::: {.content-visible when-profile="teacher"}
-## Practice: system of equations (answers)
-
-$$
-\begin{aligned}
-\text{Effort} &= \tau_4 + \lambda_4\,\text{Motivation} + \varepsilon_4 \\
-\text{StudyHmW} &= \tau_5 + \lambda_5\,\text{Motivation} + \varepsilon_5 \\
-\text{MissSc} &= \tau_6 + \lambda_6\,\text{Motivation} + \varepsilon_6 \\
-\text{Motivation} &= \alpha + \gamma_1\,\text{SES} + \zeta_M
-\end{aligned}
-$$
-
-(The SES measurement equations are unchanged.)
-:::
 
 # Systems of equations to path diagrams
 
@@ -459,17 +424,166 @@ lvpa_plot()
 :::
 :::
 
+```{r}
+#| include: false
+sp_ar  <- grid::arrow(length = grid::unit(0.2, "cm"), type = "closed")
+sp_ar2 <- grid::arrow(length = grid::unit(0.16, "cm"), ends = "both", type = "closed")
+
+sp_r <- 1.0; sp_hw <- 1.1; sp_hh <- 0.55
+sp_pt <- function(nd, tx, ty) {
+  dx <- tx - nd$x; dy <- ty - nd$y; d <- sqrt(dx^2 + dy^2); ux <- dx / d; uy <- dy / d
+  if (nd$type == "L") return(c(nd$x + sp_r * ux, nd$y + sp_r * uy))
+  t <- min(if (ux != 0) sp_hw / abs(ux) else Inf, if (uy != 0) sp_hh / abs(uy) else Inf)
+  c(nd$x + t * ux, nd$y + t * uy)
+}
+sp_circle <- function(x, y, r) {
+  t <- seq(0, 2 * pi, length.out = 60)
+  data.frame(x = x + r * cos(t), y = y + r * sin(t))
+}
+# nodes: id, type ("L" latent / "M" measured), x, y
+# edges: from, to, kind ("load" = measurement, "path" = structural)
+# covs:  a, b, curv (curvature of the double-headed arrow)
+# dirs:  named list of c(dx, dy) for where a disturbance / loop sits (default up)
+shape_plot <- function(nodes, edges, covs = NULL, dirs = list()) {
+  rownames(nodes) <- nodes$id
+  g <- ggplot()
+  segs <- list()
+  for (i in seq_len(nrow(edges))) {
+    f <- nodes[edges$from[i], ]; t <- nodes[edges$to[i], ]
+    p0 <- sp_pt(f, t$x, t$y); p1 <- sp_pt(t, f$x, f$y)
+    g <- g + annotate("segment", x = p0[1], y = p0[2], xend = p1[1], yend = p1[2],
+                      colour = if (edges$kind[i] == "load") BLU else oNG,
+                      linewidth = 1.3, arrow = sp_ar)
+  }
+  for (id in nodes$id) {
+    nd <- nodes[id, ]; inc <- edges[edges$to == id, ]
+    if (nrow(inc) > 0) {
+      loaded <- any(inc$kind == "load")
+      if (loaded) {
+        f <- nodes[inc$from[inc$kind == "load"][1], ]
+        d <- c(nd$x - f$x, nd$y - f$y); d <- d / sqrt(sum(d^2))
+      } else d <- if (is.null(dirs[[id]])) c(0, 1) else dirs[[id]]
+      b <- sp_pt(nd, nd$x + 10 * d[1], nd$y + 10 * d[2])
+      g <- g + annotate("segment", x = b[1] + 1.5 * d[1], y = b[2] + 1.5 * d[2],
+                        xend = b[1] + 0.05 * d[1], yend = b[2] + 0.05 * d[2],
+                        colour = if (loaded) MAG else LIM, arrow = sp_ar)
+    } else {
+      s <- if (!is.null(dirs[[id]]) && dirs[[id]][2] < 0) -1 else 1
+      top <- if (nd$type == "L") sp_r else sp_hh
+      g <- g + annotate("curve", x = nd$x - 0.5, y = nd$y + s * (top - 0.05),
+                        xend = nd$x + 0.5, yend = nd$y + s * (top - 0.05),
+                        colour = dk, linewidth = 0.9, curvature = -1.4 * s, arrow = sp_ar2)
+    }
+  }
+  if (!is.null(covs)) for (i in seq_len(nrow(covs))) {
+    a <- nodes[covs$a[i], ]; b <- nodes[covs$b[i], ]
+    p0 <- sp_pt(a, b$x + 3, b$y); p1 <- sp_pt(b, a$x + 3, a$y)
+    g <- g + annotate("curve", x = p0[1], y = p0[2], xend = p1[1], yend = p1[2],
+                      colour = dk, linewidth = 0.9, curvature = covs$curv[i], arrow = sp_ar2)
+  }
+  for (i in seq_len(nrow(nodes))) {
+    nd <- nodes[i, ]
+    g <- g + if (nd$type == "L")
+      geom_polygon(data = sp_circle(nd$x, nd$y, sp_r), aes(x, y), fill = dk)
+    else annotate("rect", xmin = nd$x - sp_hw, xmax = nd$x + sp_hw,
+                  ymin = nd$y - sp_hh, ymax = nd$y + sp_hh, fill = dk)
+  }
+  g + coord_equal(clip = "off") +
+    expand_limits(x = range(nodes$x) + c(-2.5, 2.5), y = range(nodes$y) + c(-2.5, 3)) +
+    theme_void()
+}
+sp_inds <- function(prefix, lat, cx, cy, offs, dy, side = "below", n = 3) {
+  # indicators of latent `lat`, placed relative to the latent
+  ids <- paste0(prefix, seq_len(n))
+  if (side == "below")
+    list(nodes = data.frame(id = ids, type = "M", x = cx + offs, y = cy + dy),
+         edges = data.frame(from = lat, to = ids, kind = "load"))
+  else
+    list(nodes = data.frame(id = ids, type = "M", x = cx + dy, y = cy + offs),
+         edges = data.frame(from = lat, to = ids, kind = "load"))
+}
+
+mk <- function(id, type, x, y) data.frame(id = id, type = type, x = x, y = y)
+off3 <- c(-2.8, 0, 2.8)
+```
+
+## Model shapes: three latent variables
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 9
+#| fig-height: 4
+i1 <- sp_inds("a", "L1", -9, 0, off3, -3.4)
+i2 <- sp_inds("b", "L2", 0, 0, off3, -3.4)
+i3 <- sp_inds("c", "L3", 9, 0, off3, -3.4)
+shape_plot(
+  rbind(mk("L1", "L", -9, 0), mk("L2", "L", 0, 0), mk("L3", "L", 9, 0),
+        i1$nodes, i2$nodes, i3$nodes),
+  rbind(data.frame(from = c("L1", "L2"), to = c("L2", "L3"), kind = "path"),
+        i1$edges, i2$edges, i3$edges))
+```
+
+## Model shapes: measured exogenous predictor
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 4
+j <- sp_inds("a", "L", 2, 0, off3, -3.4)
+shape_plot(
+  rbind(mk("X", "M", -6, 0), mk("L", "L", 2, 0), j$nodes),
+  rbind(data.frame(from = "X", to = "L", kind = "path"), j$edges))
+```
+
+## Model shapes: measured endogenous predictor
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 9
+#| fig-height: 4
+j <- sp_inds("a", "L", 2, 0, off3, -3.4)
+shape_plot(
+  rbind(mk("X1", "M", -12, 0), mk("X2", "M", -5, 0), mk("L", "L", 2, 0), j$nodes),
+  rbind(data.frame(from = c("X1", "X2"), to = c("X2", "L"), kind = "path"), j$edges))
+```
+
+## Model shapes: a more complex model
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 10
+#| fig-height: 4.8
+k1 <- sp_inds("a", "L1", -8, 3, c(-1.2, 1.2), -6, side = "left", n = 2)
+k2 <- sp_inds("b", "L2", -8, -3, c(-1.2, 1.2), -6, side = "left", n = 2)
+k3 <- sp_inds("c", "L3", -1, 0, c(-1.4, 1.4), -3.4, n = 2)
+k4 <- sp_inds("d", "L4", 6, 0, c(-1.4, 1.4), -3.4, n = 2)
+shape_plot(
+  rbind(mk("L1", "L", -8, 3), mk("L2", "L", -8, -3), mk("L3", "L", -1, 0),
+        mk("L4", "L", 6, 0), mk("X", "M", 10, 3.8), mk("Y", "M", 13.5, 0),
+        k1$nodes, k2$nodes, k3$nodes, k4$nodes),
+  rbind(data.frame(from = c("L1", "L2", "L3", "X", "L4"),
+                   to = c("L3", "L3", "L4", "L4", "Y"), kind = "path"),
+        k1$edges, k2$edges, k3$edges, k4$edges),
+  covs = data.frame(a = "L1", b = "L2", curv = 0.6),
+  dirs = list(L2 = c(0, -1)))
+```
+
 ## Matrices {.smaller}
 
-<table>
+<table style="width:100%; table-layout:fixed; border-collapse:collapse;">
+<colgroup><col style="width:18%"><col style="width:32%"><col style="width:50%"></colgroup>
 <thead>
-<tr><th>Matrix</th><th>CFA</th><th class="fragment" data-fragment-index="1">LVPA</th></tr>
+<tr style="border-bottom:2px solid #3A3A3A;"><th style="white-space:nowrap;">Matrix</th><th>CFA</th><th class="fragment" data-fragment-index="1">LVPA</th></tr>
 </thead>
 <tbody>
-<tr><td>Λ (p × k)</td><td>Loadings</td><td class="fragment" data-fragment-index="1">Unchanged</td></tr>
-<tr><td>Ψ (k × k)</td><td>All latent variances and covariances, free</td><td class="fragment" data-fragment-index="1">Exogenous latents' (co)variances, plus disturbance variances for endogenous latents</td></tr>
-<tr><td>Θ (p × p)</td><td>Indicator errors</td><td class="fragment" data-fragment-index="1">Unchanged</td></tr>
-<tr class="fragment" data-fragment-index="2"><td>β (k × k)</td><td>All zeros, so it's unused</td><td>Structural paths between latents</td></tr>
+<tr style="border-bottom:1px solid #BFC3C7;"><td style="white-space:nowrap;">Λ (p × k)</td><td>Loadings</td><td class="fragment" data-fragment-index="1">Unchanged</td></tr>
+<tr style="border-bottom:1px solid #BFC3C7;"><td style="white-space:nowrap;">Ψ (k × k)</td><td>All latent variances and covariances, free</td><td class="fragment" data-fragment-index="1">Exogenous latents' (co)variances, plus disturbance variances for endogenous latents</td></tr>
+<tr style="border-bottom:1px solid #BFC3C7;"><td style="white-space:nowrap;">Θ (p × p)</td><td>Indicator errors</td><td class="fragment" data-fragment-index="1">Unchanged</td></tr>
+<tr class="fragment" data-fragment-index="2" style="border-bottom:1px solid #BFC3C7;"><td style="white-space:nowrap;">β (k × k)</td><td>All zeros, so it's unused</td><td>Structural paths between latents</td></tr>
 </tbody>
 </table>
 
@@ -482,47 +596,51 @@ lvpa_plot()
 | Part of | measurement model | structural model |
 | Represents | random measurement error & variance unique to the indicator | Variance in the latent variable not predicted by predictors |
 
-## Why it matters
+## Why it matters: MVPA
 
-**Where is random error in this model?**
+**Where is the random error in this model?**
 
-::: {.fragment}
-1. A student guesses randomly on the math items.
-:::
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 3.6
+mv_plot()
+```
 
-::: {.fragment}
-2. Motivation, parental involvement, and school quality all affect achievement, but only SES is in the model.
-:::
+## Why it matters: CFA
 
-::: {.fragment}
-3. The reading test measures vocabulary, which is not shared with the math or science tests.
-:::
+**Where is the random error in this model?**
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 4.2
+lvpa_plot(parts = "meas")
+```
+
+## Why it matters: LVPA
+
+**Where is the random error in this model?**
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 4.2
+lvpa_plot()
+```
 
 ::: {.fragment}
 **Why it matters:** in MVPA, measurement error sat inside the disturbance. In LVPA, it is separated into ε, so the structural path γ₁ is not diluted by measurement error in the indicators.
 :::
 
-## ε or ζ?
-
-*Which one captures each of these?*
-
-1. A student guesses randomly on the math items.
-2. Motivation, parental involvement, and school quality all affect achievement, but only SES is in the model.
-3. The reading test measures vocabulary, which is not shared with the math or science tests.
-
-::: {.content-visible when-profile="teacher"}
-::: {.fragment}
-1. ε (random error specific to the indicator)
-2. ζ (unexplained variance in the latent variable)
-3. ε (true variance, unique to that indicator, not shared through the latent variable)
-:::
-:::
 
 # Model-implied covariance matrix
 
-- We only observe the **indicators**, so the model-implied covariance matrix is among the indicators (here 6 × 6)
-- Latent variables have no data; they only show up as routes in the path diagram
-- We still use the path tracing rules
+- We only observe the **indicators**, so the model-implied covariance matrix remains among the indicators (here 6 × 6)
+- We still use the same path tracing rules to identify it
 
 ## Review: path tracing rules
 
@@ -867,33 +985,39 @@ cm_mat(8)
 
 ## The whole matrix: three kinds of cells
 
+:::: {.columns}
+::: {.column width="76%"}
 ```{r}
 #| echo: false
 #| fig-align: center
-#| fig-width: 8.5
-#| fig-height: 4.6
+#| fig-width: 7
+#| fig-height: 5.2
 lab <- c("PE", "BH", "TH", "Read", "Math", "Sci")
 cells <- expand.grid(r = 1:6, c = 1:6)
 cells$type <- with(cells, ifelse(r <= 3 & c <= 3, "A", ifelse(r > 3 & c > 3, "B", "C")))
 cells <- subset(cells, c <= r)
 cells$fill <- c(A = "#2C6FB5", B = "#6FA80F", C = "#E07B1A")[cells$type]
-cells$txt <- with(cells, ifelse(r == c & type == "A", "λ² Var(S) + θ",
-                         ifelse(r == c & type == "B", "λ² Var(A) + θ",
-                         ifelse(type == "A", "λλ Var(S)",
-                         ifelse(type == "B", "λλ Var(A)", "λ γ λ Var(S)")))))
+cells$txt <- with(cells, ifelse(r == c & type == "A", "λ² Var(S)\n+ θ",
+                         ifelse(r == c & type == "B", "λ² Var(A)\n+ θ",
+                         ifelse(type == "A", "λλ\nVar(S)",
+                         ifelse(type == "B", "λλ\nVar(A)", "λ γ λ\nVar(S)")))))
 ggplot(cells, aes(c, -r)) +
   geom_tile(aes(fill = I(fill)), alpha = 0.85, colour = "white", linewidth = 1.2) +
-  geom_text(aes(label = txt), colour = "white", size = 3.1) +
+  geom_text(aes(label = txt), colour = "white", size = 3.4, lineheight = 0.9) +
   scale_x_continuous(breaks = 1:6, labels = lab, position = "top") +
   scale_y_continuous(breaks = -(1:6), labels = lab) +
   coord_equal() +
   labs(x = NULL, y = NULL) +
   theme_minimal(base_size = 13) + theme(panel.grid = element_blank())
 ```
+:::
 
-<span style="color:#2C6FB5;">**Blue:** SES indicators</span> ·
-<span style="color:#6FA80F;">**Green:** Achievement indicators</span> ·
+::: {.column style="width:24%; font-size: 0.6em;"}
+<span style="color:#2C6FB5;">**Blue:** SES indicators</span><br>
+<span style="color:#6FA80F;">**Green:** Achievement indicators</span><br>
 <span style="color:#E07B1A;">**Orange:** across factors (the structural path)</span>
+:::
+::::
 
 ::: {.content-visible when-profile="teacher"}
 ::: {.notes}
@@ -995,34 +1119,6 @@ lvpa_plot(c("l4", "l5", "e5"))
 :::
 :::
 
-## Practice: model-implied covariance
-
-Model: **SES → Motivation**
-
-```{r}
-#| echo: false
-#| fig-align: center
-#| fig-width: 8
-#| fig-height: 4
-lvpa_plot(factors = c("SES", "Motiv."),
-          inds = c("Parent\neducation", "Books\nat home", "Tech\nat home",
-                   "Effort", "Study\nhomework", "Missed\nschool"),
-          dist_lab = "zeta[M]")
-```
-
-*In groups of three, one person per row. Compare answers.*
-
-1. Cov(Books, Study homework)
-2. Cov(Effort, Missed school)
-3. Var(Study homework)
-
-::: {.content-visible when-profile="teacher"}
-## Practice: model-implied covariance (answers)
-
-1. Cov(Books, StudyHmW) = λ₂ · γ₁ · λ₅ · Var(SES) (route: BH ← SES → Motiv → StudyHmW)
-2. Cov(Effort, MissSc) = λ₄ · λ₆ · [γ₁²·Var(SES) + Var(ζ<sub>M</sub>)] (route: Effort ← Motiv → MissSc)
-3. Var(StudyHmW) = λ₅² · [γ₁²·Var(SES) + Var(ζ<sub>M</sub>)] + Var(ε₅)
-:::
 
 # Implications
 
@@ -1034,7 +1130,12 @@ Every latent variable still needs a scale, **including the endogenous one**.
 - Option 2: fix the latent variable's variance to 1
 
 ::: {.fragment}
-**New twist:** Var(Ach) = γ₁²·Var(SES) + Var(ζ<sub>A</sub>) is *derived*, so we can't fix it directly. For endogenous latent variables, use the **marker indicator** (fix the first loading to 1).
+**New twist:** 
+
+Var(Ach) = γ₁²·Var(SES) + Var(ζ<sub>A</sub>) 
+
+- Var(Ach) is *derived*, so we can't fix it directly (it's already set). 
+- For endogenous latent variables, use the **marker indicator** (fix the first loading to 1).
 :::
 
 
@@ -1123,7 +1224,7 @@ With two latent variables, the structural part is **saturated**: γ₁ and Var(�
 # Two-step logic:
 
 1. Fit the CFA first. If measurement is poor, no structural interpretation is trustworthy.
-2. Replace factor covariances with theory-driven paths. Omitting a path adds df and makes the structure testable.
+2. Replace factor covariances of the CFA with theory-driven structural paths. 
 
 ::: {.content-visible when-profile="teacher"}
 ::: {.notes}
