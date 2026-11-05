@@ -459,19 +459,44 @@ lvpa_plot()
 :::
 :::
 
-## Matrices
+## Matrices {.smaller}
+
+<table>
+<thead>
+<tr><th>Matrix</th><th>CFA</th><th class="fragment" data-fragment-index="1">LVPA</th></tr>
+</thead>
+<tbody>
+<tr><td>Λ (p × k)</td><td>Loadings</td><td class="fragment" data-fragment-index="1">Unchanged</td></tr>
+<tr><td>Ψ (k × k)</td><td>All latent variances and covariances, free</td><td class="fragment" data-fragment-index="1">Exogenous latents' (co)variances, plus disturbance variances for endogenous latents</td></tr>
+<tr><td>Θ (p × p)</td><td>Indicator errors</td><td class="fragment" data-fragment-index="1">Unchanged</td></tr>
+<tr class="fragment" data-fragment-index="2"><td>β (k × k)</td><td>All zeros, so it's unused</td><td>Structural paths between latents</td></tr>
+</tbody>
+</table>
 
 
-
-
-
-## Disturbances vs. residuals
+## Disturbances vs. residuals {.smaller}
 
 | | Residual (ε) | Disturbance (ζ) |
 |:--|:--------------|:----------------|
 | Sits on | an **indicator** (measured variable) | an **endogenous latent variable** |
 | Part of | measurement model | structural model |
-| Represents | random measurement error + other causes unique to the indicator | everything besides the model's predictors that drives the latent variable |
+| Represents | random measurement error & variance unique to the indicator | Variance in the latent variable not predicted by predictors |
+
+## Why it matters
+
+**Where is random error in this model?**
+
+::: {.fragment}
+1. A student guesses randomly on the math items.
+:::
+
+::: {.fragment}
+2. Motivation, parental involvement, and school quality all affect achievement, but only SES is in the model.
+:::
+
+::: {.fragment}
+3. The reading test measures vocabulary, which is not shared with the math or science tests.
+:::
 
 ::: {.fragment}
 **Why it matters:** in MVPA, measurement error sat inside the disturbance. In LVPA, it is separated into ε, so the structural path γ₁ is not diluted by measurement error in the indicators.
@@ -521,31 +546,157 @@ Revisit the rules from [Lecture 3](https://srdevore.github.io/edep_625_sem/lectu
 :::
 ::::
 
+```{r}
+#| include: false
+# ---- step-by-step model-implied covariance matrix (lower triangle, 6 x 6) ----
+cm_lab <- c("PE", "BH", "TH", "Read", "Math", "Sci")
+cm_col <- c(A = "#2C6FB5", B = "#6FA80F", C = "#E07B1A")
+sub_n  <- c("₁", "₂", "₃", "₄", "₅", "₆")
+cm_type <- function(r, c) if (r <= 3 && c <= 3) "A" else if (r > 3 && c > 3) "B" else "C"
+cm_txt <- function(r, c) {
+  switch(cm_type(r, c),
+    A = if (r == c) paste0("λ", sub_n[r], "²Var(S)\n+Var(ε", sub_n[r], ")")
+        else paste0("λ", sub_n[r], "λ", sub_n[c], "\nVar(S)"),
+    B = if (r == c) paste0("λ", sub_n[r], "²Var(A)\n+Var(ε", sub_n[r], ")")
+        else paste0("λ", sub_n[r], "λ", sub_n[c], "\nVar(A)"),
+    C = paste0("λ", sub_n[r], "γλ", sub_n[c], "\nVar(S)"))
+}
+cm_steps <- list(
+  list(c(1, 1)),                                               # 1 Var(PE)
+  list(c(2, 1)),                                               # 2 Cov(PE, BH)
+  list(c(2, 2), c(3, 1), c(3, 2), c(3, 3)),                    # 3 rest of SES block
+  list(c(4, 1)),                                               # 4 Cov(PE, Math)
+  list(c(4, 2), c(4, 3), c(5, 1), c(5, 2), c(5, 3),
+       c(6, 1), c(6, 2), c(6, 3)),                             # 5 rest of cross block
+  list(c(5, 4)),                                               # 6 Cov(Read, Math)
+  list(c(4, 4)),                                               # 7 Var(Read)
+  list(c(5, 5), c(6, 4), c(6, 5), c(6, 6))                     # 8 rest of Ach block
+)
+# i = number of steps drawn; emph = outline/emphasize the newest step
+cm_mat <- function(i, emph = TRUE) {
+  g <- ggplot()
+  for (r in 1:6) for (cc in 1:r) {
+    g <- g + annotate("rect", xmin = cc - 0.48, xmax = cc + 0.48,
+                      ymin = (7 - r) - 0.48, ymax = (7 - r) + 0.48,
+                      fill = "grey95", colour = "grey80")
+  }
+  for (s in seq_len(i)) {
+    now <- emph && s == i
+    for (cell in cm_steps[[s]]) {
+      r <- cell[1]; cc <- cell[2]
+      g <- g +
+        annotate("rect", xmin = cc - 0.48, xmax = cc + 0.48,
+                 ymin = (7 - r) - 0.48, ymax = (7 - r) + 0.48,
+                 fill = cm_col[[cm_type(r, cc)]], alpha = if (now) 0.95 else 0.4,
+                 colour = if (now) "black" else NA, linewidth = if (now) 1 else 0) +
+        annotate("text", x = cc, y = 7 - r, label = cm_txt(r, cc),
+                 colour = if (now) "white" else "grey20", size = 2.1, lineheight = 0.9)
+    }
+  }
+  for (k in 1:6) {
+    g <- g + annotate("text", x = k, y = 6.8, label = cm_lab[k], fontface = "bold", size = 3.4) +
+      annotate("text", x = 0.2, y = 7 - k, label = cm_lab[k], fontface = "bold", size = 3.4)
+  }
+  g + coord_equal(clip = "off") + theme_void() +
+    expand_limits(x = c(-0.1, 6.5), y = c(0.4, 7.1))
+}
+```
+
+## Tracing: Var(Parent ed)
+
+:::: {.columns}
+::: {.column style="width:58%; font-size:0.85em;"}
+**Var(PE)**: up-and-back through SES, plus its own residual
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 6.2
+#| fig-height: 3.3
+lvpa_plot(c("l1", "e1", "varS"))
+```
+
+$$\text{Var(PE)} = \lambda_1^2\,\text{Var(SES)} + \text{Var}(\varepsilon_1)$$
+:::
+::: {.column width="42%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 4.2
+#| fig-height: 4.2
+cm_mat(1)
+```
+:::
+::::
+
 ## Tracing: within the same latent variable
 
+:::: {.columns}
+::: {.column style="width:58%; font-size:0.85em;"}
 **Cov(Parent ed, Books)**: one route, PE ← SES → BH
 
 ```{r}
 #| echo: false
 #| fig-align: center
-#| fig-width: 8
-#| fig-height: 4.2
+#| fig-width: 6.2
+#| fig-height: 3.3
 lvpa_plot(c("l1", "l2", "varS"))
 ```
 
 $$\text{Cov(PE, BH)} = \lambda_1\,\lambda_2\,\text{Var(SES)}$$
 
 *This is exactly what we did in Week 7.*
+:::
+::: {.column width="42%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 4.2
+#| fig-height: 4.2
+cm_mat(2)
+```
+:::
+::::
+
+## Tracing: the rest of the SES block
+
+:::: {.columns}
+::: {.column style="width:58%; font-size:0.85em;"}
+Same two patterns for every pair of SES indicators:
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 6.2
+#| fig-height: 3.3
+lvpa_plot(c("l1", "l2", "l3", "e2", "e3", "varS"))
+```
+
+- Variance: $\lambda_i^2\,\text{Var(SES)} + \text{Var}(\varepsilon_i)$
+- Covariance: $\lambda_i\,\lambda_j\,\text{Var(SES)}$
+:::
+::: {.column width="42%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 4.2
+#| fig-height: 4.2
+cm_mat(3)
+```
+:::
+::::
 
 ## Tracing: across latent variables
 
+:::: {.columns}
+::: {.column style="width:58%; font-size:0.85em;"}
 **Cov(Parent ed, Math)**: PE ← SES → Achievement → Math
 
 ```{r}
 #| echo: false
 #| fig-align: center
-#| fig-width: 8
-#| fig-height: 4.2
+#| fig-width: 6.2
+#| fig-height: 3.3
 lvpa_plot(c("l1", "varS", "g1", "l5"))
 ```
 
@@ -554,52 +705,165 @@ $$\text{Cov(PE, Math)} = \lambda_1\,\gamma_1\,\lambda_5\,\text{Var(SES)}$$
 ::: {.fragment}
 The **structural path** is what links indicators of *different* latent variables.
 :::
+:::
+::: {.column width="42%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 4.2
+#| fig-height: 4.2
+cm_mat(4)
+```
+:::
+::::
 
-## Tracing: variance of the endogenous latent variable
+## Tracing: the rest of the cross-factor block
 
-Achievement is not a free parameter, so we need its **implied** variance. Trace it like any other variable:
+:::: {.columns}
+::: {.column style="width:58%; font-size:0.85em;"}
+Every SES indicator with every Achievement indicator uses the same route type:
 
 ```{r}
 #| echo: false
 #| fig-align: center
-#| fig-width: 8
-#| fig-height: 3.6
-lvpa_plot(c("g1", "varS", "zA"), parts = "struct")
+#| fig-width: 6.2
+#| fig-height: 3.3
+lvpa_plot(c("l1", "l2", "l3", "l4", "l5", "l6", "varS", "g1"))
+```
+
+$$\text{Cov}(i, j) = \lambda_i\,\gamma_1\,\lambda_j\,\text{Var(SES)}$$
+:::
+::: {.column width="42%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 4.2
+#| fig-height: 4.2
+cm_mat(5)
+```
+:::
+::::
+
+## Tracing: variance of the endogenous latent variable
+
+:::: {.columns}
+::: {.column style="width:58%; font-size:0.85em;"}
+Next, the Achievement block. Achievement is not a free parameter, so we need its **implied** variance first. Trace it like any other variable:
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 6.2
+#| fig-height: 3.3
+lvpa_plot(c("g1", "varS", "zA"))
 ```
 
 $$\text{Var(Ach)} = \gamma_1^2\,\text{Var(SES)} + \text{Var}(\zeta_A)$$
 
-- Up-and-back through the common cause SES, plus its own disturbance (same as Var(Books) in Week 3)
+Up-and-back through SES, plus its own disturbance (same as Var(Books) in Week 3). It is an ingredient, not a matrix cell.
+:::
+::: {.column width="42%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 4.2
+#| fig-height: 4.2
+cm_mat(5, emph = FALSE)
+```
+:::
+::::
 
 ## Tracing: within the endogenous latent variable
 
+:::: {.columns}
+::: {.column style="width:58%; font-size:0.85em;"}
 **Cov(Reading, Math)**: Reading ← Achievement → Math
 
 ```{r}
 #| echo: false
 #| fig-align: center
-#| fig-width: 8
-#| fig-height: 4.2
+#| fig-width: 6.2
+#| fig-height: 3.3
 lvpa_plot(c("l4", "l5"))
 ```
 
-$$\text{Cov(Reading, Math)} = \lambda_4\,\lambda_5\,\text{Var(Ach)} = \lambda_4\,\lambda_5\,\bigl[\gamma_1^2\,\text{Var(SES)} + \text{Var}(\zeta_A)\bigr]$$
+$$\text{Cov(Reading, Math)} = \lambda_4\,\lambda_5\,\text{Var(Ach)}$$
+$$= \lambda_4\,\lambda_5\,\bigl[\gamma_1^2\,\text{Var(SES)} + \text{Var}(\zeta_A)\bigr]$$
 
 ::: {.fragment}
-Use the variance of Achievement we already found, as with Cov(Books, Reading) in Week 3.
+Use the variance of Achievement we already found.
 :::
+:::
+::: {.column width="42%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 4.2
+#| fig-height: 4.2
+cm_mat(6)
+```
+:::
+::::
 
 ## Tracing: variance of an indicator
 
+:::: {.columns}
+::: {.column style="width:58%; font-size:0.85em;"}
 **Var(Reading)**: up-and-back through Achievement, plus its own residual
 
-$$\text{Var(Reading)} = \lambda_4^2\,\text{Var(Ach)} + \text{Var}(\varepsilon_4)$$
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 6.2
+#| fig-height: 3.3
+lvpa_plot(c("l4", "e4"))
+```
 
+$$\text{Var(Reading)} = \lambda_4^2\,\text{Var(Ach)} + \text{Var}(\varepsilon_4)$$
 $$= \lambda_4^2\,\bigl[\gamma_1^2\,\text{Var(SES)} + \text{Var}(\zeta_A)\bigr] + \text{Var}(\varepsilon_4)$$
 
 ::: {.fragment}
 Compare Week 7: Var(PE) = λ₁²·Var(SES) + Var(ε₁). The only new piece is that Var(Ach) has two terms.
 :::
+:::
+::: {.column width="42%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 4.2
+#| fig-height: 4.2
+cm_mat(7)
+```
+:::
+::::
+
+## Tracing: the rest of the Achievement block
+
+:::: {.columns}
+::: {.column style="width:58%; font-size:0.85em;"}
+Same two patterns, now through Var(Ach):
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 6.2
+#| fig-height: 3.3
+lvpa_plot(c("l4", "l5", "l6", "e5", "e6", "g1", "varS", "zA"))
+```
+
+- Variance: $\lambda_i^2\,\text{Var(Ach)} + \text{Var}(\varepsilon_i)$
+- Covariance: $\lambda_i\,\lambda_j\,\text{Var(Ach)}$
+:::
+::: {.column width="42%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 4.2
+#| fig-height: 4.2
+cm_mat(8)
+```
+:::
+::::
 
 ## The whole matrix: three kinds of cells
 
@@ -773,9 +1037,6 @@ Every latent variable still needs a scale, **including the endogenous one**.
 **New twist:** Var(Ach) = γ₁²·Var(SES) + Var(ζ<sub>A</sub>) is *derived*, so we can't fix it directly. For endogenous latent variables, use the **marker indicator** (fix the first loading to 1).
 :::
 
-::: {.fragment}
-*Discuss:* What does a 1-unit change in Achievement mean with the marker on Reading?
-:::
 
 ::: {.content-visible when-profile="teacher"}
 ::: {.notes}
@@ -859,12 +1120,10 @@ CFA: 4 loadings + 6 residual variances + 2 factor variances + 1 covariance = **1
 With two latent variables, the structural part is **saturated**: γ₁ and Var(ζ<sub>A</sub>) replace Cov and Var(Ach). So fit tells us only about the **measurement** model.
 :::
 
-::: {.fragment}
-Two-step logic:
+# Two-step logic:
 
 1. Fit the CFA first. If measurement is poor, no structural interpretation is trustworthy.
 2. Replace factor covariances with theory-driven paths. Omitting a path adds df and makes the structure testable.
-:::
 
 ::: {.content-visible when-profile="teacher"}
 ::: {.notes}
@@ -916,7 +1175,7 @@ fit <- lavaan(lvpa_model, data = dat)
 - `ACH ~~ ACH` is the **disturbance** variance because ACH is endogenous
 - Anything not specified is fixed to 0
 
-## Spot the errors
+## Spot the errors {.smaller}
 
 *This model has three bugs. Find them.*
 
@@ -940,61 +1199,13 @@ bad_model <- '
 :::
 :::
 
-## Path diagram from the model syntax
-
-```{r}
-#| echo: false
-#| fig-align: center
-#| fig-width: 9
-#| fig-height: 5
-library(lavaan)
-library(semPlot)
-
-dat <- read.csv("../data/w07_data_pisa22_USA_cln_cfa.csv")
-
-lvpa_model <- '
-  SES =~ 1*PARENTED    + BOOKSHOME + TECHHOME
-  ACH =~ 1*READING_AVE + MATH_AVE  + SCIENCE_AVE
-  ACH ~ SES
-  SES ~~ SES
-  ACH ~~ ACH
-  PARENTED ~~ PARENTED
-  BOOKSHOME ~~ BOOKSHOME
-  TECHHOME ~~ TECHHOME
-  READING_AVE ~~ READING_AVE
-  MATH_AVE ~~ MATH_AVE
-  SCIENCE_AVE ~~ SCIENCE_AVE
-'
-
-# parse the model and data, but do not estimate
-fit0 <- lavaan(lvpa_model, data = dat, do.fit = FALSE)
-
-semPaths(fit0, what = "path", whatLabels = "name", style = "lisrel",
-         layout = "tree", residuals = TRUE,
-         nCharNodes = 0, sizeMan = 10, sizeMan2 = 4)
-```
-
 # Rlab
 
-Go to the rlab for today.
 
-- Specify the SES → Achievement model in lavaan
-- Extend it to SES → Motivation
-- Draw the diagram from the syntax and check it against your own sketch
-- Count parameters and df by hand, then compare to lavaan
-
-::: {.content-visible when-profile="teacher"}
-::: {.notes}
-No w11 rlab exists yet; these tasks are a placeholder. Update to match the lab once written.
-:::
-:::
 
 # Up Next
 
-Identification & fit for LVPA
+- Mini project 2 due today
+- Identification & fit for LVPA
+- Post-Thanksgiving classes will be online (synchronous)
 
-::: {.content-visible when-profile="teacher"}
-::: {.notes}
-Add reading/prep assignment here.
-:::
-:::
