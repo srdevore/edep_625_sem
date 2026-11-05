@@ -137,7 +137,29 @@ Orient students to the arc: equations, then diagrams, then covariance, then impl
 :::
 :::
 
-# Overview
+## Reframe: research questions
+
+:::: {.columns}
+::: {.column style="width:33%; font-size: 0.8em;"}
+**MVPA**
+
+What is the effect of parent education on reading score, through books in the home?
+:::
+
+::: {.column style="width:33%; font-size: 0.8em;"}
+**CFA**
+
+To what extent do parent education, books in the home, and technology in the home reflect a single latent socioeconomic status variable?
+:::
+
+::: {.column style="width:34%; font-size: 0.8em;"}
+**LVPA**
+
+What is the effect of **latent SES** on **latent academic achievement**, when each is measured by several indicators?
+:::
+::::
+
+# MVPA Overview
 
 :::: {.columns}
 ::: {.column width="50%"}
@@ -190,7 +212,7 @@ Week 3: the structure (which variables affect which). Week 7: the measurement (h
 :::
 :::
 
-## Putting the two parts together
+## Putting the two parts together  {.smaller}
 
 ```{r}
 #| echo: false
@@ -203,6 +225,8 @@ lvpa_plot()
 ::: {.content-visible when-profile="teacher"}
 ::: {.notes}
 Same CFA as the previous slide, but the factor covariance is replaced by a directional path (SES to Achievement), and Achievement gets a disturbance. LVPA = CFA (measurement model) + path analysis among latent variables (structural model). Fundamentally the same: theory motivates every specification decision, and we estimate parameters so the model-implied covariance matrix is as close to the observed one as possible. Key difference: the structural paths connect latent variables, so the regression is (conceptually) free of measurement error in the indicators.
+
+- we are going to spend a lot of time reviewing these parts 1. so they are fresh in our minds, and 2. we will discuss how to work with them together.
 :::
 :::
 
@@ -215,31 +239,6 @@ Activity template on course site > activities review quiz.
   - first on the same method you worked on. 
   - then on the other method
 
-
-
-
-## Reframe: research questions
-
-:::: {.columns}
-::: {.column style="width:33%; font-size: 0.8em;"}
-**MVPA**
-
-What is the effect of parent education on reading score, through books in the home?
-:::
-
-::: {.column style="width:33%; font-size: 0.8em;"}
-**CFA**
-
-To what extent do parent education, books in the home, and technology in the home reflect a single latent socioeconomic status variable?
-:::
-
-::: {.column style="width:34%; font-size: 0.8em;"}
-**LVPA**
-
-What is the effect of **latent SES** on **latent academic achievement**, when each is measured by several indicators?
-:::
-::::
-
 ## LVPA research questions across fields {.smaller}
 
 | Field | Research question | Latent predictor (indicators) | Latent outcome (indicators) |
@@ -249,20 +248,8 @@ What is the effect of **latent SES** on **latent academic achievement**, when ea
 | Second-language studies | Does L2 anxiety lower L2 proficiency? | L2 anxiety (classroom, speaking, test anxiety scales) | L2 proficiency (listening, reading, writing scores) |
 | Business | Does employee engagement increase customer loyalty? | Engagement (vigor, dedication, absorption) | Loyalty (repurchase intent, referral, satisfaction) |
 
-## Which model? {.smaller}
 
-*Classify each as MVPA, CFA, or LVPA. Be ready to defend your choice.*
-
-1. Do the 20 items on a language-anxiety survey measure one construct or several?
-2. Does hours of study predict exam score? (both single observed variables)
-3. Does teacher self-efficacy (measured by 6 items) predict student engagement (measured by 5 items)?
-4. Does motivation (3 indicators) affect GPA (a single variable)?
-
-::: {.content-visible when-profile="teacher"}
-::: {.fragment}
-1. CFA 2. MVPA 3. LVPA 4. A hybrid: latent predictor, measured outcome. Still LVPA, because there's a measurement part *and* a structural part.
-:::
-:::
+# Latent Variable Path Analysis
 
 # Systems of equations
 
@@ -302,7 +289,9 @@ Latent variables are predicted by other latent variables (same form as Week 3):
 
 $$\text{Ach} = \alpha + \gamma_1\,\text{SES} + \zeta_A$$
 
-- α = intercept, γ₁ = structural path (the effect we care about), ζ<sub>A</sub> = disturbance
+- α = intercept, 
+- γ₁ = structural path
+- ζ<sub>A</sub> = disturbance
 - SES is **exogenous**: no equation, just a variance
 
 ::: {.fragment}
@@ -469,6 +458,12 @@ lvpa_plot()
 3. Var(SES), Var(ζ<sub>A</sub>), and six residual variances. Var(Achievement) is **not** a free parameter. It is *implied*: γ₁²·Var(SES) + Var(ζ<sub>A</sub>).
 :::
 :::
+
+## Matrices
+
+
+
+
 
 ## Disturbances vs. residuals
 
