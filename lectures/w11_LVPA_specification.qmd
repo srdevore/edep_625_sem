@@ -10,194 +10,996 @@ format:
     self-contained-math: true
 ---
 
+```{r}
+#| include: false
+# ---- shared diagram helper for the whole deck -------------------------------
+# Running example: SES (PARENTED, BOOKSHOME, TECHHOME) -> Ach = Achievement (READING, MATH, SCIENCE)
+# Highlight ids: l1..l6 (loadings), e1..e6 (residuals), g1 (structural path),
+#                zA (disturbance), varS (Var of exogenous factor), covSA (factor covariance)
+library(ggplot2)
+
+oNG <- "#E07B1A"; BLU <- "#2C6FB5"; MAG <- "#C81E7A"; LIM <- "#6FA80F"
+dk <- "#3A3A3A"; GRY <- "#9AA0A6"
+ar  <- grid::arrow(length = grid::unit(0.22, "cm"), type = "closed")
+ar2 <- grid::arrow(length = grid::unit(0.18, "cm"), ends = "both", type = "closed")
+
+circle <- function(x, y, r = 0.5) {
+  t <- seq(0, 2 * pi, length.out = 60)
+  data.frame(x = x + r * cos(t), y = y + r * sin(t))
+}
+
+lvpa_plot <- function(hl = NULL,                       # NULL = colour by parameter type
+                      parts = c("meas", "struct"),     # which model parts to draw
+                      marker = FALSE,                  # show first loadings fixed to 1
+                      factors = c("SES", "Ach"),
+                      inds = c("Parent\neducation", "Books\nat home", "Tech\nat home",
+                               "Reading", "Math", "Science"),
+                      struct_lab = "gamma[1]", dist_lab = "zeta[A]") {
+  draw_m <- "meas" %in% parts
+  draw_s <- "struct" %in% parts
+  # colour / width helpers: type colours by default, magenta-on-grey when highlighting
+  col <- function(id, type_col) if (is.null(hl)) type_col else ifelse(id %in% hl, MAG, GRY)
+  wd  <- function(id, base) if (is.null(hl)) base else ifelse(id %in% hl, 1.8, 1.0)
+
+  fx <- c(-6, 6); r <- 1.1
+  bx <- c(-8.5, -6, -3.5, 3.5, 6, 8.5); by <- -3.4
+  fidx <- c(1, 1, 1, 2, 2, 2)
+  ids_l <- paste0("l", 1:6); ids_e <- paste0("e", 1:6)
+  lam <- paste0("lambda[", 1:6, "]")
+  eps <- paste0("epsilon[", 1:6, "]")
+  lcol <- col(ids_l, BLU); ecol <- col(ids_e, MAG)
+
+  p <- ggplot() +
+    geom_polygon(data = circle(fx[1], 0, r), aes(x, y), fill = dk) +
+    geom_polygon(data = circle(fx[2], 0, r), aes(x, y), fill = dk) +
+    annotate("text", x = fx[1], y = 0, label = factors[1], colour = "white", size = 4.6) +
+    annotate("text", x = fx[2], y = 0, label = factors[2], colour = "white", size = 4.6)
+
+  # Var of exogenous factor (self-loop); in meas-only view both factors get one
+  loops <- if (draw_s) 1 else 1:2
+  for (k in loops) {
+    p <- p +
+      annotate("curve", x = fx[k] - 0.5, y = 1.0, xend = fx[k] + 0.5, yend = 1.0,
+               colour = col("varS", dk), linewidth = wd("varS", 0.9),
+               curvature = -1.4, arrow = ar2) +
+      annotate("text", x = fx[k], y = 2.25, label = "Var", colour = col("varS", dk),
+               size = 4, fontface = "italic")
+  }
+
+  if (draw_s) {
+    # structural path SES -> Achievement, and the disturbance on Achievement
+    p <- p +
+      annotate("segment", x = fx[1] + r + 0.1, xend = fx[2] - r - 0.1, y = 0, yend = 0,
+               colour = col("g1", oNG), linewidth = wd("g1", 1.3), arrow = ar) +
+      annotate("text", x = 0, y = 0.55, label = struct_lab, parse = TRUE,
+               colour = col("g1", oNG), size = 6, fontface = "italic") +
+      annotate("segment", x = fx[2], xend = fx[2], y = 3.2, yend = r + 0.05,
+               colour = col("zA", LIM), linewidth = wd("zA", 0.5), arrow = ar) +
+      annotate("text", x = fx[2] + 0.9, y = 3.0, label = dist_lab, parse = TRUE,
+               colour = col("zA", LIM), size = 4.6)
+  } else {
+    # measurement-only view: the factors simply covary
+    p <- p +
+      annotate("curve", x = fx[1] + 0.9, y = 0.9, xend = fx[2] - 0.9, yend = 0.9,
+               colour = col("covSA", dk), linewidth = wd("covSA", 0.9),
+               curvature = -0.35, arrow = ar2) +
+      annotate("text", x = 0, y = 2.9, label = "Cov", colour = col("covSA", dk),
+               size = 4, fontface = "italic")
+  }
+
+  if (draw_m) {
+    th <- atan2(by + 0.55 - 0, bx - fx[fidx])
+    x0 <- fx[fidx] + r * cos(th); y0 <- r * sin(th)
+    lab_fix <- if (marker) c("1", lam[2:3], "1", lam[5:6]) else lam
+    lw <- wd(ids_l, 1.3); lt <- rep("solid", 6)
+    if (marker) lt[c(1, 4)] <- "dashed"
+    p <- p +
+      annotate("segment", x = x0, xend = bx, y = y0, yend = by + 0.55,
+               colour = lcol, linewidth = lw, linetype = lt, arrow = ar) +
+      annotate("text", x = 0.5 * x0 + 0.5 * bx + c(-0.55, 0.6, 0.6, -0.6, -0.6, 0.55) * 0.6,
+               y = 0.5 * y0 + 0.5 * (by + 0.55) + 0.1,
+               label = lab_fix, parse = TRUE, colour = lcol, size = 5, fontface = "italic") +
+      annotate("segment", x = bx, xend = bx, y = by - 2.2, yend = by - 0.55,
+               colour = ecol, linewidth = wd(ids_e, 0.5), arrow = ar) +
+      annotate("text", x = bx, y = by - 2.65, label = eps, parse = TRUE,
+               colour = ecol, size = 4)
+    for (i in 1:6) {
+      p <- p +
+        annotate("rect", xmin = bx[i] - 1.1, xmax = bx[i] + 1.1,
+                 ymin = by - 0.55, ymax = by + 0.55, fill = dk) +
+        annotate("text", x = bx[i], y = by, label = inds[i], colour = "white",
+                 size = 3.4, lineheight = 0.9)
+    }
+  }
+
+  ymin <- if (draw_m) by - 3.2 else -1.8
+  ymax <- if (draw_s) 3.6 else 3.3
+  p + coord_equal(clip = "off") +
+    expand_limits(x = c(-10, 10), y = c(ymin, ymax)) +
+    theme_void()
+}
+```
+
 # Agenda
 
+- Overview: bringing CFA and MVPA together
+- Review of MVPA & CFA
+- Systems of equations
+- Path diagrams
+- Model-implied covariance
+- Implications: scale, degrees of freedom, parameters
+- Specifying LVPA in Lavaan
+- Rlab
+
 ::: {.content-visible when-profile="teacher"}
-**Purpose:** Orient students to the arc of the session: equations, diagrams, covariance, implications, lavaan.
+::: {.notes}
+Orient students to the arc: equations, then diagrams, then covariance, then implications, then lavaan. Same arc as Lectures 3 and 7.
+:::
 :::
 
 # Overview
 
+:::: {.columns}
+::: {.column width="50%"}
+**Week 3: MVPA**
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 6.5
+#| fig-height: 3.2
+mv_box <- function(x, label) list(
+  annotate("rect", xmin = x - 1.15, xmax = x + 1.15, ymin = -0.55, ymax = 0.55, fill = dk),
+  annotate("text", x = x, y = 0, label = label, colour = "white", size = 3.6, lineheight = 0.9)
+)
+ggplot() +
+  annotate("segment", x = 1.25, xend = 2.75, y = 0, yend = 0, colour = oNG, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 2, y = 0.45, label = "a[1]", parse = TRUE, colour = oNG, size = 5, fontface = "italic") +
+  annotate("segment", x = 5.25, xend = 6.75, y = 0, yend = 0, colour = oNG, linewidth = 1.3, arrow = ar) +
+  annotate("text", x = 6, y = 0.45, label = "b[1]", parse = TRUE, colour = oNG, size = 5, fontface = "italic") +
+  annotate("curve", x = -0.55, y = 0.6, xend = 0.55, yend = 0.6,
+           colour = dk, linewidth = 0.9, curvature = -1.4, arrow = ar2) +
+  annotate("text", x = 0, y = 1.85, label = "Var", colour = dk, size = 4, fontface = "italic") +
+  annotate("segment", x = 4, xend = 4, y = 1.85, yend = 0.6, colour = LIM, arrow = ar) +
+  annotate("text", x = 4, y = 2.3, label = "zeta[B]", parse = TRUE, colour = LIM, size = 4) +
+  annotate("segment", x = 8, xend = 8, y = 1.85, yend = 0.6, colour = LIM, arrow = ar) +
+  annotate("text", x = 8, y = 2.3, label = "zeta[R]", parse = TRUE, colour = LIM, size = 4) +
+  mv_box(0, "Parent\neducation") + mv_box(4, "Books at\nhome") + mv_box(8, "Reading\nscore") +
+  coord_equal(clip = "off") +
+  expand_limits(x = c(-1.3, 9.3), y = c(-0.9, 3)) +
+  theme_void()
+```
+:::
+
+::: {.column width="50%"}
+**Week 7: CFA**
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 6.5
+#| fig-height: 3.6
+lvpa_plot(parts = "meas")
+```
+:::
+::::
+
 ::: {.content-visible when-profile="teacher"}
-**Purpose:** Frame LVPA as the combination of the two pieces students already know, not a new method.
+::: {.notes}
+Week 3: the structure (which variables affect which). Week 7: the measurement (how indicators reflect latent variables). Today: what if the variables in the structure are latent? LVPA is also called structural regression, or "full SEM". Students already know both halves; this unit adds no new building blocks, only a new combination.
+:::
 :::
 
 ## Putting the two parts together
 
-::: {.content-visible when-profile="teacher"}
-**Purpose:** State the central idea: LVPA = measurement model (CFA) + structural model (path analysis among latent variables). Same logic as before: theory-driven specification, estimate so the model-implied covariance matches the observed one. Key difference: the structural paths now connect latent variables, not measured ones.
-:::
-
-## Review: the structural part (MVPA)
-
-::: {.content-visible when-profile="teacher"}
-**Purpose:** Reactivate w3 ideas: regressions among measured variables, exogenous/endogenous, disturbances. This is what will now operate on latent variables.
-:::
-
-## Review: the measurement part (CFA)
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 4.2
+lvpa_plot()
+```
 
 ::: {.content-visible when-profile="teacher"}
-**Purpose:** Reactivate w7 ideas: indicators, loadings, residuals, latent variable as common cause of indicators. This is what defines the latent variables.
+::: {.notes}
+Same CFA as the previous slide, but the factor covariance is replaced by a directional path (SES to Achievement), and Achievement gets a disturbance. LVPA = CFA (measurement model) + path analysis among latent variables (structural model). Fundamentally the same: theory motivates every specification decision, and we estimate parameters so the model-implied covariance matrix is as close to the observed one as possible. Key difference: the structural paths connect latent variables, so the regression is (conceptually) free of measurement error in the indicators.
 :::
+:::
+
+## Review
+
+Activity template on course site > activities review quiz. 
+
+1.  Your job: Work with your group to write a quiz for your peers on either MVPA or CFA (as assigned)
+2. Take the quiz
+  - first on the same method you worked on. 
+  - then on the other method
+
+
+
 
 ## Reframe: research questions
 
+:::: {.columns}
+::: {.column style="width:33%; font-size: 0.8em;"}
+**MVPA**
+
+What is the effect of parent education on reading score, through books in the home?
+:::
+
+::: {.column style="width:33%; font-size: 0.8em;"}
+**CFA**
+
+To what extent do parent education, books in the home, and technology in the home reflect a single latent socioeconomic status variable?
+:::
+
+::: {.column style="width:34%; font-size: 0.8em;"}
+**LVPA**
+
+What is the effect of **latent SES** on **latent academic achievement**, when each is measured by several indicators?
+:::
+::::
+
+## LVPA research questions across fields {.smaller}
+
+| Field | Research question | Latent predictor (indicators) | Latent outcome (indicators) |
+|:--|:----------|:------------|:------------|
+| Education | Does SES affect academic achievement? | SES (parent education, books, technology) | Achievement (reading, math, science scores) |
+| Clinical psychology | Does emotion dysregulation predict depressive symptoms? | Emotion dysregulation (awareness, impulse control, strategies subscales) | Depression (mood, sleep, anhedonia scales) |
+| Second-language studies | Does L2 anxiety lower L2 proficiency? | L2 anxiety (classroom, speaking, test anxiety scales) | L2 proficiency (listening, reading, writing scores) |
+| Business | Does employee engagement increase customer loyalty? | Engagement (vigor, dedication, absorption) | Loyalty (repurchase intent, referral, satisfaction) |
+
+## Which model? {.smaller}
+
+*Classify each as MVPA, CFA, or LVPA. Be ready to defend your choice.*
+
+1. Do the 20 items on a language-anxiety survey measure one construct or several?
+2. Does hours of study predict exam score? (both single observed variables)
+3. Does teacher self-efficacy (measured by 6 items) predict student engagement (measured by 5 items)?
+4. Does motivation (3 indicators) affect GPA (a single variable)?
+
 ::: {.content-visible when-profile="teacher"}
-**Purpose:** Show the kind of RQ that needs LVPA (e.g., effect of one construct on another, each measured with multiple indicators), contrasted with MVPA and CFA RQs, as w7 did.
+::: {.fragment}
+1. CFA 2. MVPA 3. LVPA 4. A hybrid: latent predictor, measured outcome. Still LVPA, because there's a measurement part *and* a structural part.
+:::
 :::
 
 # Systems of equations
 
-::: {.content-visible when-profile="teacher"}
-**Purpose:** Build the model algebraically first, as in w3 and w7, so diagrams and covariance tracing have something to map onto.
-:::
+Same recipe as Weeks 3 and 7: build the model as equations first, then map the equations onto a diagram.
 
 ## Measurement equations
 
-::: {.content-visible when-profile="teacher"}
-**Purpose:** Indicators are written as functions of latent variables (intercept, loading, residual). Unchanged from CFA; reinforce that every latent variable needs its own indicators.
+Each indicator is a function of its latent variable (unchanged from CFA):
+
+:::: {.columns}
+::: {.column style="width:50%; font-size: 0.78em;"}
+$$
+\begin{aligned}
+\text{ParentEd} &= \tau_1 + \lambda_1\,\text{SES} + \varepsilon_1 \\
+\text{BooksHome} &= \tau_2 + \lambda_2\,\text{SES} + \varepsilon_2 \\
+\text{TechHome} &= \tau_3 + \lambda_3\,\text{SES} + \varepsilon_3
+\end{aligned}
+$$
 :::
+::: {.column style="width:50%; font-size: 0.78em;"}
+$$
+\begin{aligned}
+\text{Reading} &= \tau_4 + \lambda_4\,\text{Ach} + \varepsilon_4 \\
+\text{Math} &= \tau_5 + \lambda_5\,\text{Ach} + \varepsilon_5 \\
+\text{Science} &= \tau_6 + \lambda_6\,\text{Ach} + \varepsilon_6
+\end{aligned}
+$$
+:::
+::::
+
+- Every latent variable gets its **own** set of indicators
+- Same symbols as Week 7: τ = intercept, λ = loading, ε = residual
 
 ## Structural equations
 
-::: {.content-visible when-profile="teacher"}
-**Purpose:** Latent variables are written as functions of other latent variables (path coefficient, disturbance). Same form as MVPA regressions, but the variables are latent.
+Latent variables are predicted by other latent variables (same form as Week 3):
+
+$$\text{Ach} = \alpha + \gamma_1\,\text{SES} + \zeta_A$$
+
+- α = intercept, γ₁ = structural path (the effect we care about), ζ<sub>A</sub> = disturbance
+- SES is **exogenous**: no equation, just a variance
+
+::: {.fragment}
+*Compare:* Books = a₀ + a₁(ParentEd) + ζ<sub>B</sub>. Same form, but the variables are now latent.
 :::
 
 ## Combined system
 
+Same model, two representations. Matching colors show what maps to what.
+
+:::: {.columns}
+::: {.column style="width:42%; font-size: 0.62em;"}
+**Measurement**
+$$
+\begin{aligned}
+\text{ParentEd} &= \tau_1 + \color{#2C6FB5}{\lambda_1}\,\text{SES} + \color{#C81E7A}{\varepsilon_1} \\
+\text{BooksHome} &= \tau_2 + \color{#2C6FB5}{\lambda_2}\,\text{SES} + \color{#C81E7A}{\varepsilon_2} \\
+\text{TechHome} &= \tau_3 + \color{#2C6FB5}{\lambda_3}\,\text{SES} + \color{#C81E7A}{\varepsilon_3} \\
+\text{Reading} &= \tau_4 + \color{#2C6FB5}{\lambda_4}\,\text{Ach} + \color{#C81E7A}{\varepsilon_4} \\
+\text{Math} &= \tau_5 + \color{#2C6FB5}{\lambda_5}\,\text{Ach} + \color{#C81E7A}{\varepsilon_5} \\
+\text{Science} &= \tau_6 + \color{#2C6FB5}{\lambda_6}\,\text{Ach} + \color{#C81E7A}{\varepsilon_6}
+\end{aligned}
+$$
+
+**Structural**
+$$\text{Ach} = \alpha + \color{#E07B1A}{\gamma_1}\,\text{SES} + \color{#6FA80F}{\zeta_A}$$
+:::
+
+::: {.column width="58%"}
+```{r}
+#| echo: false
+#| fig-width: 8
+#| fig-height: 4.2
+lvpa_plot()
+```
+:::
+::::
+
 ::: {.content-visible when-profile="teacher"}
-**Purpose:** Put both sets of equations side by side so students see one model with two layers. Introduce the notation distinction (loadings vs. structural paths; residuals vs. disturbances).
+::: {.notes}
+Point out the two layers: blue/magenta are the measurement model, orange/lime are the structural model. Loadings vs. structural paths; residuals vs. disturbances.
+:::
+:::
+
+## Practice: system of equations
+
+Now **SES → Motivation**. Motivation is measured by Effort, Study Homework, and Missed School.
+
+*Write the full system (measurement and structural).*
+
+$$
+\begin{aligned}
+\text{Effort} &= \underline{\phantom{\lambda_1}} + \underline{\phantom{\lambda_1}}\,\underline{\phantom{\text{Motivation}}} + \underline{\phantom{\lambda_1}} \\
+\text{StudyHmW} &= \underline{\phantom{\lambda_1}} + \underline{\phantom{\lambda_1}}\,\underline{\phantom{\text{Motivation}}} + \underline{\phantom{\lambda_1}} \\
+\text{MissSc} &= \underline{\phantom{\lambda_1}} + \underline{\phantom{\lambda_1}}\,\underline{\phantom{\text{Motivation}}} + \underline{\phantom{\lambda_1}} \\
+\text{Motivation} &= \underline{\phantom{\lambda_1}} + \underline{\phantom{\lambda_1}}\,\underline{\phantom{\text{Motivation}}} + \underline{\phantom{\lambda_1}}
+\end{aligned}
+$$
+
+::: {.content-visible when-profile="teacher"}
+## Practice: system of equations (answers)
+
+$$
+\begin{aligned}
+\text{Effort} &= \tau_4 + \lambda_4\,\text{Motivation} + \varepsilon_4 \\
+\text{StudyHmW} &= \tau_5 + \lambda_5\,\text{Motivation} + \varepsilon_5 \\
+\text{MissSc} &= \tau_6 + \lambda_6\,\text{Motivation} + \varepsilon_6 \\
+\text{Motivation} &= \alpha + \gamma_1\,\text{SES} + \zeta_M
+\end{aligned}
+$$
+
+(The SES measurement equations are unchanged.)
 :::
 
 # Systems of equations to path diagrams
 
-::: {.content-visible when-profile="teacher"}
-**Purpose:** Translate the equations into the diagram conventions students already use.
-:::
-
 ## Path diagram review
 
+What do the following represent?
+
+- squares/rectangles
+- circles/ovals
+- single-headed straight arrow
+- curved double-headed arrow
+
 ::: {.content-visible when-profile="teacher"}
-**Purpose:** Quick retrieval of symbols: squares, circles, single-headed arrows, curved double-headed arrows.
+::: {.fragment}
+- Measured variables
+- Latent variables
+- A path: a loading (latent → indicator) or a structural path (latent → latent)
+- A variance or covariance
 :::
-
-## Path diagram: structural part
-
-::: {.content-visible when-profile="teacher"}
-**Purpose:** Show the structural part alone, with latent variables in circles and paths between them.
 :::
 
 ## Path diagram: measurement part
 
+If we only had the measurement model, it's a CFA with two correlated factors.
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 4.2
+lvpa_plot(parts = "meas")
+```
+
 ::: {.content-visible when-profile="teacher"}
-**Purpose:** Show the measurement part alone, with indicators, loadings and residuals for each latent variable.
+::: {.notes}
+Key point for later: in a CFA the two factors simply covary. There is no direction.
 :::
+:::
+
+## Path diagram: structural part
+
+If the latent variables were observed, this is a simple path model (just like Week 3).
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 2.4
+lvpa_plot(parts = "struct")
+```
+
+- The factor **covariance** is replaced by a **directional** path
+- Achievement now gets a **disturbance**; SES keeps a **variance**
 
 ## Path diagram: LVPA
 
-::: {.content-visible when-profile="teacher"}
-**Purpose:** Merge the two diagrams into the full LVPA diagram. Students should be able to point to which arrows belong to which part.
+:::: {.columns}
+::: {.column width="70%"}
+```{r}
+#| echo: false
+#| fig-width: 8
+#| fig-height: 4.2
+lvpa_plot()
+```
 :::
+::: {.column style="width:30%; font-size: 0.85em;"}
+**Measurement model**
+
+<span style="color:#2C6FB5;">**λ** loadings</span><br>
+<span style="color:#C81E7A;">**ε** residuals</span>
+
+**Structural model**
+
+<span style="color:#E07B1A;">**γ** structural path</span><br>
+<span style="color:#6FA80F;">**ζ** disturbance</span>
+:::
+::::
 
 ## Exogenous vs. endogenous latent variables
 
+*Look at the LVPA diagram.*
+
+1. Which latent variable is exogenous? Which is endogenous?
+2. Which variables get a **disturbance**? Which get a **residual**?
+3. Which variances are free parameters?
+
 ::: {.content-visible when-profile="teacher"}
-**Purpose:** Extend the w3 exogenous/endogenous distinction to latent variables. Determines which get a variance parameter and which get a disturbance.
+::: {.fragment}
+1. SES is exogenous. Achievement is endogenous.
+2. Disturbance: Achievement only. Residuals: all six indicators.
+3. Var(SES), Var(ζ<sub>A</sub>), and six residual variances. Var(Achievement) is **not** a free parameter. It is *implied*: γ₁²·Var(SES) + Var(ζ<sub>A</sub>).
+:::
 :::
 
 ## Disturbances vs. residuals
 
+| | Residual (ε) | Disturbance (ζ) |
+|:--|:--------------|:----------------|
+| Sits on | an **indicator** (measured variable) | an **endogenous latent variable** |
+| Part of | measurement model | structural model |
+| Represents | random measurement error + other causes unique to the indicator | everything besides the model's predictors that drives the latent variable |
+
+::: {.fragment}
+**Why it matters:** in MVPA, measurement error sat inside the disturbance. In LVPA, it is separated into ε, so the structural path γ₁ is not diluted by measurement error in the indicators.
+:::
+
+## ε or ζ?
+
+*Which one captures each of these?*
+
+1. A student guesses randomly on the math items.
+2. Motivation, parental involvement, and school quality all affect achievement, but only SES is in the model.
+3. The reading test measures vocabulary, which is not shared with the math or science tests.
+
 ::: {.content-visible when-profile="teacher"}
-**Purpose:** Prevent confusion between two kinds of error: residuals on indicators (measurement error) and disturbances on endogenous latent variables (unexplained structural variance).
+::: {.fragment}
+1. ε (random error specific to the indicator)
+2. ζ (unexplained variance in the latent variable)
+3. ε (true variance, unique to that indicator, not shared through the latent variable)
+:::
 :::
 
 # Model-implied covariance matrix
 
-::: {.content-visible when-profile="teacher"}
-**Purpose:** Connect specification to estimation: the model implies a covariance matrix among the indicators only, and that is what is compared to the data.
-:::
+- We only observe the **indicators**, so the model-implied covariance matrix is among the indicators (here 6 × 6)
+- Latent variables have no data; they only show up as routes in the path diagram
+- We still use the path tracing rules
 
 ## Review: path tracing rules
 
-::: {.content-visible when-profile="teacher"}
-**Purpose:** Restate the tracing rules from w3 and w7 so students have them in hand before the new case.
+Revisit the rules from [Lecture 3](https://srdevore.github.io/edep_625_sem/lectures/w03_mvpa_specification.html) and [Lecture 7](https://srdevore.github.io/edep_625_sem/lectures/w07_cfa_specification.html).
+
+:::: {.columns}
+::: {.column style="width:50%; font-size: 0.8em;"}
+**Finding routes**
+
+1. Go backward against an arrowhead, then forward. Never forward-then-backward.
+2. Never pass through the same variable twice.
+3. At most one curved arrow, only at the turning point.
+:::
+::: {.column style="width:50%; font-size: 0.8em;"}
+**Computing the covariance**
+
+1. Find every valid route.
+2. Multiply all coefficients along each route.
+3. Multiply by the variance of the route's ultimate common source.
+4. Sum across routes.
+:::
+::::
+
+## Tracing: within the same latent variable
+
+**Cov(Parent ed, Books)**: one route, PE ← SES → BH
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 4.2
+lvpa_plot(c("l1", "l2", "varS"))
+```
+
+$$\text{Cov(PE, BH)} = \lambda_1\,\lambda_2\,\text{Var(SES)}$$
+
+*This is exactly what we did in Week 7.*
+
+## Tracing: across latent variables
+
+**Cov(Parent ed, Math)**: PE ← SES → Achievement → Math
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 4.2
+lvpa_plot(c("l1", "varS", "g1", "l5"))
+```
+
+$$\text{Cov(PE, Math)} = \lambda_1\,\gamma_1\,\lambda_5\,\text{Var(SES)}$$
+
+::: {.fragment}
+The **structural path** is what links indicators of *different* latent variables.
 :::
 
-## Tracing through the measurement and structural parts
+## Tracing: variance of the endogenous latent variable
+
+Achievement is not a free parameter, so we need its **implied** variance. Trace it like any other variable:
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 3.6
+lvpa_plot(c("g1", "varS", "zA"), parts = "struct")
+```
+
+$$\text{Var(Ach)} = \gamma_1^2\,\text{Var(SES)} + \text{Var}(\zeta_A)$$
+
+- Up-and-back through the common cause SES, plus its own disturbance (same as Var(Books) in Week 3)
+
+## Tracing: within the endogenous latent variable
+
+**Cov(Reading, Math)**: Reading ← Achievement → Math
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 4.2
+lvpa_plot(c("l4", "l5"))
+```
+
+$$\text{Cov(Reading, Math)} = \lambda_4\,\lambda_5\,\text{Var(Ach)} = \lambda_4\,\lambda_5\,\bigl[\gamma_1^2\,\text{Var(SES)} + \text{Var}(\zeta_A)\bigr]$$
+
+::: {.fragment}
+Use the variance of Achievement we already found, as with Cov(Books, Reading) in Week 3.
+:::
+
+## Tracing: variance of an indicator
+
+**Var(Reading)**: up-and-back through Achievement, plus its own residual
+
+$$\text{Var(Reading)} = \lambda_4^2\,\text{Var(Ach)} + \text{Var}(\varepsilon_4)$$
+
+$$= \lambda_4^2\,\bigl[\gamma_1^2\,\text{Var(SES)} + \text{Var}(\zeta_A)\bigr] + \text{Var}(\varepsilon_4)$$
+
+::: {.fragment}
+Compare Week 7: Var(PE) = λ₁²·Var(SES) + Var(ε₁). The only new piece is that Var(Ach) has two terms.
+:::
+
+## The whole matrix: three kinds of cells
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 8.5
+#| fig-height: 4.6
+lab <- c("PE", "BH", "TH", "Read", "Math", "Sci")
+cells <- expand.grid(r = 1:6, c = 1:6)
+cells$type <- with(cells, ifelse(r <= 3 & c <= 3, "A", ifelse(r > 3 & c > 3, "B", "C")))
+cells <- subset(cells, c <= r)
+cells$fill <- c(A = "#2C6FB5", B = "#6FA80F", C = "#E07B1A")[cells$type]
+cells$txt <- with(cells, ifelse(r == c & type == "A", "λ² Var(S) + θ",
+                         ifelse(r == c & type == "B", "λ² Var(A) + θ",
+                         ifelse(type == "A", "λλ Var(S)",
+                         ifelse(type == "B", "λλ Var(A)", "λ γ λ Var(S)")))))
+ggplot(cells, aes(c, -r)) +
+  geom_tile(aes(fill = I(fill)), alpha = 0.85, colour = "white", linewidth = 1.2) +
+  geom_text(aes(label = txt), colour = "white", size = 3.1) +
+  scale_x_continuous(breaks = 1:6, labels = lab, position = "top") +
+  scale_y_continuous(breaks = -(1:6), labels = lab) +
+  coord_equal() +
+  labs(x = NULL, y = NULL) +
+  theme_minimal(base_size = 13) + theme(panel.grid = element_blank())
+```
+
+<span style="color:#2C6FB5;">**Blue:** SES indicators</span> ·
+<span style="color:#6FA80F;">**Green:** Achievement indicators</span> ·
+<span style="color:#E07B1A;">**Orange:** across factors (the structural path)</span>
 
 ::: {.content-visible when-profile="teacher"}
-**Purpose:** Show that implied covariances between indicators of different latent variables run through the loadings and the structural path. Key insight: structure only shows up in the covariance between indicators of different factors.
+::: {.notes}
+Structure only shows up in the orange block, and inside Var(Ach). Emphasize that all three blocks use the same tracing rules. Var(A) expands to γ₁²·Var(S) + Var(ζ_A).
+:::
 :::
 
 ## Allowed or not allowed?
 
+For each example, the **magenta** path is the route to evaluate. Is it an allowed route? Take a stand first, then we'll reveal the answer.
+
+## Allowed or not allowed?
+
+**Route:** Parent education ← SES → Achievement → Math
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 4.2
+lvpa_plot(c("l1", "varS", "g1", "l5"))
+```
+
 ::: {.content-visible when-profile="teacher"}
-**Purpose:** Check understanding of valid traces in the combined model (e.g., no going through a collider, no going forward then back).
+::: {.fragment}
+**Allowed.** Backward against λ₁, then forward along γ₁ and λ₅. Each variable appears once.
+:::
 :::
 
-## Practice
+## Allowed or not allowed?
+
+**Route:** Parent education ← SES → Achievement ← ζ<sub>A</sub>
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 4.2
+lvpa_plot(c("l1", "g1", "zA"))
+```
 
 ::: {.content-visible when-profile="teacher"}
-**Purpose:** Students derive implied covariances in a small LVPA on their own, as in the w3 and w7 practice slides.
+::: {.fragment}
+**Not allowed.** The route goes forward into Achievement along γ₁, then backward against the arrow from ζ<sub>A</sub>. Forward-then-backward is never allowed.
+:::
+:::
+
+## Allowed or not allowed?
+
+**Route:** Reading ← Achievement → Math
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 4.2
+lvpa_plot(c("l4", "l5"))
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+**Allowed.** Backward against λ₄, forward along λ₅. Achievement is the common source, so we multiply by Var(Ach).
+:::
+:::
+
+## Allowed or not allowed?
+
+**Route:** Reading ← Achievement ← SES → Achievement → Math
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 4.2
+lvpa_plot(c("l4", "g1", "l5"))
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+**Not allowed.** The route passes through Achievement twice. (The SES contribution is already inside Var(Ach).)
+:::
+:::
+
+## Allowed or not allowed?
+
+**Route:** Reading ← Achievement → Math ← ε<sub>5</sub>
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 4.2
+lvpa_plot(c("l4", "l5", "e5"))
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+**Not allowed.** The route goes forward into Math, then backward against the arrow from ε₅. Residuals only show up in the *variance* of their own indicator.
+:::
+:::
+
+## Practice: model-implied covariance
+
+Model: **SES → Motivation**
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 4
+lvpa_plot(factors = c("SES", "Motiv."),
+          inds = c("Parent\neducation", "Books\nat home", "Tech\nat home",
+                   "Effort", "Study\nhomework", "Missed\nschool"),
+          dist_lab = "zeta[M]")
+```
+
+*In groups of three, one person per row. Compare answers.*
+
+1. Cov(Books, Study homework)
+2. Cov(Effort, Missed school)
+3. Var(Study homework)
+
+::: {.content-visible when-profile="teacher"}
+## Practice: model-implied covariance (answers)
+
+1. Cov(Books, StudyHmW) = λ₂ · γ₁ · λ₅ · Var(SES) (route: BH ← SES → Motiv → StudyHmW)
+2. Cov(Effort, MissSc) = λ₄ · λ₆ · [γ₁²·Var(SES) + Var(ζ<sub>M</sub>)] (route: Effort ← Motiv → MissSc)
+3. Var(StudyHmW) = λ₅² · [γ₁²·Var(SES) + Var(ζ<sub>M</sub>)] + Var(ε₅)
 :::
 
 # Implications
 
-::: {.content-visible when-profile="teacher"}
-**Purpose:** Spell out what the combined model means for scaling, identification and parameter counting.
+## Scale
+
+Every latent variable still needs a scale, **including the endogenous one**.
+
+- Option 1: fix the first loading to 1 (marker indicator)
+- Option 2: fix the latent variable's variance to 1
+
+::: {.fragment}
+**New twist:** Var(Ach) = γ₁²·Var(SES) + Var(ζ<sub>A</sub>) is *derived*, so we can't fix it directly. For endogenous latent variables, use the **marker indicator** (fix the first loading to 1).
 :::
 
-## Scale of latent variables
+::: {.fragment}
+*Discuss:* What does a 1-unit change in Achievement mean with the marker on Reading?
+:::
 
 ::: {.content-visible when-profile="teacher"}
-**Purpose:** Each latent variable still needs its scale set (marker loading or fixed variance). Note that endogenous latent variables are scaled via a marker loading, since their variance is not a free parameter.
+::: {.notes}
+Exogenous factors can use either option; endogenous factors need the marker (or a more advanced constraint on the disturbance). Simplest default: marker on every factor. Answer to the discussion: a 1-unit change in Achievement is a 1-point change in Reading, the marker indicator.
 :::
+:::
+
+## Scale: marker indicators in the diagram
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 4.2
+lvpa_plot(marker = TRUE)
+```
+
+Dashed paths with a **1** are fixed, so they are not estimated.
 
 ## Degrees of freedom
 
-::: {.content-visible when-profile="teacher"}
-**Purpose:** Review how df = information − parameters, with information based on the indicators only. Preview that the structural part can add df.
+df = information − parameters
+
+Remember from MVPA and CFA, information = p(p + 1) / 2, where **p = the number of measured variables**.
+
+::: {.fragment}
+Latent variables add **no** information. Six indicators: 6(7)/2 = **21** pieces of information.
 :::
 
-## Parameters to be estimated
+## Parameters (q) to be estimated {.smaller}
+
+| Parameter type | CFA (Week 7) | LVPA |
+|:---|:---|:---|
+| Loadings (λ) | free ones, after fixing one per factor | same |
+| Residual variances of indicators (θ) | one per indicator | same |
+| Variance of exogenous latent variable(s) | factor variances (and covariances) | exogenous factors only |
+| **Structural paths (γ)** | — | one per arrow between latent variables |
+| **Disturbance variances (ζ)** | — | one per endogenous latent variable |
+
+::: {.fragment}
+Don't count fixed values (marker loadings, or fixed variances).
+:::
+
+## Example: counting parameters
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 4.2
+lvpa_plot(marker = TRUE)
+```
+
+::: {.fragment}
+Loadings 4 (λ₂, λ₃, λ₅, λ₆) + residual variances 6 + Var(SES) 1 + γ₁ 1 + Var(ζ<sub>A</sub>) 1 = **13**
+:::
+
+::: {.fragment}
+df = 21 − 13 = **8**
+:::
+
+## Practice
+
+Calculate degrees of freedom for the SES → Motivation model (marker indicators on both factors).
 
 ::: {.content-visible when-profile="teacher"}
-**Purpose:** Count parameters by type (loadings, residual variances, structural paths, disturbance variances, exogenous variances) so students can see where df come from.
+::: {.fragment}
+Same structure as the example: 21 pieces of information, 4 loadings + 6 residual variances + Var(SES) + γ₁ + Var(ζ<sub>M</sub>) = 13. **df = 8.**
+:::
 :::
 
 ## Measurement model first, then structure
 
+*Count parameters for a **CFA** with the same six indicators and two correlated factors. Compare.*
+
+::: {.fragment}
+CFA: 4 loadings + 6 residual variances + 2 factor variances + 1 covariance = **13**. df = **8**, the same as the LVPA.
+:::
+
+::: {.fragment}
+With two latent variables, the structural part is **saturated**: γ₁ and Var(ζ<sub>A</sub>) replace Cov and Var(Ach). So fit tells us only about the **measurement** model.
+:::
+
+::: {.fragment}
+Two-step logic:
+
+1. Fit the CFA first. If measurement is poor, no structural interpretation is trustworthy.
+2. Replace factor covariances with theory-driven paths. Omitting a path adds df and makes the structure testable.
+:::
+
 ::: {.content-visible when-profile="teacher"}
-**Purpose:** Introduce the logic of checking the CFA before adding structural paths: poor measurement undermines any structural interpretation. Sets up the identification and fit weeks.
+::: {.notes}
+Discussion prompt: SES → Ach and Ach → SES give identical fit here. Direction comes from theory, not data. Sets up identification and fit next week.
+:::
 :::
 
 # Specifying LVPA models in Lavaan
 
+## Lavaan syntax review {.smaller}
+
+| Symbol | Name | Diagram element | Example |
+|:------:|:-----|:----------------|:--------|
+| `=~` | measured by | loading (λ): latent → indicator | `SES =~ PARENTED + BOOKSHOME` |
+| `~` | regression | structural path (γ) | `ACH ~ SES` |
+| `~~` | covariance | variance, residual variance, disturbance variance | `SES ~~ SES` |
+| `*` | fix | marker loading | `SES =~ 1*PARENTED` |
+| `:=` | define | new parameter, such as an indirect effect | `ind := a*b` |
+
+: {tbl-colwidths="[8,14,36,42]"}
+
+## Lavaan syntax: measurement + structural {.smaller}
+
+```r
+lvpa_model <- '
+  # measurement model (first loading fixed to 1 to set the scale)
+  SES =~ 1*PARENTED    + BOOKSHOME + TECHHOME
+  ACH =~ 1*READING_AVE + MATH_AVE  + SCIENCE_AVE
+
+  # structural model
+  ACH ~ SES
+
+  # variance of exogenous latent variable, disturbance of endogenous one
+  SES ~~ SES
+  ACH ~~ ACH
+
+  # residual variances of indicators
+  PARENTED ~~ PARENTED
+  BOOKSHOME ~~ BOOKSHOME
+  TECHHOME ~~ TECHHOME
+  READING_AVE ~~ READING_AVE
+  MATH_AVE ~~ MATH_AVE
+  SCIENCE_AVE ~~ SCIENCE_AVE
+'
+
+fit <- lavaan(lvpa_model, data = dat)
+```
+
+- `ACH ~~ ACH` is the **disturbance** variance because ACH is endogenous
+- Anything not specified is fixed to 0
+
+## Spot the errors
+
+*This model has three bugs. Find them.*
+
+```r
+bad_model <- '
+  SES =~ PARENTED    + BOOKSHOME + TECHHOME
+  ACH =~ 1*READING_AVE + MATH_AVE + SCIENCE_AVE
+
+  ACH =~ SES
+
+  SES ~~ SES
+  # ...residual variances omitted for space
+'
+```
+
 ::: {.content-visible when-profile="teacher"}
-**Purpose:** Move from diagram to code.
+::: {.fragment}
+1. SES has no marker (`1*`) and no fixed variance, so its scale isn't set.
+2. The structural path should use `~` (`ACH ~ SES`), not `=~` (that says Achievement is *measured by* SES).
+3. Missing `ACH ~~ ACH` (the disturbance variance).
+:::
 :::
 
-## Lavaan syntax review
+## Path diagram from the model syntax
 
-::: {.content-visible when-profile="teacher"}
-**Purpose:** Pull together `=~`, `~`, `~~` and `:=` from w3 and w7 in one table.
-:::
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 9
+#| fig-height: 5
+library(lavaan)
+library(semPlot)
 
-## Lavaan syntax: measurement + structural
+dat <- read.csv("../data/w07_data_pisa22_USA_cln_cfa.csv")
 
-::: {.content-visible when-profile="teacher"}
-**Purpose:** Show one model block with a measurement section and a structural section, so students see how each part of the diagram maps to a line of code.
-:::
+lvpa_model <- '
+  SES =~ 1*PARENTED    + BOOKSHOME + TECHHOME
+  ACH =~ 1*READING_AVE + MATH_AVE  + SCIENCE_AVE
+  ACH ~ SES
+  SES ~~ SES
+  ACH ~~ ACH
+  PARENTED ~~ PARENTED
+  BOOKSHOME ~~ BOOKSHOME
+  TECHHOME ~~ TECHHOME
+  READING_AVE ~~ READING_AVE
+  MATH_AVE ~~ MATH_AVE
+  SCIENCE_AVE ~~ SCIENCE_AVE
+'
+
+# parse the model and data, but do not estimate
+fit0 <- lavaan(lvpa_model, data = dat, do.fit = FALSE)
+
+semPaths(fit0, what = "path", whatLabels = "name", style = "lisrel",
+         layout = "tree", residuals = TRUE,
+         nCharNodes = 0, sizeMan = 10, sizeMan2 = 4)
+```
 
 # Rlab
 
+Go to the rlab for today.
+
+- Specify the SES → Achievement model in lavaan
+- Extend it to SES → Motivation
+- Draw the diagram from the syntax and check it against your own sketch
+- Count parameters and df by hand, then compare to lavaan
+
 ::: {.content-visible when-profile="teacher"}
-**Purpose:** Hands-on practice specifying an LVPA in lavaan.
+::: {.notes}
+No w11 rlab exists yet; these tasks are a placeholder. Update to match the lab once written.
+:::
 :::
 
 # Up Next
 
+Identification & fit for LVPA
+
 ::: {.content-visible when-profile="teacher"}
-**Purpose:** Preview identification and fit for LVPA, and any reading to prep.
+::: {.notes}
+Add reading/prep assignment here.
+:::
 :::
