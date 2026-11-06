@@ -1,0 +1,149 @@
+---
+title: "Review Quiz: [MVPA or CFA]"
+author: "[Group members' names]"
+date: today
+format:
+  docx:
+    toc: false
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+::: {.content-hidden when-format="docx"}
+
+## Instructions (this block does not appear in the Word document)
+
+With your group, you will write a quiz for your classmates to take. Your group
+has been assigned **either MVPA or CFA**. Write your quiz on that topic.
+
+**Requirements**
+
+- First identify the key concepts needed to understand the model you were assigned.
+- Write at least 5 questions reflecting the key concepts.
+- Questions should be a general review of the topic, open ended, and ask quiz-takers to demonstrate their understanding of the model.
+- Refer back to previous lectures and course materials.
+- Focus on key concepts to understand the model.
+  - No yes/no or single-word answers. 
+  - Should require some synthesis of information not copy/paste from the slides/materials.
+- For every question, write the expected answer in the teacher block under it.
+
+**Course materials**
+
+- [Lectures](https://srdevore.github.io/edep_625_sem/lectures.html)
+- [R labs](https://srdevore.github.io/edep_625_sem/labs.html)
+
+**How to use this template**
+
+1. Replace the placeholders in the title and author fields above.
+2. Write your questions and your expected answers below.
+3. Render the **student** version. This is the file you post
+   and share with the class:
+
+   ```bash
+   quarto render widgets/review_quiz.qmd --to docx --profile student
+   ```
+
+4. Render the **teacher** version (questions and expected answers) to check
+   the quiz-takers' work:
+
+   ```bash
+   quarto render widgets/review_quiz.qmd --to docx --profile teacher
+   ```
+
+:::
+
+## Questions
+
+### Question 1
+
+[Write question 1 here]
+
+**Your answer:**
+
+&nbsp;
+
+&nbsp;
+
+&nbsp;
+
+::: {.content-visible when-profile="teacher"}
+**Expected answer:**
+
+[Write the expected answer to question 1 here]
+:::
+
+### Question 2
+
+[Write question 2 here]
+
+**Your answer:**
+
+&nbsp;
+
+&nbsp;
+
+&nbsp;
+
+::: {.content-visible when-profile="teacher"}
+**Expected answer:**
+
+[Write the expected answer to question 2 here]
+:::
+
+### Question 3
+
+[Write question 3 here]
+
+**Your answer:**
+
+&nbsp;
+
+&nbsp;
+
+&nbsp;
+
+::: {.content-visible when-profile="teacher"}
+**Expected answer:**
+
+[Write the expected answer to question 3 here]
+:::
+
+### Question 4
+
+[Write question 4 here]
+
+**Your answer:**
+
+&nbsp;
+
+&nbsp;
+
+&nbsp;
+
+::: {.content-visible when-profile="teacher"}
+**Expected answer:**
+
+[Write the expected answer to question 4 here]
+:::
+
+### Question 5
+
+[Write question 5 here]
+
+**Your answer:**
+
+&nbsp;
+
+&nbsp;
+
+&nbsp;
+
+::: {.content-visible when-profile="teacher"}
+**Expected answer:**
+
+[Write the expected answer to question 5 here]
+:::
+
+<!-- Add more questions by copying a question block above. -->
