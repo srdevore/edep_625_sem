@@ -34,8 +34,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.R_LIBS_USER }}
-          key: ${{ runner.os }}-r43-${{ hashFiles('.github/workflows/publish.yml') }}
-          restore-keys: ${{ runner.os }}-r43-
+          # Key on the runner image (ImageOS, e.g. ubuntu24) so binaries built
+          # against one image's system libs (ICU, GLPK) are never restored onto
+          # another. No restore-keys: a partial match would revive a stale,
+          # incompatible library that install.packages() then skips.
+          key: ${{ runner.os }}-${{ env.ImageOS }}-r43-${{ hashFiles('.github/workflows/publish.yml') }}
 
       - name: Install system libraries
         # semPlot -> igraph needs GLPK (libglpk.so.40) at load time.
