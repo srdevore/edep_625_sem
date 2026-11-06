@@ -50,7 +50,7 @@ make_dat <- function(vars, n = 200) {
 answer_diagram <- function(model, vars) {
   fit0 <- lavaan(model, data = make_dat(vars), do.fit = FALSE)
   semPaths(fit0, what = "path", whatLabels = "name", style = "lisrel",
-           layout = "tree", residuals = TRUE, nCharNodes = 0,
+           layout = "tree", rotation = 2, residuals = TRUE, nCharNodes = 0,
            sizeMan = 8, sizeMan2 = 4)
 }
 ```
@@ -93,7 +93,7 @@ model1 <- "
 fit1 <- lavaan(model1, data = make_dat(vars1), do.fit = FALSE)
 
 semPaths(fit1, what = "path", whatLabels = "name", style = "lisrel",
-         layout = "tree", residuals = TRUE, nCharNodes = 0,
+         layout = "tree", rotation = 2, residuals = TRUE, nCharNodes = 0,
          sizeMan = 8, sizeMan2 = 4)
 ```
 
@@ -164,7 +164,7 @@ model2 <- "
 fit2 <- lavaan(model2, data = make_dat(vars2), do.fit = FALSE)
 
 semPaths(fit2, what = "path", whatLabels = "name", style = "lisrel",
-         layout = "tree", residuals = TRUE, nCharNodes = 0,
+         layout = "tree", rotation = 2, residuals = TRUE, nCharNodes = 0,
          sizeMan = 8, sizeMan2 = 4)
 ```
 
@@ -235,7 +235,7 @@ model3 <- "
 fit3 <- lavaan(model3, data = make_dat(vars3), do.fit = FALSE)
 
 semPaths(fit3, what = "path", whatLabels = "name", style = "lisrel",
-         layout = "tree", residuals = TRUE, nCharNodes = 0,
+         layout = "tree", rotation = 2, residuals = TRUE, nCharNodes = 0,
          sizeMan = 8, sizeMan2 = 4)
 ```
 
@@ -308,7 +308,7 @@ model4 <- "
 fit4 <- lavaan(model4, data = make_dat(vars4), do.fit = FALSE)
 
 semPaths(fit4, what = "path", whatLabels = "name", style = "lisrel",
-         layout = "tree", residuals = TRUE, nCharNodes = 0,
+         layout = "tree", rotation = 2, residuals = TRUE, nCharNodes = 0,
          sizeMan = 8, sizeMan2 = 4)
 ```
 

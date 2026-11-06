@@ -10,3 +10,7 @@ listing:
 ---
 
 Interactive pages and in-class activities for exploring SEM concepts. Each one includes its own worksheet or instructions.
+
+## Templates
+
+- [Review quiz template (.qmd)](template-downloads/review_quiz.qmd){download="review_quiz.qmd"} -- download, then follow the instructions at the top of the file to write your group's quiz.

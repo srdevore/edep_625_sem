@@ -65,3 +65,12 @@ data_files <- list.files("rlabs", pattern = "\\.(csv|tsv|rds|xlsx|sav|dta)$",
 for (f in data_files) {
   file.copy(f, file.path(dest_dir, basename(f)), overwrite = TRUE)
 }
+
+# Student-facing templates that students download and fill in. Copied
+# verbatim (NOT stripped): the teacher-profile blocks in these files are
+# placeholders the students' groups are meant to fill in, and the file holds
+# no real answers.
+template_dir <- file.path("_site", "template-downloads")
+dir.create(template_dir, showWarnings = FALSE, recursive = TRUE)
+file.copy(file.path("widgets", "review_quiz.qmd"),
+          file.path(template_dir, "review_quiz.qmd"), overwrite = TRUE)

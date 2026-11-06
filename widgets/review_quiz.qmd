@@ -20,12 +20,13 @@ has been assigned **either MVPA or CFA**. Write your quiz on that topic.
 
 **Requirements**
 
-- Write **at least 5 questions** about your assigned topic.
-- Questions should be a general review of the topic, not specific to model
-  specification.
+- First identify the key concepts needed to understand the model you were assigned.
+- Write at least 5 questions reflecting the key concepts.
+- Questions should be a general review of the topic, open ended, and ask quiz-takers to demonstrate their understanding of the model.
 - Refer back to previous lectures and course materials.
-- Focus on key concepts.
-- No yes/no or single-word answers.
+- Focus on key concepts to understand the model.
+  - No yes/no or single-word answers. 
+  - Should require some synthesis of information not copy/paste from the slides/materials.
 - For every question, write the expected answer in the teacher block under it.
 
 **Course materials**
@@ -33,26 +34,23 @@ has been assigned **either MVPA or CFA**. Write your quiz on that topic.
 - [Lectures](https://srdevore.github.io/edep_625_sem/lectures.html)
 - [R labs](https://srdevore.github.io/edep_625_sem/labs.html)
 
-**Steps**
+**How to use this template**
 
 1. Replace the placeholders in the title and author fields above.
 2. Write your questions and your expected answers below.
-3. Render the **student** version (questions only). This is the file you post
+3. Render the **student** version. This is the file you post
    and share with the class:
 
    ```bash
-   quarto render activities/review_quiz.qmd --to docx --profile student
+   quarto render widgets/review_quiz.qmd --to docx --profile student
    ```
 
 4. Render the **teacher** version (questions and expected answers) to check
-   your work:
+   the quiz-takers' work:
 
    ```bash
-   quarto render activities/review_quiz.qmd --to docx --profile teacher
+   quarto render widgets/review_quiz.qmd --to docx --profile teacher
    ```
-
-5. Post the student version where your classmates can find it. Keep the teacher
-   version for yourselves.
 
 :::
 

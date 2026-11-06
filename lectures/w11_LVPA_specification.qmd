@@ -235,7 +235,7 @@ Same CFA as the previous slide, but the factor covariance is replaced by a direc
 
 ## Review
 
-Activity template on course site > activities review quiz. 
+Activity template on course site > widgets > review quiz. 
 
 1.  Your job: Work with your group to write a quiz for your peers on either MVPA or CFA (as assigned)
 2. Take the quiz
