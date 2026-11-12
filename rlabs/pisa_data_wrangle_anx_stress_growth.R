@@ -1,14 +1,14 @@
-# Build a CSV with math anxiety, stress resistance, growth mindset, and math score
+# Build a CSV with math anxiety, stress resilience, growth mindset, and math score
 # from the PISA 2022 subset (see `countries` below). Run locally from the project root.
 library(dplyr)
 
 pv_math <- paste0("PV", 1:10, "MATH")
 
 anx_items    <- sprintf("ST292Q%02dJA", 1:6)          # math anxiety items (-> ANXMAT)
-stress_items <- sprintf("ST345Q%02dJA", 1:10)         # stress resistance items (-> STRESAGR)
+stress_items <- sprintf("ST345Q%02dJA", 1:10)         # stress resilience items (-> STRESAGR)
 growth_items <- sprintf("ST263Q%02dJA", c(2, 4, 6, 8)) # growth mindset items (-> GROSAGR)
 
-# Country filter. Stress resistance (ST345) was NOT administered in the USA
+# Country filter. Stress resilience (ST345) was NOT administered in the USA
 # (all 97 = "not administered"), so USA alone cannot support the stress factor.
 # GBR has stress data. Use c("USA", "GBR", "KSV") to keep all three.
 countries <- "GBR"

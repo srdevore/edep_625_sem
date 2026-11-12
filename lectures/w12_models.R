@@ -21,7 +21,7 @@ pisa <- data.frame(
 pisa[anx_items] <- 5 - pisa[anx_items]               # 4-pt: higher = more anxious
 pisa[gm_items]  <- 5 - pisa[gm_items]                # 4-pt: higher = more growth mindset
 rev_str <- paste0("str", c(1, 3, 4, 7, 10))          # negatively keyed stress items
-pisa[rev_str] <- 6 - pisa[rev_str]                   # 5-pt: higher = more resistant
+pisa[rev_str] <- 6 - pisa[rev_str]                   # 5-pt: higher = more resilient
 
 # ---- Model syntax ------------------------------------------------------------
 ind <- function(f, items) paste0(f, " =~ ", paste(items, collapse = " + "))
