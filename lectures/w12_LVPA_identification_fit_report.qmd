@@ -479,7 +479,7 @@ ggplot() +
 
 Standardized estimates. Circles under the items = standardized **residual variances**; orange brackets = the three **residual covariances** (standardized); dashed loadings are the marker items (fixed to 1 in the unstandardized solution).
 
-## Example 1: Final measurement model
+## Example 1: Final measurement model fit {.smaller}
 
 ```{r}
 #| echo: false
@@ -489,10 +489,10 @@ ctab(list(fit1_0, fit1_m), c("Initial", "+ 3 residual covariances")) |>
 
 - Now df = `r gfit(fit1_m)["df.scaled"]` (three more parameters).
 - CFI = `r f3(gfit(fit1_m)["cfi.robust"])` (acceptable), RMSEA = `r f3(gfit(fit1_m)["rmsea.robust"])` (acceptable), SRMR = `r f3(gfit(fit1_m)["srmr"])` (acceptable).
-- All three are in the acceptabl (not good) range, so we can proceed to the structure model.
+- All three are in the acceptable (although not "good") range, so we can proceed to the structure model.
 
 
-## Example 1: Interpret the measurement model
+## Example 1: Measurement model: Intrpret (.smaller)
 
 ```{r}
 #| echo: false
@@ -504,50 +504,53 @@ knitr::kable(lt, digits = 2, row.names = FALSE, align = "llrrr")
 - Standardized loadings ranged from `r f2(min(lt$β))` to `r f2(max(lt$β))`. Math.Anx items load strongly (about .7-.9); Stress.Res items are more mixed. These are *standardized*: SD change in the item per SD of the factor.
 :::
 
-## Example 1: Interpret: factor relationships {.smaller}
+## Practice
+
+How do you interpret these loadings? 
+
+## Example 1: Factor relationships {.smaller}
 
 ```{r}
 #| echo: false
 fcor_tab(fit1_m, c("stress", "anx", "math")) |>
   knitr::kable(digits = 2, row.names = FALSE, col.names = c("Pair", "r", "95% CI lower", "95% CI upper"))
 ```
+Practice: How do you interpret the factor correlations? 
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
 
 - **Discriminant validity:** Moderate correlations between Stress.Res and Math.Anx, suggesting distinct constructs.
 - Signs match theory? Negative relationship between Stress.Res ↔ Math.Anx is expected
 - *Observed* Math.Sc ↔ latent correlations are also weak/moderate
+:::
+:::
+
+## Example 1 structure model
+
+
 
 ## Example 1: Structural model, identification {.smaller}
 
-Start from the measurement model (q = 39, df = 114) and replace the covariances with paths.
+Start from the measurement model (q = 39, df = 114) and determine this changes the identification.
 
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
 | Change | Parameters |
 |:--|:-:|
 | Remove covariances Stress.Res↔ Math.Anx, Stress.Res↔ Math.Sc, Math.Anx↔ Math.Sc | −3 |
 | Add paths a (Stress.Res → Math.Anx) and b (Math.Anx → Math.Sc) | +2 |
 | Variances of Math.Anx and Math.Sc become **disturbances** (still free, same count) | 0 |
+:::
+:::
 
-
-## Example 1: Structural Model Identification
-
-Measurement is identified. 
-
-q = 39 − 3 + 2 = **38**; df = 153 − 38 = **115**. One more df than the measurement model.
-
-- structure is also identified
 
 ## Pause: Practice
 
-1. What does the structural model assume about the Stress.Res → Math.Sc relationship, once Math.Anx is in the model?
-2. How could we *add* a direct path? What happens to df?
-3. Would adding it make the model identified differently?
+1. What does the structural model theorize about the Stress.Res, math.anx, and Math.Sc relationship?
 
-::: {.content-visible when-profile="teacher"}
-::: {.fragment}
-1. Full mediation: Stress.Res is related to Math.Sc *only* through Math.Anx. 2. `math ~ stress`: df goes back to 114, same as the measurement model (structure saturated). 3. Still identified, because the structural part is just-identified (saturated).
-:::
-:::
 
-## Example 1: Structural model: Specify
+## Example 1: Structural model: Specify {.smaller}
 
 ```r
 sem_model <- '
@@ -567,8 +570,6 @@ sem_model <- '
   # indirect effect
   ind := a*b
 '
-
-fit_sem <- sem(sem_model, data = pisa, estimator = "MLR", missing = "fiml")
 ```
 
 - `~` is a regression; `a*`, `b*` label paths; `:=` defines the indirect effect.
@@ -578,7 +579,7 @@ fit_sem <- sem(sem_model, data = pisa, estimator = "MLR", missing = "fiml")
 
 ```{r}
 #| echo: false
-ctab(list(fit1_m, fit1_s), c("Measurement (saturated structure)", "Structural (Stress.Res → Math.Anx → Math.Sc)")) |>
+ctab(list(fit1_m, fit1_s), c("Measurement", "Structural")) |>
   knitr::kable(row.names = FALSE, align = "lrrrrr")
 ```
 
@@ -591,12 +592,11 @@ lrt1 <- suppressWarnings(lavTestLRT(fit1_s, fit1_m, method = "satorra.bentler.20
 Scaled Δχ²(`r lrt1[2, "Df diff"]`) = `r f2(lrt1[2, "Chisq diff"])`, *p* `r ifelse(lrt1[2, "Pr(>Chisq)"] < .001, "< .001", paste("=", f3(lrt1[2, "Pr(>Chisq)"])))`
 
 ::: {.fragment}
-- A **significant** Δχ² would mean the structural model fits worse than the measurement model: the omitted path (Stress.Res → Math.Sc) matters.
-- A **non-significant** one supports full mediation (no evidence for a direct path).
+- A **significant** Δχ² would mean the structural model fits worse than the measurement model (non-sig: not worse - good)
 - Also look at the *change in CFI and RMSEA* (here, essentially none).
 :::
 
-## Example 1: Local fit: MI
+## Example 1: Local fit: MI (opt)
 
 ```{r}
 #| echo: false
@@ -634,10 +634,11 @@ semPaths(pm_s, what = "std", layout = lay_s,
          mar = c(4, 3, 4, 3), nCharNodes = 0, fade = FALSE)
 ```
 
-Standardized estimates (β). Residual variances and the three residual covariances from Step 1 are in the model but not drawn.
+- Standardized estimates (β). 
+- Residual variances and the three residual covariances from Step 1 are modeled but not drawn due to space.
 
 
-## Example 1: Interpret: path coefficients
+## Example 1: Interpret: path  (.smaller)
 
 ```{r}
 #| echo: false
@@ -645,8 +646,8 @@ pt1 <- path_tab(fit1_s)
 knitr::kable(pt1, digits = 3, row.names = FALSE, align = "lrrrr")
 ```
 
-- *b* is in the units of the factor's marker item (and Math.Sc ÷ 100: **1 unit = 100 points**). β is in SD units.
-- Indirect effect `ind` = a·b. Its CI should ideally be **bootstrapped** (here delta-method; bootstrapping FIML fits is slow).
+- β is the standardized result, but we report both.
+- Indirect effect `ind` = a·b. Its CI should be **bootstrapped**.
 
 ::: {.content-visible when-profile="teacher"}
 ::: {.notes}
@@ -670,15 +671,7 @@ data.frame(Variable = c("Math.Anx (latent)", "Math.Sc"),
 - R² = share of variance explained by predictors; the rest is the disturbance.
 - Is `r f2(r2["math"])` meaningful for Math.Sc in education research?
 
-# Example 2: Growth.Mind → Stress.Res & Math.Anx → Math.Sc
-
-Growth Mindset (Growth.Mind) → Stress Resilience (Stress.Res) → Math Anxiety (Math.Anx) → Math Score (Math.Sc)
-
-```
-Stress.Res ~ Growth.Mind
-Math.Anx   ~ Growth.Mind + Stress.Res
-Math.Sc    ~ Math.Anx
-```
+# Example 2
 
 **RQ:** Does Growth.Mind relate to lower Math.Anx *directly* and *through* Stress.Res, and does Math.Anx carry the link to Math.Sc?
 
