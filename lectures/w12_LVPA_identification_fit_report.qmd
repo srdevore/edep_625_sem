@@ -1,0 +1,798 @@
+---
+title: "Week 12: LVPA Identification, Fit & Reporting"
+date: today
+description: '<a href="lectures/w12_LVPA_identification_fit_report.pdf" download="w12_LVPA_identification_fit_report.pdf">Download PDF</a>'
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+    embed-resources: true
+    self-contained-math: true
+release: week 12
+draft: true
+---
+
+```{r}
+#| include: false
+# Data, model syntax and CACHED fits live in w12_models.R. FIML fits on these
+# data take ~2-3 min each, so they are fit once and stored in w12_cache/.
+source("w12_models.R")
+library(ggplot2)
+
+f3 <- function(x) formatC(x, digits = 3, format = "f")
+f2 <- function(x) formatC(x, digits = 2, format = "f")
+fmt_p <- function(p) ifelse(p < .001, "< .001", f3(p))
+
+fit1_0 <- get_fit("m1_meas0"); fit1_m <- get_fit("m1_meas"); fit1_s <- get_fit("m1_sem")
+fit2_0 <- get_fit("m2_meas0"); fit2_m <- get_fit("m2_meas"); fit2_s <- get_fit("m2_sem")
+
+fm <- c("chisq.scaled", "df.scaled", "pvalue.scaled", "cfi.robust", "tli.robust",
+        "rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust", "srmr")
+gfit <- function(fit) cached_fm(attr(fit, "nm"))
+
+# Global fit table for one model
+gtab <- function(fit) {
+  g <- gfit(fit)
+  data.frame(
+    Index = c("χ² (scaled)", "df", "p", "CFI (robust)", "TLI (robust)",
+              "RMSEA (robust)", "90% CI", "SRMR"),
+    Value = c(f2(g["chisq.scaled"]), g["df.scaled"], fmt_p(g["pvalue.scaled"]),
+              f3(g["cfi.robust"]), f3(g["tli.robust"]), f3(g["rmsea.robust"]),
+              paste0("[", f3(g["rmsea.ci.lower.robust"]), ", ",
+                     f3(g["rmsea.ci.upper.robust"]), "]"),
+              f3(g["srmr"])))
+}
+# Side-by-side comparison of several models
+ctab <- function(fits, labels) {
+  g <- sapply(fits, gfit)
+  data.frame(Model = labels, df = g["df.scaled", ],
+             `χ²` = f2(g["chisq.scaled", ]), CFI = f3(g["cfi.robust", ]),
+             RMSEA = f3(g["rmsea.robust", ]), SRMR = f3(g["srmr", ]),
+             check.names = FALSE)
+}
+# Standardized loadings (flag < .40)
+load_tab <- function(fit, facs) {
+  pe <- parameterEstimates(fit); ss <- standardizedSolution(fit)
+  k <- pe$op == "=~" & pe$lhs %in% facs
+  data.frame(Factor = pe$lhs[k], Item = pe$rhs[k], b = pe$est[k],
+             `β` = ss$est.std[k], `Resid. var` = 1 - ss$est.std[k]^2,
+             check.names = FALSE)
+}
+# Correlations among latent variables (and the observed math score)
+fcor_tab <- function(fit, vars) {
+  ss <- standardizedSolution(fit)
+  k <- ss$op == "~~" & ss$lhs %in% vars & ss$rhs %in% vars & ss$lhs != ss$rhs
+  data.frame(Pair = paste(ss$lhs[k], "↔", ss$rhs[k]), r = ss$est.std[k],
+             lower = ss$ci.lower[k], upper = ss$ci.upper[k])
+}
+# Structural paths + defined effects
+path_tab <- function(fit) {
+  pe <- parameterEstimates(fit); ss <- standardizedSolution(fit)
+  k <- pe$op %in% c("~", ":=")
+  data.frame(Effect = ifelse(pe$op[k] == "~", paste(pe$rhs[k], "→", pe$lhs[k]), pe$lhs[k]),
+             b = pe$est[k], SE = pe$se[k], p = fmt_p(pe$pvalue[k]),
+             `β` = ss$est.std[k], check.names = FALSE)
+}
+# Top modification indices of a given type
+mi_tab <- function(name, op, n = 6, within = NULL) {
+  mi <- cached_mi(name)
+  mi <- mi[mi$op == op & mi$lhs != mi$rhs, ]
+  if (!is.null(within)) mi <- mi[mi$lhs %in% within & mi$rhs %in% within, ]
+  head(mi[, c("lhs", "op", "rhs", "mi", "epc", "sepc.all")], n)
+}
+mi_print <- function(m) knitr::kable(m, digits = 2, row.names = FALSE,
+  col.names = c("lhs", "", "rhs", "MI", "EPC", "std EPC"))
+
+# Colours and arrow used by the path diagrams
+oNG <- "#E07B1A"; dk <- "#3A3A3A"; BLU <- "#2C6FB5"
+ar <- grid::arrow(length = grid::unit(0.2, "cm"), type = "closed")
+```
+
+# Agenda
+
+- Review quiz
+- Assumptions
+- The 2-step workflow
+- **Example 1** (worked): Stress resistance → Math anxiety → Math score
+  - Step 1 measurement: identification, fit, modification
+  - Step 2 structural: identification, fit, interpretation
+- **Example 2** (your turn first): Growth mindset, Stress, Anxiety, Math
+- Reporting LVPA
+- Reporting workshop
+- Rlab
+
+::: {.content-visible when-profile="teacher"}
+::: {.notes}
+Nothing new conceptually. LVPA = CFA + path analysis, so identification, fit, interpretation, and reporting are each the MVPA version plus the CFA version. This week uses real PISA 2022 data (GBR). Example 1 is worked end to end. For Example 2, students attempt each step first (pause slides), then compare with the worked answer. Fits are cached in lectures/w12_cache; each FIML fit takes 2-3 minutes if refit.
+:::
+:::
+
+# Review
+
+Lamaku > quiz > w12
+
+- Repeat until you get it right
+- 5 minutes
+
+## What do we already know?
+
+:::: {.columns}
+::: {.column width="50%"}
+**MVPA (Weeks 3-6)**
+
+- Paths among **measured** variables
+- Identification: df, recursive
+- Fit: χ², CFI, RMSEA, SRMR
+- Direct, indirect, total effects
+- Report standardized & unstandardized
+:::
+
+::: {.column width="50%"}
+**CFA (Weeks 7-10)**
+
+- Indicators reflect **latent** variables
+- Identification: scale, 3-indicator rule
+- Same fit indices; residuals; MIs
+- Loadings, residual variances, AVE, reliability
+- Convergent & discriminant validity
+:::
+::::
+
+**LVPA** = the measurement model of a CFA + the structural model of an MVPA.
+
+# Assumptions
+
+## Assumptions first, then the models
+
+Check these **before** fitting; they apply to both examples.
+
+- **Correct specification:** theory-based, and *direction is not testable from the data*
+- **Identification:** df ≥ 0, every latent variable has a scale, enough indicators
+- **Adequate sample size:** ≥ 10 cases per parameter, or 200
+- **Continuous, multivariate normal indicators** (or use MLR / DWLS for ordinal)
+- **Linear relationships**
+- **Missing data MCAR or MAR** (FIML)
+- **No extreme multicollinearity** between latent variables (latent *r* near 1 means they aren't distinct)
+- **Independent observations**
+
+## How do our data stack up?
+
+PISA 2022, Great Britain: a **random sample of *N* = `r nrow(pisa)`** students (seeded; from 11,037 who answered at least one item). The full file works too but each FIML fit then takes minutes.
+
+| Assumption | Our data |
+|:--|:--|
+| Sample size | `r nrow(pisa)` vs. ~40-50 parameters: fine |
+| Continuous & normal | 4- and 5-point Likert items. **Not** continuous or normal: we treat them as continuous and use **MLR** (robust SEs and χ²) |
+| Missing data | Questionnaire items are **randomly rotated**: each student saw ~5 of 10 stress items and ~5 of 6 anxiety items. Missing **by design** (≈ MCAR), so **FIML** is appropriate |
+| Independence | **Violated.** Students are nested in schools and PISA has sampling weights. We ignore both here for teaching |
+| Math score | Mean of the 10 plausible values (÷ 100): a **simplification**; use all PVs in real work |
+
+::: {.content-visible when-profile="teacher"}
+::: {.notes}
+Missing codes 7, 8, 9, 95, 97, 98, 99 were recoded to NA in the data-prep script (rlabs/pisa_data_wrangle_anx_stress_growth.R); the ~1,900 students with no questionnaire data were removed. USA is not used because stress resistance was not administered there (all 97).
+:::
+:::
+
+## Direction of the items
+
+PISA items are not all scored in the same direction. **Check, then align** before modelling.
+
+- **Math anxiety (6 items):** higher = more anxious (reversed from the raw file)
+- **Growth mindset (4 items):** higher = more growth mindset (reversed from the raw file)
+- **Stress resistance (10 items):** five items reverse-scored (items 1, 3, 4, 7, 10) so higher = more resistant
+- **Math score:** mean of 10 plausible values, divided by 100 (1 unit = 100 points)
+
+::: {.fragment}
+Why? A factor needs all loadings pointing the same way, otherwise the factor means "whatever the items agree on", not your construct. (We checked direction against the OECD indices.)
+:::
+
+## The two-step workflow
+
+1. **Measurement model first:** all latent variables (and observed variables) correlated, no structure yet.
+   - Identification → global fit → local fit → (modify) → interpret
+   - If it fits poorly, **no structural result is trustworthy**.
+2. **Then replace the covariances with theory-driven paths.**
+   - Identification → global fit → local fit → interpret
+
+- Structural part **saturated**: same df and same fit as the measurement model.
+- **Dropping** paths: more df, fit can only get worse (or stay the same). The χ² increase is the **test of the dropped paths**.
+
+## Identification checklist
+
+| Rule | From | Why |
+|:--|:--|:--|
+| df ≥ 0 | MVPA | Can't estimate more than the information supplies |
+| Every latent variable has a scale (marker or fixed variance) | CFA | Otherwise infinitely many solutions |
+| ≥ 3 indicators per factor (one factor) | CFA | Smallest just-identified one-factor model |
+| ≥ 2 indicators per factor if factors are correlated or linked | CFA | Other paths provide extra information, but fragile |
+| Recursive structural model | MVPA | Always identified if measurement is |
+
+**Information** = p(p + 1) / 2, p = number of **measured** variables. Latent variables add none. **Fixed** values aren't counted as parameters.
+
+# Example 1: Stress → Anxiety → Math
+
+## The model
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 10
+#| fig-height: 3.4
+nd <- data.frame(
+  id = c("stress", "anx", "math", "i_s", "i_a"),
+  x = c(0, 5, 10, 0, 5), y = c(0, 0, 0, -2.4, -2.4),
+  lab = c("Stress\nresistance", "Math\nanxiety", "Math score\n(observed)",
+          "10 items\nST345", "6 items\nST292"),
+  type = c("lat", "lat", "obs", "ind", "ind"), stringsAsFactors = FALSE)
+e <- data.frame(x = c(1.2, 6.2), xend = c(3.8, 8.6), y = 0, yend = 0)
+ggplot() +
+  geom_segment(data = e, aes(x = x, xend = xend, y = y, yend = yend),
+               colour = oNG, linewidth = 1.2, arrow = ar) +
+  geom_segment(data = data.frame(x = c(0, 5), xend = c(0, 5)), aes(x = x, xend = xend),
+               y = -0.85, yend = -1.6, colour = dk, arrow = ar) +
+  annotate("text", x = 2.5, y = 0.45, label = "a", colour = oNG, size = 5, fontface = "italic") +
+  annotate("text", x = 7.4, y = 0.45, label = "b", colour = oNG, size = 5, fontface = "italic") +
+  geom_label(data = nd, aes(x = x, y = y, label = lab, fill = type), colour = "white",
+             size = 4.2, label.padding = grid::unit(0.5, "lines")) +
+  scale_fill_manual(values = c(lat = BLU, obs = dk, ind = "#7A7A7A"), guide = "none") +
+  coord_equal(clip = "off") + expand_limits(x = c(-1.5, 11.5), y = c(-3.2, 1.2)) + theme_void()
+```
+
+**RQ:** Are more stress-resistant students *less math-anxious*, and is lower anxiety associated with *higher math scores*? (Anxiety is the proposed mechanism; no direct stress → math path.)
+
+*N* = `r nrow(pisa)` (random sample); items treated as continuous; MLR + FIML.
+
+::: {.content-visible when-profile="teacher"}
+::: {.notes}
+Math is a single observed variable (mean of plausible values). It is not a latent variable, so it has no loadings. Its variance is a free parameter in the measurement model.
+:::
+:::
+
+## Step 1: Measurement model, identification
+
+Measured variables: 10 stress + 6 anxiety + 1 math = **17**
+
+Information: 17(18)/2 = **153**
+
+| Type | Count |
+|:--|:-:|
+| Loadings (after fixing one marker per factor) | 9 + 5 = 14 |
+| Residual variances of indicators (θ) | 16 |
+| Variances of latent variables (stress, anxiety) | 2 |
+| Variance of math | 1 |
+| Covariances: stress↔anx, stress↔math, anx↔math | 3 |
+
+::: {.fragment}
+q = 14 + 16 + 2 + 1 + 3 = **36**; df = 153 − 36 = **117**. Over-identified.
+:::
+
+## Pause: Practice
+
+Math (observed) has only one "indicator" and is *not* a latent variable.
+
+1. Why doesn't math need a marker loading or a scale?
+2. Each factor has a marker loading fixed to 1. Which loading is that for stress? For anxiety?
+3. Suppose we later free three residual covariances. What are q and df then?
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+1. It's observed: it already has a scale (its own units). 2. The first item in each (`str1`, `anx1`), lavaan's default. 3. q = 39; df = 114.
+:::
+:::
+
+## Step 1: Specify
+
+```{r}
+#| echo: false
+cat(m1_meas0)
+```
+
+- `=~` defines the factors; the first loading is fixed to 1 by default (marker).
+- `math ~~ stress + anx`: math is observed, so we just let it covary with each factor.
+- Latent variables covary by default in `cfa()`.
+- Estimator: `MLR`, `missing = "fiml"`.
+
+## Step 1: Global fit
+
+```{r}
+#| echo: false
+knitr::kable(gtab(fit1_0), row.names = FALSE, align = "lr")
+```
+
+::: {.fragment}
+- χ² is significant, CFI is below .90, RMSEA is above .08. **Poor.**
+- Global fit says *whether* there's a problem. Local fit says *where*.
+:::
+
+## Step 1: Local fit: loadings
+
+```{r}
+#| echo: false
+lt <- load_tab(fit1_0, c("stress", "anx"))
+knitr::kable(lt, digits = 2, row.names = FALSE, align = "llrrr")
+```
+
+- Weak (< .40)? Heywood (> 1, negative residual variance)?
+- All standardized loadings clear .40, so **no** item looks unusable on its own. `str2` is the weakest.
+
+## Step 1: Local fit: modification indices
+
+```{r}
+#| echo: false
+mi_print(mi_tab("m1_meas0", "~~", 8, c(str_items, anx_items)))
+```
+
+- MI = expected χ² drop (1 df) if that residual covariance were freed.
+- MI > 3.84 is "significant", but with *N* = `r nrow(pisa)` nearly everything is.
+- Look for **big** and **explainable**: same factor, same wording, adjacent items.
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+`anx5`↔`anx6` is by far the largest (standardized residual correlation about .6): near-duplicate items. Among stress items, pairs within the same **keying direction** show up (reverse-scored 1, 3, 7; non-reversed 5, 6, 9), consistent with a shared-wording method effect. `str3`↔`str6` is *larger* than `str6`↔`str9` but **crosses** keying direction and is negative, so it has no easy story: we skip it. Check item text in the codebook before defending each one.
+:::
+:::
+
+## Step 1: Modify one at a time
+
+Free the largest **defensible** residual covariance, refit, recheck MIs.
+
+```{r}
+#| echo: false
+st_fits <- list(fit1_0, get_fit("m1_step1"), get_fit("m1_step2"), fit1_m)
+st_mi <- function(name, l, r) { m <- cached_mi(name); m$mi[m$lhs == l & m$rhs == r & m$op == "~~"] }
+st_mis <- c(NA, st_mi("m1_meas0", "anx5", "anx6"), st_mi("m1_step1", "str6", "str9"),
+            st_mi("m1_step2", "str5", "str6"))
+g <- sapply(st_fits, gfit)
+data.frame(Step = 0:3,
+           Freed = c("none", "anx5 ~~ anx6", "str6 ~~ str9", "str5 ~~ str6"),
+           MI = ifelse(is.na(st_mis), "", formatC(st_mis, format = "f", digits = 0)),
+           CFI = f3(g["cfi.robust", ]), RMSEA = f3(g["rmsea.robust", ]),
+           SRMR = f3(g["srmr", ])) |>
+  knitr::kable(row.names = FALSE, align = "rlrrrr")
+```
+
+::: {.fragment}
+Why stop at three? Each step helps less, and more covariances = more ad hoc model. Fit is acceptable but not perfect; we **report that honestly**. We chose the largest **defensible** MI each time (not blindly the largest).
+:::
+
+- Re-run MIs after *each* change: indices change once one is freed.
+- Report every modification and why.
+
+## Step 1: Final measurement model
+
+```{r}
+#| echo: false
+ctab(list(fit1_0, fit1_m), c("Initial", "+ 3 residual covariances")) |>
+  knitr::kable(row.names = FALSE, align = "lrrrrr")
+```
+
+- Now df = `r gfit(fit1_m)["df.scaled"]` (three more parameters).
+- CFI = `r f3(gfit(fit1_m)["cfi.robust"])` (acceptable), RMSEA = `r f3(gfit(fit1_m)["rmsea.robust"])` (close, not ≤ .08), SRMR = `r f3(gfit(fit1_m)["srmr"])` (acceptable).
+- Good enough to proceed, with this caveat in the limitations.
+
+## Step 1: Interpret the measurement model
+
+```{r}
+#| echo: false
+lt <- load_tab(fit1_m, c("stress", "anx"))
+knitr::kable(lt, digits = 2, row.names = FALSE, align = "llrrr")
+```
+
+::: {.content-visible when-profile="teacher"}
+- Standardized loadings ranged from `r f2(min(lt$β))` to `r f2(max(lt$β))`. Anxiety items load strongly (about .7-.9); stress items are more mixed. These are *standardized*: SD change in the item per SD of the factor.
+:::
+
+## Step 1: Interpret: factor relationships
+
+```{r}
+#| echo: false
+fcor_tab(fit1_m, c("stress", "anx", "math")) |>
+  knitr::kable(digits = 2, row.names = FALSE, col.names = c("Pair", "r", "95% CI lower", "95% CI upper"))
+```
+
+- **Discriminant validity:** latent correlations well below 1, so stress and anxiety are distinct constructs.
+- Signs match theory? Stress resistance ↔ anxiety should be **negative**; anxiety ↔ math, **negative**.
+- *Observed* math ↔ latent correlations are attenuated only by math's measurement error (not corrected).
+
+## Step 2: Structural model, identification
+
+Start from the measurement model (q = 39, df = 114) and replace the covariances with theory.
+
+| Change | Parameters |
+|:--|:-:|
+| Remove covariances stress↔anx, stress↔math, anx↔math | −3 |
+| Add paths a (stress → anx) and b (anx → math) | +2 |
+| Variances of anxiety and math become **disturbances** (still free, same count) | 0 |
+
+::: {.fragment}
+q = 39 − 3 + 2 = **38**; df = 153 − 38 = **115**. One more df than the measurement model.
+:::
+
+::: {.fragment}
+That one df is the omitted **direct path stress → math**, so comparing the two models tests it.
+:::
+
+## Pause: Practice
+
+1. What does the structural model assume about the stress → math relationship, once anxiety is in the model?
+2. How could we *add* a direct path? What happens to df?
+3. Would adding it make the model identified differently?
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+1. Full mediation: stress is related to math *only* through anxiety. 2. `math ~ stress`: df goes back to 114, same as the measurement model (structure saturated). 3. Still identified, because the structural part is just-identified (saturated).
+:::
+:::
+
+## Step 2: Specify
+
+```{r}
+#| echo: false
+cat(m1_sem)
+```
+
+- `~` is a regression; `a*`, `b*` label paths; `:=` defines the indirect effect.
+- The residual covariances from Step 1 **stay in**: the measurement model doesn't change.
+
+## Step 2: Global fit
+
+```{r}
+#| echo: false
+ctab(list(fit1_m, fit1_s), c("Measurement (saturated structure)", "Structural (stress → anx → math)")) |>
+  knitr::kable(row.names = FALSE, align = "lrrrrr")
+```
+
+```{r}
+#| echo: false
+#| warning: false
+lrt1 <- suppressWarnings(lavTestLRT(fit1_s, fit1_m, method = "satorra.bentler.2001"))
+```
+
+Scaled Δχ²(`r lrt1[2, "Df diff"]`) = `r f2(lrt1[2, "Chisq diff"])`, *p* `r ifelse(lrt1[2, "Pr(>Chisq)"] < .001, "< .001", paste("=", f3(lrt1[2, "Pr(>Chisq)"])))`
+
+::: {.fragment}
+- A **significant** Δχ² would mean the structural model fits worse than the measurement model: the omitted path (stress → math) matters.
+- A **non-significant** one supports full mediation (no evidence for a direct path).
+- Also look at the *change in CFI and RMSEA* (here, essentially none).
+:::
+
+## Step 2: Local fit: structural misfit
+
+```{r}
+#| echo: false
+mi_print(mi_tab("m1_sem", "~", 6))
+```
+
+- Look for omitted **paths** (`~`), not just residual covariances.
+- Compare with the Δχ² result: the only structural thing the model leaves out is `math ~ stress`.
+- Don't add it just because MI says so: it must make **theoretical** sense.
+
+## Step 2: Interpret: path coefficients
+
+```{r}
+#| echo: false
+pt1 <- path_tab(fit1_s)
+knitr::kable(pt1, digits = 3, row.names = FALSE, align = "lrrrr")
+```
+
+- *b* is in the units of the factor's marker item (and math ÷ 100: **1 unit = 100 points**). β is in SD units.
+- Indirect effect `ind` = a·b. Its CI should ideally be **bootstrapped** (here delta-method; bootstrapping FIML fits is slow).
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+- More stress-resistant students reported **lower** math anxiety (*b* = `r f2(pt1$b[1])`, β = `r f2(pt1$β[1])`).
+- Higher math anxiety was associated with **lower** math scores (*b* = `r f2(pt1$b[2])`, i.e. `r f2(abs(pt1$b[2]) * 100)` points per unit, β = `r f2(pt1$β[2])`).
+- Indirect effect β = `r f2(pt1$β[3])`: positive and small. Both paths are negative, so the product is positive (more stress-resistant → less anxious → higher math), and it is small because it multiplies two modest numbers.
+- Associations only: cross-sectional, so "affects" is not supported by these data alone.
+:::
+:::
+
+## Step 2: Interpret: R²
+
+```{r}
+#| echo: false
+r2 <- lavInspect(fit1_s, "r2")
+data.frame(Variable = c("Math anxiety (latent)", "Math score"),
+           `R²` = f2(r2[c("anx", "math")]), check.names = FALSE) |>
+  knitr::kable(row.names = FALSE, align = "lr")
+```
+
+- R² = share of variance explained by predictors; the rest is the disturbance.
+- Is `r f2(r2["math"])` meaningful for math scores in education research?
+
+# Example 2: Growth Mindset → Stress & Anxiety → Math
+
+## The model
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 11
+#| fig-height: 4.4
+nd2 <- data.frame(
+  id = c("gm", "stress", "anx", "math", "i_g", "i_s", "i_a"),
+  x = c(0, 5, 10, 15, 0, 5, 10), y = c(0, 2.2, 0, 0, -2.4, 4.6, -2.4),
+  lab = c("Growth\nmindset", "Stress\nresistance", "Math\nanxiety", "Math score\n(observed)",
+          "4 items\nST263", "10 items\nST345", "6 items\nST292"),
+  type = c("lat", "lat", "lat", "obs", "ind", "ind", "ind"), stringsAsFactors = FALSE)
+ggplot() +
+  geom_segment(data = data.frame(x = c(1, 1, 6.2, 11.2), y = c(0.3, -0.1, 1.5, 0),
+                                 xend = c(3.8, 8.7, 8.8, 13.6), yend = c(1.8, 0, 0.5, 0)),
+               aes(x = x, y = y, xend = xend, yend = yend),
+               colour = oNG, linewidth = 1.2, arrow = ar) +
+  geom_segment(data = data.frame(x = c(0, 5, 10), xend = c(0, 5, 10),
+                                 y = c(-0.85, 3.05, -0.85), yend = c(-1.6, 3.9, -1.6)),
+               aes(x = x, xend = xend, y = y, yend = yend), colour = dk, arrow = ar) +
+  geom_label(data = nd2, aes(x = x, y = y, label = lab, fill = type), colour = "white",
+             size = 4.0, label.padding = grid::unit(0.5, "lines")) +
+  scale_fill_manual(values = c(lat = BLU, obs = dk, ind = "#7A7A7A"), guide = "none") +
+  coord_equal(clip = "off") + expand_limits(x = c(-1.5, 16.5), y = c(-3.2, 5.6)) + theme_void()
+```
+
+```
+Stress ~ GM
+Anxiety ~ GM + Stress
+Math ~ Anxiety
+```
+
+**RQ:** Does a growth mindset relate to lower anxiety *directly* and *through* stress resistance, and does anxiety carry the link to math?
+
+## Your turn: Step 1 (measurement model)
+
+Work in pairs for ~10 minutes. For the measurement model of Example 2:
+
+1. **Identification:** how many measured variables? Information? Parameters? df?
+2. **Specify** the `lavaan` model (all latent variables and math correlated).
+3. **Fit** it (`cfa()`, `MLR`, `fiml`; the fit is already cached: `get_fit("m2_meas0")`).
+4. **Global & local fit:** is it acceptable? What do loadings and MIs say?
+5. Modify (≤ 3 changes, with a reason for each), refit, and **interpret**.
+
+Hint: some modifications from Example 1 may carry over. Is there anything *new* about growth mindset?
+
+## Step 1: Identification (answer)
+
+::: {.content-visible when-profile="teacher"}
+Measured: 4 + 10 + 6 + 1 = **21**; information = 21(22)/2 = **231**
+
+| Type | Count |
+|:--|:-:|
+| Loadings (after markers): 3 + 9 + 5 | 17 |
+| Indicator residual variances | 20 |
+| Variances of latent variables (gm, stress, anx) | 3 |
+| Variance of math | 1 |
+| Covariances: 3 among latents + 3 with math | 6 |
+
+q = 17 + 20 + 3 + 1 + 6 = **47**; df = 231 − 47 = **184** (with the 3 residual covariances from Example 1: q = 50, df = **181**).
+:::
+
+## Step 1: Specify (answer)
+
+::: {.content-visible when-profile="teacher"}
+```{r}
+#| echo: false
+cat(m2_meas0)
+```
+:::
+
+## Step 1: Global fit (answer)
+
+::: {.content-visible when-profile="teacher"}
+```{r}
+#| echo: false
+knitr::kable(gtab(fit2_0), row.names = FALSE, align = "lr")
+```
+:::
+
+## Step 1: Local fit (answer)
+
+::: {.content-visible when-profile="teacher"}
+```{r}
+#| echo: false
+lt2 <- load_tab(fit2_0, c("gm", "stress", "anx"))
+knitr::kable(lt2[lt2$Factor == "gm", ], digits = 2, row.names = FALSE, align = "llrrr")
+```
+
+```{r}
+#| echo: false
+mi_print(mi_tab("m2_meas0", "~~", 8, c(gm_items, str_items, anx_items)))
+```
+
+- The Example 1 pairs (`anx5 ~~ anx6`, `str6 ~~ str9`, `str5 ~~ str6`) reappear.
+- **New:** `gm2 ~~ gm3` has a huge MI, and its *standardized* EPC is above 1: not a valid correlation. Two growth-mindset items are nearly redundant (they correlate very highly), so the factor is dominated by them. We will **not** free that pair blindly. Discuss.
+:::
+
+## Step 1: Modify and interpret (answer)
+
+::: {.content-visible when-profile="teacher"}
+```{r}
+#| echo: false
+ctab(list(fit2_0, fit2_m), c("Initial", "+ 3 residual covariances (as Ex. 1)")) |>
+  knitr::kable(row.names = FALSE, align = "lrrrrr")
+```
+
+```{r}
+#| echo: false
+fcor_tab(fit2_m, c("gm", "stress", "anx", "math")) |>
+  knitr::kable(digits = 2, row.names = FALSE, col.names = c("Pair", "r", "95% CI lower", "95% CI upper"))
+```
+
+- Check signs: growth mindset ↔ stress (+), growth mindset ↔ anxiety (−), stress ↔ anxiety (−), anxiety ↔ math (−), growth mindset ↔ math (+).
+:::
+
+## Your turn: Step 2 (structural model)
+
+Work in pairs for ~10 minutes.
+
+1. **Identification:** which covariances/paths change? q and df of the structural model? How does df compare with the measurement model, and why?
+2. **Specify** the structural model (the same residual covariances stay in).
+3. **Global fit:** compare with the measurement model (Δχ²). What does it test?
+4. **Local fit:** which omitted paths do the MIs point to? Do they make sense?
+5. **Interpret:** paths, indirect effects (name them), R².
+
+## Step 2: Identification & specification (answer)
+
+::: {.content-visible when-profile="teacher"}
+- Parameters: loadings 17, residual variances 20, residual covariances 3, variance of gm 1, paths 4 (gm → stress, gm → anx, stress → anx, anx → math), disturbances 3 (stress, anx, math) = **48**
+- df = 231 − 48 = **183**; the measurement model had df = 181. The **2 extra df** are the two omitted paths: **gm → math** and **stress → math**.
+
+```{r}
+#| echo: false
+cat(m2_sem)
+```
+:::
+
+## Step 2: Global & local fit (answer)
+
+::: {.content-visible when-profile="teacher"}
+```{r}
+#| echo: false
+ctab(list(fit2_m, fit2_s), c("Measurement (saturated)", "Structural")) |>
+  knitr::kable(row.names = FALSE, align = "lrrrrr")
+```
+
+```{r}
+#| echo: false
+#| warning: false
+lrt2 <- suppressWarnings(lavTestLRT(fit2_s, fit2_m, method = "satorra.bentler.2001"))
+```
+
+Scaled Δχ²(`r lrt2[2, "Df diff"]`) = `r f2(lrt2[2, "Chisq diff"])`, *p* `r ifelse(lrt2[2, "Pr(>Chisq)"] < .001, "< .001", paste("=", f3(lrt2[2, "Pr(>Chisq)"])))`
+
+- Δχ² is significant at .05 but CFI and RMSEA barely change. Is the omitted path worth adding? (Discuss: what do the MIs for `math ~ gm` say, and is a direct growth mindset → math path theoretically sensible?)
+
+```{r}
+#| echo: false
+mi_print(mi_tab("m2_sem", "~", 6))
+```
+:::
+
+## Step 2: Interpret (answer)
+
+::: {.content-visible when-profile="teacher"}
+```{r}
+#| echo: false
+pt2 <- path_tab(fit2_s)
+knitr::kable(pt2, digits = 3, row.names = FALSE, align = "lrrrr")
+```
+
+```{r}
+#| echo: false
+r2b <- lavInspect(fit2_s, "r2")
+```
+
+R²: stress = `r f2(r2b["stress"])`, anxiety = `r f2(r2b["anx"])`, math = `r f2(r2b["math"])`.
+
+- Two indirect effects: GM → stress → anxiety, and GM → (stress →) anxiety → math.
+- Which is the *total* effect of GM on math through this chain?
+:::
+
+## Compare the two examples
+
+| | Example 1 | Example 2 |
+|:--|:-:|:-:|
+| Latent variables | 2 | 3 |
+| Measured variables | 17 | 21 |
+| df (measurement → structural) | `r gfit(fit1_m)["df.scaled"]` → `r gfit(fit1_s)["df.scaled"]` | `r gfit(fit2_m)["df.scaled"]` → `r gfit(fit2_s)["df.scaled"]` |
+| Omitted paths | 1 (stress → math) | 2 (gm → math, stress → math) |
+
+- Same arc: assumptions → identify → fit globally → fit locally → modify (measurement only) → interpret.
+- Modify the **measurement** model; test the **structural** model.
+
+## Careful: equivalent models
+
+A → B → C and C → B → A have the **same df and same fit**.
+
+- Fit can't tell the direction of the arrows. **Theory does.**
+- Here: could math anxiety cause stress? Could math achievement lower anxiety? Cross-sectional data can't say.
+- That's why a *Specification & theoretical motivation* section is the first thing a reviewer looks for.
+
+## Pause & Recap
+
+1. Why do we modify the **measurement** model but not the structural model to get fit?
+2. In each example, which tools told us *where* a model misfits?
+3. Two models fit equally well. How do you choose?
+
+# Reporting LVPA
+
+## Checklist: build from what we have
+
+[APA JARS](https://apastyle.apa.org/jars/quant-table-7.pdf)
+
+- **Specification & theory:** why these constructs, indicators, and directions? Alternatives?
+- **Data & assumptions:** N, missing data, distributions, estimator
+- **Descriptives:** covariance/correlation matrix + means & SDs
+- **Path diagram:** latent & measured variables, with estimates
+- **Identification:** scale, # parameters, df, and measurement-first logic
+
+## Checklist: results
+
+- **Fit:** χ², df, p, CFI, TLI, RMSEA + 90% CI, SRMR (scaled if MLR/DWLS)
+  - Say what's saturated vs. testable
+- **Measurement:** all loadings (b & β), residual variances, reliability/AVE
+- **Structural:** all paths (b & β, CI, p), indirect and total effects (bootstrapped CIs), R²
+- **Model comparison / modification:** what was compared or changed, and why
+- **Discussion:** back to theory, limitations (equivalent models, causal language)
+
+## Which are LVPA-specific?
+
+Compare to the CFA and MVPA checklists.
+
+| Item | MVPA | CFA | LVPA |
+|:--|:-:|:-:|:-:|
+| Theory for **paths & direction** | ✔ | | ✔ |
+| Theory for **indicators/factors** | | ✔ | ✔ |
+| Indirect effects w/ bootstrapped CIs | ✔ | | ✔ |
+| Loadings, residual variances | | ✔ | ✔ |
+| Reliability / AVE / discriminant validity | | ✔ | ✔ |
+| Measurement-first / two-step fit | | | ✔ |
+| **Reporting every modification** | | ✔ | ✔ |
+
+## Example results write-up (Example 1)
+
+::: {.content-visible when-profile="teacher"}
+We estimated the model with robust maximum likelihood (MLR) and full-information maximum likelihood to handle items missing by design (*N* = `r nrow(pisa)` students from Great Britain). Following a two-step approach, we first fit the measurement model; the initial fit was poor (CFI = `r f3(gfit(fit1_0)["cfi.robust"])`, RMSEA = `r f3(gfit(fit1_0)["rmsea.robust"])`), so we freed three residual covariances (`anx5 ~~ anx6`, `str6 ~~ str9`, `str5 ~~ str6`), after which fit was acceptable but imperfect, χ²(`r gfit(fit1_m)["df.scaled"]`) = `r f2(gfit(fit1_m)["chisq.scaled"])`, CFI = `r f3(gfit(fit1_m)["cfi.robust"])`, RMSEA = `r f3(gfit(fit1_m)["rmsea.robust"])`, 90% CI [`r f3(gfit(fit1_m)["rmsea.ci.lower.robust"])`, `r f3(gfit(fit1_m)["rmsea.ci.upper.robust"])`], SRMR = `r f3(gfit(fit1_m)["srmr"])`. In the structural model, stress resistance predicted math anxiety (*b* = `r f2(pt1$b[1])`, β = `r f2(pt1$β[1])`), and math anxiety predicted math scores (*b* = `r f2(pt1$b[2])`, β = `r f2(pt1$β[2])`). The indirect effect was β = `r f2(pt1$β[3])`. Constraining the direct path stress → math to zero changed χ² by Δχ²(`r lrt1[2, "Df diff"]`) = `r f2(lrt1[2, "Chisq diff"])`, *p* `r ifelse(lrt1[2, "Pr(>Chisq)"] < .001, "< .001", paste("=", f3(lrt1[2, "Pr(>Chisq)"])))`. Limitations: the residual covariances were data-driven, the items were treated as continuous, and school clustering and sampling weights were ignored.
+:::
+
+::: {.content-visible unless-profile="teacher"}
+*Work in your group: write the results paragraph for Example 2 from the output on the previous slides.*
+:::
+
+# Reporting Workshop
+
+## Part 1: Review
+
+- Teams of 3-4; each team reviews a different LVPA report
+- Is it ready for publication? Use the checklist as a rubric.
+
+1. **High level:** relevance, fit of methods to RQ, what's done well, what to improve
+2. **Substance:** specification, identification, fit, interpretation, claims
+3. **Minor:** mismatched numbers, typos
+4. **Decision:** Accept / Revise & resubmit / Reject
+
+## Part 2: Critical questions
+
+1. Did they fit/report the **measurement model first**?
+2. Is the direction of the paths **theoretically justified**? Were equivalent models acknowledged?
+3. Is the number of parameters reasonable for the sample size?
+4. Are **indirect effects** tested appropriately?
+5. Do conclusions match what the model can support (e.g. causal language)?
+
+## Part 3: Share out
+
+- 1 representative per team: < 1 minute summary of the study + your top **major** then **minor** feedback
+- Document feedback in the shared Google Doc
+
+# Rlab
+
+Lamaku > rlabs > w12
+
+1. Identify models: count information, parameters, df
+2. Fit the measurement model, then the structural model
+3. Evaluate global & local fit
+4. Interpret & write up one scenario
+
+# Up Next
+
+- Mini Project 3 (LVPA) work time
+- Multi-group SEM
+- Online (synchronous) classes after Thanksgiving: Dec 3 and Dec 10
