@@ -69,10 +69,15 @@ cached_fit <- function(name, model, fun = lavaan::sem) {
 m1_step1 <- paste(m1_meas0, "anx5 ~~ anx6", sep = "\n")
 m1_step2 <- paste(m1_step1, "str6 ~~ str9", sep = "\n")
 
+# Example 2: same three residual covariances, freed one at a time (same order as Example 1)
+m2_step1 <- paste(m2_meas0, "anx5 ~~ anx6", sep = "\n")
+m2_step2 <- paste(m2_step1, "str6 ~~ str9", sep = "\n")
+
 specs <- list(
   m1_step1 = list(m1_step1, lavaan::cfa), m1_step2 = list(m1_step2, lavaan::cfa),
   m1_meas0 = list(m1_meas0, lavaan::cfa), m1_meas = list(m1_meas, lavaan::cfa),
   m1_sem   = list(m1_sem,   lavaan::sem),
+  m2_step1 = list(m2_step1, lavaan::cfa), m2_step2 = list(m2_step2, lavaan::cfa),
   m2_meas0 = list(m2_meas0, lavaan::cfa), m2_meas = list(m2_meas, lavaan::cfa),
   m2_sem   = list(m2_sem,   lavaan::sem)
 )

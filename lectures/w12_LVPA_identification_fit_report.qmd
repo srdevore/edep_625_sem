@@ -293,6 +293,57 @@ Math.Sc is a single observed variable (mean of plausible values). It is not a la
 
 ## Ex 1: Measurement model diagram
 
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 15
+#| fig-height: 5.6
+# CFA measurement model, no estimates: loadings, residuals, and covariances (curved) among
+# the two latent variables and the observed Math.Sc
+xs <- seq(0, 9); xa <- seq(11.5, 16.5)
+cs <- mean(xs); ca <- mean(xa); cx <- (cs + ca) / 2
+items <- data.frame(item = c(str_items, anx_items), x = c(xs, xa),
+                    f = rep(c("s", "a"), c(10, 6)), y = -2.6)
+items$fx <- ifelse(items$f == "s", cs, ca)
+r <- 1.15
+th <- seq(0, 2 * pi, length.out = 100)
+lat <- data.frame(x = c(cs, ca), y = 0, lab = c("Stress.Res", "Math.Anx"))
+circ <- do.call(rbind, lapply(1:2, function(i)
+  data.frame(g = i, x = lat$x[i] + r * cos(th), y = lat$y[i] + r * sin(th))))
+mth <- c(cx, 3.9)
+ux <- items$x - items$fx; len <- sqrt(ux^2 + items$y^2)
+ldseg <- data.frame(x = items$fx + r * ux / len, y = r * items$y / len,
+                    xend = items$x, yend = items$y + 0.4)
+mk <- data.frame(x = c(xs[1], xa[1]) + 0.25, y = -1.5, lab = "1")
+pol <- function(cx0, ang) c(cx0 + r * cos(ang * pi / 180), r * sin(ang * pi / 180))
+cov_seg <- data.frame(
+  rbind(c(pol(cs, 35),  pol(ca, 145), -0.15),
+        c(pol(cs, 70),  mth + c(-0.9, -0.45), -0.2),
+        c(pol(ca, 110), mth + c(0.9, -0.45),   0.2)))
+names(cov_seg) <- c("x", "y", "xend", "yend", "curv")
+ggplot() +
+  geom_segment(data = ldseg, aes(x = x, y = y, xend = xend, yend = yend),
+               colour = dk, arrow = ar) +
+  geom_text(data = mk, aes(x = x, y = y, label = lab), colour = dk, size = 3.8, fontface = "italic") +
+  lapply(seq_len(nrow(cov_seg)), function(i)
+    geom_curve(data = cov_seg[i, ], aes(x = x, y = y, xend = xend, yend = yend),
+               curvature = cov_seg$curv[i], colour = oNG, linewidth = 1.1, ncp = 8,
+               arrow = grid::arrow(length = grid::unit(0.18, "cm"), ends = "both", type = "closed"))) +
+  geom_polygon(data = circ, aes(x = x, y = y, group = g), fill = BLU, colour = BLU) +
+  geom_text(data = lat, aes(x = x, y = y, label = lab), colour = "white", size = 4.6) +
+  geom_label(data = data.frame(x = mth[1], y = mth[2], lab = "Math.Sc"), aes(x = x, y = y, label = lab),
+             fill = dk, colour = "white", size = 4.4, label.padding = grid::unit(0.5, "lines")) +
+  geom_segment(data = items, aes(x = x, xend = x), y = -3.25, yend = -3.0, colour = dk, arrow = ar) +
+  geom_point(data = items, aes(x = x), y = -3.7, shape = 21, size = 9, fill = "white",
+             colour = dk, stroke = 0.8) +
+  geom_text(data = items, aes(x = x), y = -3.7, label = "ε", colour = dk, size = 4.4, fontface = "italic") +
+  geom_label(data = items, aes(x = x, y = y, label = item), fill = "#7A7A7A", colour = "white",
+             size = 3.9, label.padding = grid::unit(0.3, "lines")) +
+  coord_equal(clip = "off") + expand_limits(x = c(-0.5, 22.5), y = c(-4.6, 4.6)) + theme_void()
+```
+
+Curved orange arrows = covariances among the latent variables and Math.Sc (no directional paths); ε = residual variances; the first loading of each factor is fixed to 1.
+
 
 ## Ex 1: Measurement model: information
 
@@ -845,12 +896,47 @@ mi_print(mi_tab("m2_meas0", "~~", 8, c(gm_items, str_items, anx_items)))
 Which modification indices would you consider, and are they defensible?
 
 
+## Ex 2: Modify one at a time
+
+- Same procedure as Ex 1: free the largest **defensible** residual covariance, refit, recheck MIs.
+- Step = free the parameter, rerun the model, rerun the fit indices, rerun the MI.
+
+```{r}
+#| echo: false
+st2_fits <- list(fit2_0, get_fit("m2_step1"), get_fit("m2_step2"), fit2_m)
+st2_mis <- c(NA, st_mi("m2_meas0", "anx5", "anx6"), st_mi("m2_step1", "str6", "str9"),
+             st_mi("m2_step2", "str5", "str6"))
+g2 <- sapply(st2_fits, gfit)
+data.frame(Step = 0:3,
+           Freed = c("none", "anx5 ~~ anx6", "str6 ~~ str9", "str5 ~~ str6"),
+           MI = ifelse(is.na(st2_mis), "", formatC(st2_mis, format = "f", digits = 0)),
+           CFI = f3(g2["cfi.robust", ]), RMSEA = f3(g2["rmsea.robust", ]),
+           SRMR = f3(g2["srmr", ])) |>
+  knitr::kable(row.names = FALSE, align = "rlrrrr")
+```
+
 ## Ex 2: Measurement model: Modify
 
 ```{r}
 #| echo: false
 ctab(list(fit2_0, fit2_m), c("Initial", "+ 3 residual covariances")) |>
   knitr::kable(row.names = FALSE, align = "lrrrrr")
+```
+
+```{r}
+#| echo: false
+#| warning: false
+# Δχ² for each step (scaled difference test vs. the previous step) and the sign of the freed covariance
+freed2 <- list(c("anx5", "anx6"), c("str6", "str9"), c("str5", "str6"))
+step2 <- do.call(rbind, lapply(1:3, function(i) {
+  lr <- suppressWarnings(lavTestLRT(st2_fits[[i + 1]], st2_fits[[i]], method = "satorra.bentler.2001"))
+  pe <- parameterEstimates(st2_fits[[i + 1]])
+  est <- pe$est[pe$op == "~~" & pe$lhs == freed2[[i]][1] & pe$rhs == freed2[[i]][2]]
+  data.frame(Step = i, Freed = paste(freed2[[i]], collapse = " ~~ "),
+             `Δχ² (1 df)` = f2(lr[2, "Chisq diff"]), p = fmt_p(lr[2, "Pr(>Chisq)"]),
+             Estimate = f2(est), Sign = ifelse(est > 0, "+", "−"), check.names = FALSE)
+}))
+knitr::kable(step2, row.names = FALSE, align = "rlrrrc")
 ```
 
 Is the fit now acceptable enough to move on?
