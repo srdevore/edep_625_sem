@@ -675,8 +675,6 @@ data.frame(Variable = c("Math.Anx (latent)", "Math.Sc"),
 
 **RQ:** Does Growth.Mind relate to lower Math.Anx *directly* and *through* Stress.Res, and does Math.Anx carry the link to Math.Sc?
 
-*N* = `r nrow(pisa)` (random sample); items treated as continuous; MLR + FIML.
-
 ## Example 2: The model
 
 ```{r}
@@ -756,22 +754,24 @@ Loadings 3 + 9 + 5 = 17; residual variances 20; latent variances 3; Math.Sc vari
 :::
 
 ::: {.fragment}
-q = 47; df = 231 − 47 = **`r 231 - 47`**. (If we free the 3 residual covariances from Example 1: q = 50, df = **`r 231 - 50`**.)
+q = 47; df = 231 − 47 = **`r 231 - 47`**. 
 :::
 :::
 
-## Example 2: Measurement model: Global fit
+## Ex 2: Measurement model: Global fit
 
 ```{r}
 #| echo: false
 knitr::kable(gtab(fit2_0), row.names = FALSE, align = "lr")
 ```
 
+## Ex 2: Measurement model: Global fit
+
 Is the global fit acceptable?
 
 ::: {.content-visible when-profile="teacher"}
 ::: {.fragment}
-No: CFI is well below .90 and RMSEA is above .08. Poor, so look at **where** (local fit).
+No: CFI is well below .90 and RMSEA is above .08. Poor.
 :::
 :::
 
@@ -779,12 +779,13 @@ No: CFI is well below .90 and RMSEA is above .08. Poor, so look at **where** (lo
 
 ```{r}
 #| echo: false
+#| output: false
 lt2 <- load_tab(fit2_0, c("gm", "stress", "anx"))
 lt2$Factor <- factor(lt2$Factor, levels = unique(lt2$Factor))
 agg <- do.call(rbind, lapply(split(lt2, lt2$Factor), function(d)
   data.frame(Factor = d$Factor[1], `Standardized loadings (β)` = paste(paste0(d$Item, " ", f2(d$β)), collapse = ",  "),
              check.names = FALSE)))
-knitr::kable(agg, row.names = FALSE, align = "ll")
+# knitr::kable(agg, row.names = FALSE, align = "ll")
 ```
 
 ```{r}
@@ -795,15 +796,8 @@ mi_print(mi_tab("m2_meas0", "~~", 8, c(gm_items, str_items, anx_items)))
 1. Any weak (< .40) or impossible loadings?
 2. Which modification indices would you consider, and are they defensible?
 
-::: {.content-visible when-profile="teacher"}
-::: {.fragment}
-Loadings are all ≥ .40 (`gm4` is the weakest); `gm2` and `gm3` are very high (near duplicates). The Example 1 pairs (`anx5 ~~ anx6`, `str6 ~~ str9`, `str5 ~~ str6`) reappear and are defensible for the same reasons. `gm2 ~~ gm3` has the largest *new* MI but a standardized EPC above 1 (not a valid correlation), so we don't free it.
-:::
-:::
 
 ## Example 2: Measurement model: Modify
-
-Free the residual covariances you chose, refit, and compare.
 
 ```{r}
 #| echo: false
@@ -813,11 +807,6 @@ ctab(list(fit2_0, fit2_m), c("Initial", "+ 3 residual covariances")) |>
 
 Is the fit now acceptable enough to move on?
 
-::: {.content-visible when-profile="teacher"}
-::: {.fragment}
-We freed the three pairs carried over from Example 1. CFI = `r f3(gfit(fit2_m)["cfi.robust"])`, RMSEA = `r f3(gfit(fit2_m)["rmsea.robust"])`, SRMR = `r f3(gfit(fit2_m)["srmr"])`: acceptable, not good. We proceed, and report this honestly.
-:::
-:::
 
 ## Example 2: Measurement model: Interpret
 
@@ -846,7 +835,8 @@ semPaths(pm2, what = "std", layout = lay2,
          mar = c(4, 3, 4, 3), nCharNodes = 0, fade = FALSE)
 ```
 
-Standardized estimates. Residual variances and the three residual covariances are in the model but not drawn.
+- Standardized estimates. 
+- Residual variances and the three residual covariances are in the model but not drawn.
 
 ## Example 2: Measurement model: Interpret (relationships) {.smaller}
 
@@ -859,15 +849,10 @@ fcor_tab(fit2_m, c("gm", "stress", "anx", "math")) |>
 1. Do the signs match theory?
 2. Is there evidence of discriminant validity? Which factor is the weakest measure?
 
-::: {.content-visible when-profile="teacher"}
-::: {.fragment}
-Signs: Growth.Mind ↔ Stress.Res (+), Growth.Mind ↔ Math.Anx (−), Stress.Res ↔ Math.Anx (−), Math.Anx ↔ Math.Sc (−), Growth.Mind ↔ Math.Sc (+): all as expected. All latent correlations are modest (|r| ≤ .42), so the constructs are distinct. Growth.Mind has the weakest measurement (`gm1`, `gm4` loadings are low; `gm2`, `gm3` dominate).
-:::
-:::
 
-## Example 2: Structural model: Specify
+## Example 2: Structural model: Specify {.smaller)}
 
-Write the `lavaan` syntax for the **structural model** (keep the measurement part and the residual covariances). Name the paths and define the indirect effects.
+Write the `lavaan` syntax for the **structural model** (keep the measurement part and the residual covariances from above). Name the paths and define the indirect effects of interest.
 
 ::: {.content-visible when-profile="teacher"}
 ::: {.fragment}
@@ -893,19 +878,17 @@ fit_sem2 <- sem(sem_model2, data = pisa, estimator = "MLR", missing = "fiml")
 :::
 :::
 
-## Example 2: Structural model: Identification
+## Ex 2: Structural model: Identification {.smaller}
 
-Starting from the measurement model (q = 50, df = `r gfit(fit2_m)["df.scaled"]`): which parameters are replaced? What are q and df now? Which paths are **omitted**?
+Starting from the measurement model (q = 50, df = `r gfit(fit2_m)["df.scaled"]`), how does DF change? which parameters are replaced? What are q and df now? 
 
 ::: {.content-visible when-profile="teacher"}
 ::: {.fragment}
-Remove the 6 covariances (3 among the latents, 3 with Math.Sc); add 4 paths (gm → stress, gm → anx, stress → anx, anx → math); the variances of stress, anx and Math.Sc become disturbances (same count). q = 50 − 6 + 4 = **48**; df = 231 − 48 = **`r 231 - 48`**.
+- Remove the 6 covariances (3 among the latents, 3 with Math.Sc); 
+- add 4 paths (gm → stress, gm → anx, stress → anx, anx → math); the variances of stress, anx and Math.Sc become disturbances (same count). 
+- q = 50 − 6 + 4 = **48**; df = 231 − 48 = **`r 231 - 48`**.
 :::
 
-::: {.fragment}
-Two extra df = the two omitted paths: Growth.Mind → Math.Sc and Stress.Res → Math.Sc.
-:::
-:::
 
 ## Example 2: Structural model: Fit
 
@@ -914,6 +897,8 @@ Two extra df = the two omitted paths: Growth.Mind → Math.Sc and Stress.Res →
 ctab(list(fit2_m, fit2_s), c("Measurement (saturated)", "Structural")) |>
   knitr::kable(row.names = FALSE, align = "lrrrrr")
 ```
+
+## Ex 2: Modification Indices
 
 ```{r}
 #| echo: false
@@ -962,7 +947,7 @@ semPaths(pm2s, what = "std", layout = lay2s,
 
 Standardized estimates (β).
 
-## Example 2: Structural model: Interpret (paths) {.smaller}
+## Example 2: Structural model: Interpret {.smaller}
 
 ```{r}
 #| echo: false
@@ -985,17 +970,13 @@ R²: Stress.Res = `r f2(r2b["stress"])`, Math.Anx = `r f2(r2b["anx"])`, Math.Sc 
 :::
 :::
 
-## Compare the two examples
+## Compare the two examples 
 
 | | Example 1 | Example 2 |
 |:--|:-:|:-:|
 | Latent variables | 2 | 3 |
 | Measured variables | 17 | 21 |
 | df (measurement → structural) | `r gfit(fit1_m)["df.scaled"]` → `r gfit(fit1_s)["df.scaled"]` | `r gfit(fit2_m)["df.scaled"]` → `r gfit(fit2_s)["df.scaled"]` |
-| Omitted paths | 1 (Stress.Res → Math.Sc) | 2 (Growth.Mind → Math.Sc, Stress.Res → Math.Sc) |
-
-- Same arc: assumptions → identify → fit globally → fit locally → modify (measurement only) → interpret.
-- Modify the **measurement** model; test the **structural** model.
 
 ## Careful: equivalent models
 
@@ -1003,13 +984,13 @@ A → B → C and C → B → A have the **same df and same fit**.
 
 - Fit can't tell the direction of the arrows. **Theory does.**
 - Here: could Math.Anx cause Stress.Res? Could Math.Sc lower Math.Anx? Cross-sectional data can't say.
-- That's why a *Specification & theoretical motivation* section is the first thing a reviewer looks for.
+- That's why a *Specification & theoretical motivation* are paramount.
 
 ## Pause & Recap
 
-1. Why do we modify the **measurement** model but not the structural model to get fit?
-2. In each example, which tools told us *where* a model misfits?
-3. Two models fit equally well. How do you choose?
+1. What are the two main steps involved in running an LVPA?
+2. Within each step, what do we need to do? 
+3. What is required to continue to the structure model? 
 
 # Reporting LVPA
 
@@ -1017,81 +998,29 @@ A → B → C and C → B → A have the **same df and same fit**.
 
 [APA JARS](https://apastyle.apa.org/jars/quant-table-7.pdf)
 
-- **Specification & theory:** why these constructs, indicators, and directions? Alternatives?
-- **Data & assumptions:** N, missing data, distributions, estimator
-- **Descriptives:** covariance/correlation matrix + means & SDs
-- **Path diagram:** latent & measured variables, with estimates
-- **Identification:** scale, # parameters, df, and measurement-first logic
+What items from this checklist do we use for an LVPA model? 
 
-## Checklist: results
+## Practice: 
 
-- **Fit:** χ², df, p, CFI, TLI, RMSEA + 90% CI, SRMR (scaled if MLR/DWLS)
-  - Say what's saturated vs. testable
-- **Measurement:** all loadings (b & β), residual variances, reliability/AVE
-- **Structural:** all paths (b & β, CI, p), indirect and total effects (bootstrapped CIs), R²
-- **Model comparison / modification:** what was compared or changed, and why
-- **Discussion:** back to theory, limitations (equivalent models, causal language)
+Use the final results for example 2 and write up a report on the model. 
 
-## Which are LVPA-specific?
+Submit to Lamaku > Assignments > W12
 
-Compare to the CFA and MVPA checklists.
-
-| Item | MVPA | CFA | LVPA |
-|:--|:-:|:-:|:-:|
-| Theory for **paths & direction** | ✔ | | ✔ |
-| Theory for **indicators/factors** | | ✔ | ✔ |
-| Indirect effects w/ bootstrapped CIs | ✔ | | ✔ |
-| Loadings, residual variances | | ✔ | ✔ |
-| Reliability / AVE / discriminant validity | | ✔ | ✔ |
-| Measurement-first / two-step fit | | | ✔ |
-| **Reporting every modification** | | ✔ | ✔ |
-
-## Example results write-up (Example 1)
+## Example results write-up (Example 1) {.smaller}
 
 ::: {.content-visible when-profile="teacher"}
 We estimated the model with robust maximum likelihood (MLR) and full-information maximum likelihood to handle items missing by design (*N* = `r nrow(pisa)` students from Great Britain). Following a two-step approach, we first fit the measurement model; the initial fit was poor (CFI = `r f3(gfit(fit1_0)["cfi.robust"])`, RMSEA = `r f3(gfit(fit1_0)["rmsea.robust"])`), so we freed three residual covariances (`anx5 ~~ anx6`, `str6 ~~ str9`, `str5 ~~ str6`), after which fit was acceptable but imperfect, χ²(`r gfit(fit1_m)["df.scaled"]`) = `r f2(gfit(fit1_m)["chisq.scaled"])`, CFI = `r f3(gfit(fit1_m)["cfi.robust"])`, RMSEA = `r f3(gfit(fit1_m)["rmsea.robust"])`, 90% CI [`r f3(gfit(fit1_m)["rmsea.ci.lower.robust"])`, `r f3(gfit(fit1_m)["rmsea.ci.upper.robust"])`], SRMR = `r f3(gfit(fit1_m)["srmr"])`. In the structural model, Stress.Res predicted Math.Anx (*b* = `r f2(pt1$b[1])`, β = `r f2(pt1$β[1])`), and Math.Anx predicted Math.Sc (*b* = `r f2(pt1$b[2])`, β = `r f2(pt1$β[2])`). The indirect effect was β = `r f2(pt1$β[3])`. Constraining the direct path Stress.Res → Math.Sc to zero changed χ² by Δχ²(`r lrt1[2, "Df diff"]`) = `r f2(lrt1[2, "Chisq diff"])`, *p* `r ifelse(lrt1[2, "Pr(>Chisq)"] < .001, "< .001", paste("=", f3(lrt1[2, "Pr(>Chisq)"])))`. Limitations: the residual covariances were data-driven, the items were treated as continuous, and school clustering and sampling weights were ignored.
 :::
 
-::: {.content-visible unless-profile="teacher"}
-*Work in your group: write the results paragraph for Example 2 from the output on the previous slides.*
-:::
 
-# Reporting Workshop
-
-## Part 1: Review
-
-- Teams of 3-4; each team reviews a different LVPA report
-- Is it ready for publication? Use the checklist as a rubric.
-
-1. **High level:** relevance, fit of methods to RQ, what's done well, what to improve
-2. **Substance:** specification, identification, fit, interpretation, claims
-3. **Minor:** mismatched numbers, typos
-4. **Decision:** Accept / Revise & resubmit / Reject
-
-## Part 2: Critical questions
-
-1. Did they fit/report the **measurement model first**?
-2. Is the direction of the paths **theoretically justified**? Were equivalent models acknowledged?
-3. Is the number of parameters reasonable for the sample size?
-4. Are **indirect effects** tested appropriately?
-5. Do conclusions match what the model can support (e.g. causal language)?
-
-## Part 3: Share out
-
-- 1 representative per team: < 1 minute summary of the study + your top **major** then **minor** feedback
-- Document feedback in the shared Google Doc
 
 # Rlab
 
-Lamaku > rlabs > w12
+LVPA Widget
 
-1. Identify models: count information, parameters, df
-2. Fit the measurement model, then the structural model
-3. Evaluate global & local fit
-4. Interpret & write up one scenario
+Github > activities > widget LVPA
 
 # Up Next
 
-- Mini Project 3 (LVPA) work time
-- Multi-group SEM
+- Methods Walk Through: Callum 	Gyan	Louis	Bocar	Mike	Yuna
 - Online (synchronous) classes after Thanksgiving: Dec 3 and Dec 10
