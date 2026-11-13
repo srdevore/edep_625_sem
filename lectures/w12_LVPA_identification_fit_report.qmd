@@ -1,0 +1,1159 @@
+---
+title: "Week 12: LVPA Identification, Fit & Reporting"
+date: today
+description: '<a href="lectures/w12_LVPA_identification_fit_report.pdf" download="w12_LVPA_identification_fit_report.pdf">Download PDF</a>'
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+    embed-resources: true
+    self-contained-math: true
+release: week 12
+---
+
+```{r}
+#| include: false
+# Data, model syntax and CACHED fits live in w12_models.R. FIML fits on these
+# data take ~2-3 min each, so they are fit once and stored in w12_cache/.
+source("w12_models.R")
+library(ggplot2)
+
+f3 <- function(x) formatC(x, digits = 3, format = "f")
+f2 <- function(x) formatC(x, digits = 2, format = "f")
+fmt_p <- function(p) ifelse(p < .001, "< .001", f3(p))
+
+fit1_0 <- get_fit("m1_meas0"); fit1_m <- get_fit("m1_meas"); fit1_s <- get_fit("m1_sem")
+fit2_0 <- get_fit("m2_meas0"); fit2_m <- get_fit("m2_meas"); fit2_s <- get_fit("m2_sem")
+
+fm <- c("chisq.scaled", "df.scaled", "pvalue.scaled", "cfi.robust", "tli.robust",
+        "rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust", "srmr")
+gfit <- function(fit) cached_fm(attr(fit, "nm"))
+
+# Global fit table for one model
+gtab <- function(fit) {
+  g <- gfit(fit)
+  data.frame(
+    Index = c("χ² (scaled)", "df", "p", "CFI (robust)", "TLI (robust)",
+              "RMSEA (robust)", "90% CI", "SRMR"),
+    Value = c(f2(g["chisq.scaled"]), g["df.scaled"], fmt_p(g["pvalue.scaled"]),
+              f3(g["cfi.robust"]), f3(g["tli.robust"]), f3(g["rmsea.robust"]),
+              paste0("[", f3(g["rmsea.ci.lower.robust"]), ", ",
+                     f3(g["rmsea.ci.upper.robust"]), "]"),
+              f3(g["srmr"])))
+}
+# Side-by-side comparison of several models
+ctab <- function(fits, labels) {
+  g <- sapply(fits, gfit)
+  data.frame(Model = labels, df = g["df.scaled", ],
+             `χ²` = f2(g["chisq.scaled", ]), CFI = f3(g["cfi.robust", ]),
+             RMSEA = f3(g["rmsea.robust", ]), SRMR = f3(g["srmr", ]),
+             check.names = FALSE)
+}
+# Display labels for latent/observed variables on the slides (model syntax keeps short names)
+vlab <- c(stress = "Stress.Res", anx = "Math.Anx", math = "Math.Sc", gm = "Growth.Mind",
+          ind = "Indirect: Stress.Res → Math.Anx → Math.Sc",
+          ind_gm_stress_anx = "Indirect: Growth.Mind → Stress.Res → Math.Anx",
+          ind_gm_anx_math = "Total via Math.Anx: Growth.Mind → Math.Sc")
+lab <- function(x) ifelse(x %in% names(vlab), vlab[x], x)
+
+# Standardized loadings (flag < .40)
+load_tab <- function(fit, facs) {
+  pe <- parameterEstimates(fit); ss <- standardizedSolution(fit)
+  k <- pe$op == "=~" & pe$lhs %in% facs
+  data.frame(Factor = lab(pe$lhs[k]), Item = pe$rhs[k], b = pe$est[k],
+             `β` = ss$est.std[k], `Resid. var` = 1 - ss$est.std[k]^2,
+             check.names = FALSE)
+}
+# Correlations among latent variables (and the observed Math.Sc)
+fcor_tab <- function(fit, vars) {
+  ss <- standardizedSolution(fit)
+  k <- ss$op == "~~" & ss$lhs %in% vars & ss$rhs %in% vars & ss$lhs != ss$rhs
+  data.frame(Pair = paste(lab(ss$lhs[k]), "↔", lab(ss$rhs[k])), r = ss$est.std[k],
+             lower = ss$ci.lower[k], upper = ss$ci.upper[k])
+}
+# Covariances among latent variables (and Math.Sc), laid out like lavaan's Covariances block
+cov_tab <- function(fit, vars) {
+  pe <- parameterEstimates(fit); ss <- standardizedSolution(fit)
+  k <- pe$op == "~~" & pe$lhs %in% vars & pe$rhs %in% vars & pe$lhs != pe$rhs
+  data.frame(Covariance = paste(lab(pe$lhs[k]), "↔", lab(pe$rhs[k])),
+             b = pe$est[k], SE = pe$se[k], z = pe$z[k], p = fmt_p(pe$pvalue[k]),
+             `β` = ss$est.std[k], check.names = FALSE)
+}
+# Structural paths + defined effects
+path_tab <- function(fit) {
+  pe <- parameterEstimates(fit); ss <- standardizedSolution(fit)
+  k <- pe$op %in% c("~", ":=")
+  data.frame(Effect = ifelse(pe$op[k] == "~", paste(lab(pe$rhs[k]), "→", lab(pe$lhs[k])), lab(pe$lhs[k])),
+             b = pe$est[k], SE = pe$se[k], p = fmt_p(pe$pvalue[k]),
+             `β` = ss$est.std[k], check.names = FALSE)
+}
+# Top modification indices of a given type
+mi_tab <- function(name, op, n = 6, within = NULL) {
+  mi <- cached_mi(name)
+  mi <- mi[mi$op == op & mi$lhs != mi$rhs, ]
+  if (!is.null(within)) mi <- mi[mi$lhs %in% within & mi$rhs %in% within, ]
+  mi$lhs <- lab(mi$lhs); mi$rhs <- lab(mi$rhs)
+  head(mi[, c("lhs", "op", "rhs", "mi", "epc", "sepc.all")], n)
+}
+mi_print <- function(m) knitr::kable(m, digits = 2, row.names = FALSE,
+  col.names = c("lhs", "", "rhs", "MI", "EPC", "std EPC"))
+
+# Colours and arrow used by the path diagrams
+oNG <- "#E07B1A"; dk <- "#3A3A3A"; BLU <- "#2C6FB5"
+ar <- grid::arrow(length = grid::unit(0.2, "cm"), type = "closed")
+red <- "#C0392B"                                   # negative estimates are drawn in red
+negcol <- function(x, base) ifelse(x < 0, red, base)
+
+# semPaths with (a) curved covariances among the nodes in `curved` (row numbers of `layout`),
+# bowing upward, and (b) negative edge labels in red
+sem_plot <- function(object, layout, curved = NULL, bow = 1.2, edge.label.position = 0.78, ...) {
+  p <- semPlot::semPaths(object, layout = layout, DoNotPlot = TRUE, ...)
+  E <- p$Edgelist
+  k <- E$bidirectional & E$from %in% curved & E$to %in% curved
+  cv <- rep(0, length(E$from))
+  cv[k] <- bow * ifelse(layout[E$to[k], 1] >= layout[E$from[k], 1], 1, -1)
+  lc <- ifelse(suppressWarnings(as.numeric(p$graphAttributes$Edges$labels)) < 0, red, "black")
+  semPlot::semPaths(object, layout = layout, curve = cv, edge.label.color = lc,
+                    edge.label.position = ifelse(k, 0.5, edge.label.position), ...)  # curved: label mid-arc
+}
+```
+
+# Agenda
+
+- Global Fit Review
+- Assumptions
+- The 2-step workflow
+- Examples
+- Reporting LVPA
+- Reporting workshop
+- Rlab
+
+## Review
+
+Lamaku > quizzes > W12 Global fit indices
+
+8 min (2 min / question)
+
+## What do we already know? {.smaller}
+
+| | **MVPA (Weeks 3-6)** | **CFA (Weeks 7-10)** |
+|:--|:--|:--|
+| **Models** | Paths among **measured** variables | Indicators reflecting **latent** variables |
+| **Identification** | df ≥ 0, recursive model | adds Scale, 3-indicator rule |
+| **Fit** | χ², CFI, RMSEA, SRMR | Same indices; residuals |
+| **Key results** | Direct, indirect, total effects | Loadings, residual variances, AVE, reliability |
+| **Report** | Standardized & unstandardized | same |
+| **Interpret** | Relationships between measured variables | convergent & discriminant validity |
+
+
+## LVPA Assumptions
+
+Check these before fitting
+
+- Correct specification: theory-based
+- Identification: df ≥ 0, every latent variable has a scale, enough indicators per latent variable
+- Adequate sample size: ≥ 10 cases per parameter
+- Continuous, multivariate normal indicators (or use MLR / DWLS for ordinal)
+- Linear relationships
+- Missing data MCAR or MAR (FIML)
+- Independent observations
+
+## Pisa Data - extended {.smaller}
+
+| Variable | What it measures | Indicators | Response scale |
+|:--|:--|:-:|:--|
+| Growth Mindset (`Growth.Mind`, latent) | Belief that ability can be developed, rather than being fixed | 4 | 4-point agreement |
+| Stress Resilience (`Stress.Res`, latent) | Ability to stay calm and cope when under pressure | 10 | 5-point |
+| Math Anxiety (`Math.Anx`, latent) | Worry, tension and helplessness about math | 6 | 4-point agreement |
+| Math Score (`Math.Sc`, observed) | Math achievement | 1 | continuous (÷ 100) |
+
+## Research Design Notes
+
+1. Students don't all see the same items.
+2. Sections can be absent by country.
+3. "Missing" has different meanings: not administered (by design) & non-response (all treated as NA).
+4. Some students have no questionnaire data (about 1,900 of GBR's 12,972): removed.
+5. Plausible values: we average them; for publication, run a model of each one and pool the results.
+
+::: {.content-visible when-profile="teacher"}
+::: {.notes}
+The pairwise coverage was uneven but adequate: the thinnest pair of Stress.Res items was observed together for about 18% of the full GBR sample. Run `lavInspect(fit, "coverage")` to show students. The slides use a random sample of 1,000 students from the 11,037 who answered at least one item.
+:::
+:::
+
+## Pisa Data - extended {.smaller}
+
+PISA 2022, Great Britain: a **random sample of *N* = `r nrow(pisa)`** students (seeded; from 11,037 who answered at least one item). 
+
+| Assumption | Our data |
+|:--|:--|
+| Sample size | `r nrow(pisa)` vs. ~40-50 parameters: fine |
+| Continuous & normal | 4- and 5-point Likert items. **MLR** (robust SEs and χ²) |
+| Missing data | Missing MCAR - use **FIML** |
+| Independence | One response / student |
+
+::: {.content-visible when-profile="teacher"}
+::: {.notes}
+Missing codes 7, 8, 9, 95, 97, 98, 99 were recoded to NA in the data-prep script (rlabs/pisa_data_wrangle_anx_stress_growth.R); the ~1,900 students with no questionnaire data were removed. USA is not used because Stress.Res was not administered there (all 97).
+:::
+:::
+
+## Pisa Data - extended {.smaller}
+
+- **Math.Anx (6 items):** higher = more anxious (reversed from the raw file)
+- **Growth.Mind (4 items):** higher = stronger Growth.Mind (reversed from the raw file)
+- **Stress.Res (10 items):**  higher = more resilient (same as raw file)
+- **Math.Sc:** mean of 10 plausible values, divided by 100 
+
+
+## The two-step workflow
+
+1. Measurement model first:
+   - Identification → global fit → local fit → (modify) → interpret
+   - If it fits poorly, no structural result is trustworthy.
+2. Then add structure
+   - Identification → global fit → local fit → interpret
+
+## Identification checklist {.smaller}
+
+| Rule | From | Why |
+|:--|:--|:--|
+| df ≥ 0 | MVPA | Can't estimate more than the information supplies |
+| Every latent variable has a scale (marker or fixed variance) | CFA | Otherwise infinitely many solutions |
+| ≥ 3 indicators per factor | CFA | Smallest just-identified one-factor model |
+| Recursive structural model | MVPA | Always identified if measurement is |
+
+Information = p(p + 1) / 2, p = number of measured variables. Latent variables add none.
+
+# Ex 1: 
+
+**RQ:** Do students higher in Stress.Res report *lower Math.Anx*, and is lower Math.Anx associated with *higher Math.Sc*? 
+
+
+## The model
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 13
+#| fig-height: 3.8
+# Indicators laid out left to right: 10 stress items, 6 anxiety items, then Math.Sc
+xs <- seq(0, 9)                 # stress items
+xa <- seq(11.5, 16.5)           # anxiety items
+cs <- mean(xs); ca <- mean(xa); cm <- 21
+items <- rbind(data.frame(x = xs, lab = str_items, f = "stress"),
+               data.frame(x = xa, lab = anx_items, f = "anx"))
+items$y <- -2.6
+lat <- data.frame(x = c(cs, ca), y = 0, lab = c("Stress.Res", "Math.Anx"))
+r <- 1.15                          # radius of the latent-variable circles
+th <- seq(0, 2 * pi, length.out = 100)
+circ <- do.call(rbind, lapply(seq_len(nrow(lat)), function(i)
+  data.frame(g = i, x = lat$x[i] + r * cos(th), y = lat$y[i] + r * sin(th))))
+# loadings: latent -> each item (first one is the marker, fixed to 1)
+ld <- data.frame(x = ifelse(items$f == "stress", cs, ca), y = -1.1,
+                 xend = items$x, yend = -2.2)
+mk <- data.frame(x = c(xs[1], xa[1]) + c(0.25, 0.25), y = -1.5, lab = "1")
+ggplot() +
+  geom_segment(data = ld, aes(x = x, y = y, xend = xend, yend = yend),
+               colour = dk, arrow = ar) +
+  geom_text(data = mk, aes(x = x, y = y, label = lab), colour = dk, size = 3.6,
+            fontface = "italic") +
+  annotate("segment", x = cs + r + 0.1, xend = ca - r - 0.1, y = 0, yend = 0,
+           colour = oNG, linewidth = 1.2, arrow = ar) +
+  annotate("segment", x = ca + r + 0.1, xend = cm - 1.6, y = 0, yend = 0,
+           colour = oNG, linewidth = 1.2, arrow = ar) +
+  annotate("text", x = (cs + ca) / 2, y = 0.5, label = "a", colour = oNG, size = 5,
+           fontface = "italic") +
+  annotate("text", x = (ca + cm) / 2, y = 0.5, label = "b", colour = oNG, size = 5,
+           fontface = "italic") +
+  geom_polygon(data = circ, aes(x = x, y = y, group = g), fill = BLU, colour = BLU) +
+  geom_text(data = lat, aes(x = x, y = y, label = lab), colour = "white", size = 4.4) +
+  geom_label(data = data.frame(x = cm, y = 0, lab = "Math.Sc\n(observed)"),
+             aes(x = x, y = y, label = lab), fill = dk, colour = "white", size = 4.2,
+             label.padding = grid::unit(0.5, "lines")) +
+  # residual variances (θ): small circle with an arrow into each indicator
+  geom_segment(data = items, aes(x = x, xend = x), y = -3.45, yend = -3.0,
+               colour = dk, arrow = ar) +
+  geom_point(data = items, aes(x = x), y = -3.85, shape = 21, size = 8.5,
+             fill = "white", colour = dk, stroke = 0.8) +
+  geom_text(data = items, aes(x = x), y = -3.85, label = "ε", colour = dk, size = 4.4,
+            fontface = "italic") +
+  geom_label(data = items, aes(x = x, y = y, label = lab), fill = "#7A7A7A",
+             colour = "white", size = 3.9, label.padding = grid::unit(0.3, "lines")) +
+  coord_equal(clip = "off") + expand_limits(x = c(-0.5, 22.5), y = c(-4.4, 0.9)) + theme_void()
+```
+
+*N* = `r nrow(pisa)` (random sample); items treated as continuous; MLR + FIML.
+
+::: {.content-visible when-profile="teacher"}
+::: {.notes}
+Math.Sc is a single observed variable (mean of plausible values). It is not a latent variable, so it has no loadings. Its variance is a free parameter in the measurement model.
+:::
+:::
+
+## Ex 1: Measurement model diagram
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 15
+#| fig-height: 5.6
+# CFA measurement model, no estimates: loadings, residuals, and covariances (curved) among
+# the two latent variables and the observed Math.Sc
+xs <- seq(0, 9); xa <- seq(11.5, 16.5)
+cs <- mean(xs); ca <- mean(xa); cx <- (cs + ca) / 2
+items <- data.frame(item = c(str_items, anx_items), x = c(xs, xa),
+                    f = rep(c("s", "a"), c(10, 6)), y = -2.6)
+items$fx <- ifelse(items$f == "s", cs, ca)
+r <- 1.15
+th <- seq(0, 2 * pi, length.out = 100)
+lat <- data.frame(x = c(cs, ca), y = 0, lab = c("Stress.Res", "Math.Anx"))
+circ <- do.call(rbind, lapply(1:2, function(i)
+  data.frame(g = i, x = lat$x[i] + r * cos(th), y = lat$y[i] + r * sin(th))))
+mth <- c(cx, 3.9)
+ux <- items$x - items$fx; len <- sqrt(ux^2 + items$y^2)
+ldseg <- data.frame(x = items$fx + r * ux / len, y = r * items$y / len,
+                    xend = items$x, yend = items$y + 0.4)
+mk <- data.frame(x = c(xs[1], xa[1]) + 0.25, y = -1.5, lab = "1")
+pol <- function(cx0, ang) c(cx0 + r * cos(ang * pi / 180), r * sin(ang * pi / 180))
+cov_seg <- data.frame(
+  rbind(c(pol(cs, 35),  pol(ca, 145), -0.15),
+        c(pol(cs, 70),  mth + c(-0.9, -0.45), -0.2),
+        c(pol(ca, 110), mth + c(0.9, -0.45),   0.2)))
+names(cov_seg) <- c("x", "y", "xend", "yend", "curv")
+ggplot() +
+  geom_segment(data = ldseg, aes(x = x, y = y, xend = xend, yend = yend),
+               colour = dk, arrow = ar) +
+  geom_text(data = mk, aes(x = x, y = y, label = lab), colour = dk, size = 3.8, fontface = "italic") +
+  lapply(seq_len(nrow(cov_seg)), function(i)
+    geom_curve(data = cov_seg[i, ], aes(x = x, y = y, xend = xend, yend = yend),
+               curvature = cov_seg$curv[i], colour = oNG, linewidth = 1.1, ncp = 8,
+               arrow = grid::arrow(length = grid::unit(0.18, "cm"), ends = "both", type = "closed"))) +
+  geom_polygon(data = circ, aes(x = x, y = y, group = g), fill = BLU, colour = BLU) +
+  geom_text(data = lat, aes(x = x, y = y, label = lab), colour = "white", size = 4.6) +
+  geom_label(data = data.frame(x = mth[1], y = mth[2], lab = "Math.Sc"), aes(x = x, y = y, label = lab),
+             fill = dk, colour = "white", size = 4.4, label.padding = grid::unit(0.5, "lines")) +
+  geom_segment(data = items, aes(x = x, xend = x), y = -3.25, yend = -3.0, colour = dk, arrow = ar) +
+  geom_point(data = items, aes(x = x), y = -3.7, shape = 21, size = 9, fill = "white",
+             colour = dk, stroke = 0.8) +
+  geom_text(data = items, aes(x = x), y = -3.7, label = "ε", colour = dk, size = 4.4, fontface = "italic") +
+  geom_label(data = items, aes(x = x, y = y, label = item), fill = "#7A7A7A", colour = "white",
+             size = 3.9, label.padding = grid::unit(0.3, "lines")) +
+  coord_equal(clip = "off") + expand_limits(x = c(-0.5, 22.5), y = c(-4.6, 4.6)) + theme_void()
+```
+
+Curved orange arrows = covariances among the latent variables and Math.Sc (no directional paths); ε = residual variances; the first loading of each factor is fixed to 1.
+
+
+## Ex 1: Measurement model: information
+
+Work out for the measurement model: the **measured variables**, the pieces of **information** we have.
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+Measured variables: 10 Stress.Res + 6 Math.Anx + 1 Math.Sc = **17**
+
+Information: 17(18)/2 = **153**
+:::
+:::
+
+## Ex 1: Parameters Used {.smaller}
+
+Now determine the **free parameters (q)**, and the **df**.
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+| Type | Count |
+|:--|:-:|
+| Loadings (after fixing one marker per factor) | 9 + 5 = 14 |
+| Residual variances of indicators (θ) | 16 |
+| Variances of latent variables (Stress.Res, Math.Anx) | 2 |
+| Variance of Math.Sc | 1 |
+| Covariances: Stress.Res↔ Math.Anx, Stress.Res↔ Math.Sc, Math.Anx↔ Math.Sc | 3 |
+
+q = 14 + 16 + 2 + 1 + 3 = **36**; df = 153 − 36 = **117**. Over-identified.
+
+:::
+:::
+
+## Ex 1: Specify {.smaller}
+
+```r
+meas_model <- '
+  # measurement model
+  stress =~ str1 + str2 + str3 + str4 + str5 + str6 + str7 + str8 + str9 + str10
+  anx    =~ anx1 + anx2 + anx3 + anx4 + anx5 + anx6
+
+  # observed math score covaries with each factor
+  math ~~ stress + anx
+  stress ~~ anx
+'
+```
+
+- `=~` measured by; the first loading is fixed to 1 by default (marker).
+- `~~` between two variables is a **covariance**: `stress ~~ anx` makes explicit that the two factors covary (no direction).
+- `math ~~ stress + anx`: Math.Sc is observed & covaries with each factor. 
+- We must include all indicators/latent vars that will be in the structure model
+
+## Ex 1: Global fit {.smaller}
+
+```{r}
+#| echo: false
+knitr::kable(gtab(fit1_0), row.names = FALSE, align = "lr")
+```
+
+## Practice: Evaluate how good the fit is
+
+
+## Ex 1: Local fit: modification indices
+
+```{r}
+#| echo: false
+mi_print(mi_tab("m1_meas0", "~~", 8, c(str_items, anx_items)))
+```
+
+- MI = expected χ² drop (1 df) if that residual covariance were freed.
+- MI > 3.84 is "significant", but with *N* = `r nrow(pisa)` nearly everything is.
+- Look for **big** and **explainable**: same factor, same wording, adjacent items.
+
+
+## Ex 1: Modify one at a time
+
+- Free the largest **defensible** residual covariance, refit, recheck MIs.
+- Step = free the parameter, rerun the model, rerun the fit indices, rerun the MI. 
+
+```{r}
+#| echo: false
+st_fits <- list(fit1_0, get_fit("m1_step1"), get_fit("m1_step2"), fit1_m)
+st_mi <- function(name, l, r) { m <- cached_mi(name); m$mi[m$lhs == l & m$rhs == r & m$op == "~~"] }
+st_mis <- c(NA, st_mi("m1_meas0", "anx5", "anx6"), st_mi("m1_step1", "str6", "str9"),
+            st_mi("m1_step2", "str5", "str6"))
+g <- sapply(st_fits, gfit)
+data.frame(Step = 0:3,
+           Freed = c("none", "anx5 ~~ anx6", "str6 ~~ str9", "str5 ~~ str6"),
+           MI = ifelse(is.na(st_mis), "", formatC(st_mis, format = "f", digits = 0)),
+           CFI = f3(g["cfi.robust", ]), RMSEA = f3(g["rmsea.robust", ]),
+           SRMR = f3(g["srmr", ])) |>
+  knitr::kable(row.names = FALSE, align = "rlrrrr")
+```
+
+## Ex 1: Final measurement model: diagram
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 16
+#| fig-height: 5.4
+library(semPlot)
+# Layout: the two latent variables side by side, each above its own indicators;
+# Math.Sc (observed) centred above them. Row order = order of variables in the model.
+xs <- seq(-1, 0.1, length.out = 10); xa <- seq(0.4, 0.9, length.out = 6)
+lay <- rbind(cbind(xs, -1), cbind(xa, -1),
+             c((mean(xs) + mean(xa)) / 2, 1.7), c(mean(xs), 0.6), c(mean(xa), 0.6))
+sem_plot(fit1_m, what = "std", layout = lay, curved = 17:19,
+         nodeLabels = c(str_items, anx_items, "Math.Sc", "Stress.Res", "Math.Anx"),
+         residuals = TRUE, intercepts = FALSE, exoVar = FALSE, exoCov = TRUE,
+         sizeMan = 3.8, sizeMan2 = 3.2, sizeLat = 9, sizeLat2 = 9,
+         label.cex = 0.8, label.scale = FALSE, edge.label.cex = 0.7, edge.label.position = 0.78,
+         esize = 1.2, asize = 1.5, edge.color = "#3A3A3A",
+         color = list(lat = "#2C6FB5", man = "#DDDDDD"), label.color = "black",
+         mar = c(4, 3, 8, 3), nCharNodes = 0, fade = FALSE,
+         residScale = 4, curvePivot = FALSE, curveAdjacent = TRUE)
+```
+
+Standardized estimates. Curved double-headed arrows = covariances (correlations) among Stress.Res, Math.Anx and Math.Sc; loops = residual variances; the short arrows between neighbouring items are the three residual covariances. Negative estimates in red.
+
+## Ex 1: Final measurement model: diagram (labelled version)
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 15
+#| fig-height: 6.4
+# Standardized estimates from the final measurement model
+sol <- standardizedSolution(fit1_m)
+ld_est <- setNames(sol$est.std[sol$op == "=~"], sol$rhs[sol$op == "=~"])
+all_items <- c(str_items, anx_items)
+rv <- sol[sol$op == "~~" & sol$lhs == sol$rhs & sol$lhs %in% all_items, ]
+rv_est <- setNames(rv$est.std, rv$lhs)
+rc <- sol[sol$op == "~~" & sol$lhs != sol$rhs & sol$lhs %in% all_items & sol$rhs %in% all_items, ]
+lc <- sol[sol$op == "~~" & sol$lhs != sol$rhs & !(sol$lhs %in% all_items), ]
+lcv <- function(a, b) lc$est.std[(lc$lhs == a & lc$rhs == b) | (lc$lhs == b & lc$rhs == a)]
+
+xs <- seq(0, 9); xa <- seq(11.5, 16.5)
+cs <- mean(xs); ca <- mean(xa); cx <- (cs + ca) / 2
+items <- data.frame(item = all_items, x = c(xs, xa), f = rep(c("s", "a"), c(10, 6)), y = -2.6)
+items$fx <- ifelse(items$f == "s", cs, ca)
+items$ld <- ld_est[items$item]; items$rv <- rv_est[items$item]
+items$marker <- items$item %in% c("str1", "anx1")
+
+r <- 1.15                                  # latent circle radius
+th <- seq(0, 2 * pi, length.out = 100)
+lat <- data.frame(x = c(cs, ca), y = 0, lab = c("Stress.Res", "Math.Anx"))
+circ <- do.call(rbind, lapply(1:2, function(i)
+  data.frame(g = i, x = lat$x[i] + r * cos(th), y = lat$y[i] + r * sin(th))))
+mth <- c(cx, 3.9)                          # Math.Sc box centre
+
+# loading arrows (from circle edge to item top) and their labels (near the item)
+ux <- items$x - items$fx; uy <- items$y - 0; len <- sqrt(ux^2 + uy^2)
+ldseg <- data.frame(x = items$fx + r * ux / len, y = r * uy / len,
+                    xend = items$x, yend = items$y + 0.4, marker = items$marker)
+ldlab <- data.frame(x = ldseg$x + 0.78 * (ldseg$xend - ldseg$x),
+                    y = ldseg$y + 0.78 * (ldseg$yend - ldseg$y), lab = f2(items$ld),
+                    col = negcol(items$ld, "black"))
+
+# latent / math covariances: curved double-headed arrows (negative curvature bows up/left)
+pol <- function(cx0, ang) c(cx0 + r * cos(ang * pi / 180), r * sin(ang * pi / 180))
+cov_seg <- data.frame(
+  rbind(c(pol(cs, 35),  pol(ca, 145), -0.15),                  # Stress.Res <-> Math.Anx
+        c(pol(cs, 70),  mth + c(-0.9, -0.45), -0.2),           # Stress.Res <-> Math.Sc
+        c(pol(ca, 110), mth + c(0.9, -0.45),   0.2)))          # Math.Anx  <-> Math.Sc
+names(cov_seg) <- c("x", "y", "xend", "yend", "curv")
+cov_seg$est <- c(lcv("stress", "anx"), lcv("stress", "math"), lcv("anx", "math"))
+cov_seg$col <- negcol(cov_seg$est, oNG)
+# label on the arc: chord midpoint pushed out to the bowed side
+d <- cbind(cov_seg$xend - cov_seg$x, cov_seg$yend - cov_seg$y); dl <- sqrt(rowSums(d^2))
+cov_seg$lx <- (cov_seg$x + cov_seg$xend) / 2 + (-d[, 2] / dl) * (-cov_seg$curv) * dl * 0.42
+cov_seg$ly <- (cov_seg$y + cov_seg$yend) / 2 + ( d[, 1] / dl) * (-cov_seg$curv) * dl * 0.42
+
+# residual covariances: brackets under the residual circles
+xi <- setNames(items$x, items$item)
+rcb <- data.frame(x1 = xi[rc$lhs], x2 = xi[rc$rhs], est = rc$est.std)
+rcb$h <- 0.55 + 0.45 * (rcb$x2 - rcb$x1 > 1.5)
+rcb$y0 <- -4.35
+brk <- do.call(rbind, lapply(seq_len(nrow(rcb)), function(i)
+  with(rcb[i, ], data.frame(g = i, x = c(x1, x1, x2, x2), y = c(y0, y0 - h, y0 - h, y0)))))
+
+ggplot() +
+  geom_segment(data = ldseg, aes(x = x, y = y, xend = xend, yend = yend, linetype = marker),
+               colour = dk, arrow = ar, show.legend = FALSE) +
+  scale_linetype_manual(values = c(`FALSE` = "solid", `TRUE` = "dashed")) +
+  geom_label(data = ldlab, aes(x = x, y = y, label = lab, colour = col), size = 3.4, fill = "white",
+             label.size = 0, label.padding = grid::unit(0.08, "lines")) +
+  scale_colour_identity() +
+  lapply(seq_len(nrow(cov_seg)), function(i)
+    geom_curve(data = cov_seg[i, ], aes(x = x, y = y, xend = xend, yend = yend),
+               curvature = cov_seg$curv[i], colour = oNG, linewidth = 1, ncp = 8,
+               arrow = grid::arrow(length = grid::unit(0.18, "cm"), ends = "both", type = "closed"))) +
+  geom_label(data = cov_seg, aes(x = lx, y = ly, label = f2(est), colour = col), size = 4,
+             fill = "white", label.size = 0, label.padding = grid::unit(0.1, "lines")) +
+  geom_polygon(data = circ, aes(x = x, y = y, group = g), fill = BLU, colour = BLU) +
+  geom_text(data = lat, aes(x = x, y = y, label = lab), colour = "white", size = 4.4) +
+  geom_label(data = data.frame(x = mth[1], y = mth[2], lab = "Math.Sc"), aes(x = x, y = y, label = lab),
+             fill = dk, colour = "white", size = 4.2, label.padding = grid::unit(0.5, "lines")) +
+  geom_segment(data = items, aes(x = x, xend = x), y = -3.25, yend = -3.0,
+               colour = dk, arrow = ar) +
+  geom_point(data = items, aes(x = x), y = -3.7, shape = 21, size = 11, fill = "white",
+             colour = dk, stroke = 0.8) +
+  geom_text(data = items, aes(x = x, label = f2(rv)), y = -3.7, size = 3.1, colour = dk) +
+  geom_label(data = items, aes(x = x, y = y, label = item), fill = "#7A7A7A", colour = "white",
+             size = 3.9, label.padding = grid::unit(0.3, "lines")) +
+  geom_path(data = brk, aes(x = x, y = y, group = g), colour = oNG, linewidth = 0.9,
+            arrow = grid::arrow(length = grid::unit(0.16, "cm"), ends = "both", type = "closed")) +
+  geom_label(data = transform(rcb, x = (x1 + x2) / 2, y = y0 - h), aes(x = x, y = y, label = f2(est), colour = negcol(est, oNG)),
+             size = 3.8, fill = "white", label.size = 0,
+             label.padding = grid::unit(0.1, "lines")) +
+  coord_equal(clip = "off") + expand_limits(x = c(-0.5, 22.5), y = c(-6.2, 4.6)) + theme_void()
+```
+
+- Standardized estimates.
+
+## Ex 1: Final measurement model fit {.smaller}
+
+```{r}
+#| echo: false
+ctab(list(fit1_0, fit1_m), c("Initial", "+ 3 residual covariances")) |>
+  knitr::kable(row.names = FALSE, align = "lrrrrr")
+```
+
+- Now df = `r gfit(fit1_m)["df.scaled"]` (three more parameters).
+- CFI = `r f3(gfit(fit1_m)["cfi.robust"])` (acceptable), RMSEA = `r f3(gfit(fit1_m)["rmsea.robust"])` (acceptable), SRMR = `r f3(gfit(fit1_m)["srmr"])` (acceptable).
+- All three are in the acceptable (although not "good") range, so we can proceed to the structure model.
+
+
+## Ex 1: Measurement model: Interpret {.smaller}
+
+```{r}
+#| echo: false
+lt <- load_tab(fit1_m, c("stress", "anx"))
+knitr::kable(lt, digits = 2, row.names = FALSE, align = "llrrr")
+```
+
+::: {.content-visible when-profile="teacher"}
+- Standardized loadings ranged from `r f2(min(lt$β))` to `r f2(max(lt$β))`. Math.Anx items load strongly (about .7-.9); Stress.Res items are more mixed. These are *standardized*: SD change in the item per SD of the factor.
+:::
+
+## Practice
+
+How do you interpret these loadings? 
+
+## Ex 1: Factor relationships {.smaller}
+
+```{r}
+#| echo: false
+fcor_tab(fit1_m, c("stress", "anx", "math")) |>
+  knitr::kable(digits = 2, row.names = FALSE, col.names = c("Pair", "r", "95% CI lower", "95% CI upper"))
+```
+Practice: How do you interpret the factor correlations? 
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+
+- **Discriminant validity:** Moderate correlations between Stress.Res and Math.Anx, suggesting distinct constructs.
+- Signs match theory? Negative relationship between Stress.Res ↔ Math.Anx is expected
+- *Observed* Math.Sc ↔ latent correlations are also weak/moderate
+:::
+:::
+
+## Ex 1 structure model
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 12
+#| fig-height: 4.2
+# Structural part only: no indicators or loadings. Paths a and b; zeta = disturbances.
+xp <- c(0, 6.5, 13); rr <- 1.25
+circ1 <- do.call(rbind, lapply(1:2, function(i) {
+  th <- seq(0, 2 * pi, length.out = 100)
+  data.frame(g = i, x = xp[i] + rr * cos(th), y = rr * sin(th))
+}))
+LIM <- "#6FA80F"
+pl1 <- function(x, y, l, col = oNG, ...) annotate("text", x = x, y = y, label = l, colour = col,
+                                                  size = 6, parse = TRUE, ...)
+ggplot() +
+  annotate("segment", x = xp[1] + rr + 0.1, xend = xp[2] - rr - 0.1, y = 0, yend = 0,
+           colour = oNG, linewidth = 1.3, arrow = ar) +
+  annotate("segment", x = xp[2] + rr + 0.1, xend = xp[3] - 1.2, y = 0, yend = 0,
+           colour = oNG, linewidth = 1.3, arrow = ar) +
+  pl1(mean(xp[1:2]), 0.6, "a", fontface = "italic") + pl1(mean(xp[2:3]), 0.6, "b", fontface = "italic") +
+  annotate("segment", x = xp[2], xend = xp[2], y = 3.0, yend = rr + 0.1, colour = LIM, linewidth = 1.1, arrow = ar) +
+  annotate("segment", x = xp[3], xend = xp[3], y = 3.0, yend = 0.75, colour = LIM, linewidth = 1.1, arrow = ar) +
+  pl1(xp[2], 3.45, "zeta[Anx]", LIM) + pl1(xp[3], 3.45, "zeta[Sc]", LIM) +
+  geom_polygon(data = circ1, aes(x = x, y = y, group = g), fill = BLU, colour = BLU) +
+  annotate("text", x = xp[1:2], y = 0, label = c("Stress.Res", "Math.Anx"), colour = "white", size = 5.2) +
+  geom_label(data = data.frame(x = xp[3], y = 0, lab = "Math.Sc"), aes(x = x, y = y, label = lab),
+             fill = dk, colour = "white", size = 5, label.padding = grid::unit(0.6, "lines")) +
+  coord_equal(clip = "off") + expand_limits(x = c(-1.6, 14.6), y = c(-1.6, 4.2)) + theme_void()
+```
+
+- Structural part only 
+- The indicators and their loadings are unchanged from the measurement model (not drawn).
+
+
+## Ex 1: Structural model, identification {.smaller}
+
+Start from the measurement model (q = 39, df = 114) and determine this changes the identification.
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+| Change | Parameters |
+|:--|:-:|
+| Remove covariances Stress.Res↔ Math.Anx, Stress.Res↔ Math.Sc, Math.Anx↔ Math.Sc | −3 |
+| Add paths a (Stress.Res → Math.Anx) and b (Math.Anx → Math.Sc) | +2 |
+| Variances of Math.Anx and Math.Sc become **disturbances** (still free, same count) | 0 |
+:::
+:::
+
+
+## Pause: Practice
+
+1. What does the structural model theorize about the Stress.Res, math.anx, and Math.Sc relationship?
+
+
+## Ex 1: Structural model: Specify {.smaller}
+
+```r
+sem_model <- '
+  # measurement model (same as Step 1)
+  stress =~ str1 + str2 + str3 + str4 + str5 + str6 + str7 + str8 + str9 + str10
+  anx    =~ anx1 + anx2 + anx3 + anx4 + anx5 + anx6
+
+  # residual covariances freed in Step 1
+  anx5 ~~ anx6
+  str6 ~~ str9
+  str5 ~~ str6
+
+  # structural paths (replace the covariances among stress, anx, math)
+  anx  ~ a*stress
+  math ~ b*anx
+
+  # indirect effect
+  ind := a*b
+'
+```
+
+- `~` is a regression; `a*`, `b*` label paths; `:=` defines the indirect effect.
+- The residual covariances from Step 1 **stay in**: the measurement model doesn't change.
+
+## Ex 1: Global fit
+
+```{r}
+#| echo: false
+ctab(list(fit1_m, fit1_s), c("Measurement", "Structural")) |>
+  knitr::kable(row.names = FALSE, align = "lrrrrr")
+```
+
+```{r}
+#| echo: false
+#| warning: false
+lrt1 <- suppressWarnings(lavTestLRT(fit1_s, fit1_m, method = "satorra.bentler.2001"))
+```
+
+Scaled Δχ²(`r lrt1[2, "Df diff"]`) = `r f2(lrt1[2, "Chisq diff"])`, *p* `r ifelse(lrt1[2, "Pr(>Chisq)"] < .001, "< .001", paste("=", f3(lrt1[2, "Pr(>Chisq)"])))`
+
+::: {.fragment}
+- A **significant** Δχ² would mean the structural model fits worse than the measurement model (non-sig: not worse - good)
+- Also look at the *change in CFI and RMSEA* (here, essentially none).
+:::
+
+## Ex 1: Local fit: MI (opt)
+
+```{r}
+#| echo: false
+mi_print(mi_tab("m1_sem", "~", 6))
+```
+
+- Look for omitted **paths** (`~`), not just residual covariances.
+- Compare with the Δχ² result: the only structural thing the model leaves out is `math ~ stress`.
+- Don't add it just because MI says so: it must make **theoretical** sense.
+
+
+## Ex 1: Interpret: path coefficients diagram
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 16
+#| fig-height: 4.6
+# Same layout as the measurement diagram, with Math.Sc moved into the chain
+xs <- seq(-1, 0.1, length.out = 10); xa <- seq(0.4, 0.9, length.out = 6)
+lay_s <- rbind(cbind(xs, -1), cbind(xa, -1),
+               c(1.35, 0.6), c(mean(xs), 0.6), c(mean(xa), 0.6))
+pm_s <- semPlotModel(fit1_s)
+man_s <- pm_s@Vars$name[pm_s@Vars$manifest]
+# hide the residual covariances between items (they would be drawn through neighbouring items)
+pm_s@Pars <- pm_s@Pars[!(pm_s@Pars$edge == "<->" & pm_s@Pars$lhs %in% man_s &
+                           pm_s@Pars$rhs %in% man_s & pm_s@Pars$lhs != pm_s@Pars$rhs), ]
+sem_plot(pm_s, what = "std", layout = lay_s,
+         nodeLabels = c(str_items, anx_items, "Math.Sc", "Stress.Res", "Math.Anx"),
+         residuals = FALSE, intercepts = FALSE, exoVar = FALSE,
+         sizeMan = 3.8, sizeMan2 = 3.2, sizeLat = 9, sizeLat2 = 9,
+         label.cex = 0.8, label.scale = FALSE, edge.label.cex = 0.8, edge.label.position = 0.78,
+         esize = 1.2, asize = 1.5, edge.color = "#3A3A3A",
+         color = list(lat = "#2C6FB5", man = "#DDDDDD"), label.color = "black",
+         mar = c(4, 3, 4, 3), nCharNodes = 0, fade = FALSE)
+```
+
+- Standardized estimates (β). 
+- Residual variances and the three residual covariances from Step 1 are modeled but not drawn due to space.
+
+
+## Ex 1: Interpret: path {.smaller}
+
+```{r}
+#| echo: false
+pt1 <- path_tab(fit1_s)
+knitr::kable(pt1, digits = 3, row.names = FALSE, align = "lrrrr")
+```
+
+- β is the standardized result, but we report both.
+- Indirect effect `ind` = a·b. Its CI should be **bootstrapped**.
+
+::: {.content-visible when-profile="teacher"}
+::: {.notes}
+- Students higher in Stress.Res reported **lower** Math.Anx (*b* = `r f2(pt1$b[1])`, β = `r f2(pt1$β[1])`).
+- Higher Math.Anx was associated with **lower** Math.Sc (*b* = `r f2(pt1$b[2])`, i.e. `r f2(abs(pt1$b[2]) * 100)` points per unit, β = `r f2(pt1$β[2])`).
+- Indirect effect β = `r f2(pt1$β[3])`: positive and small. Both paths are negative, so the product is positive (higher Stress.Res → lower Math.Anx → higher Math.Sc), and it is small because it multiplies two modest numbers.
+- Associations only: cross-sectional, so "affects" is not supported by these data alone.
+:::
+:::
+
+## Ex 1: Interpret: R²
+
+```{r}
+#| echo: false
+r2 <- lavInspect(fit1_s, "r2")
+data.frame(Variable = c("Math.Anx (latent)", "Math.Sc"),
+           `R²` = f2(r2[c("anx", "math")]), check.names = FALSE) |>
+  knitr::kable(row.names = FALSE, align = "lr")
+```
+
+- R² = share of variance explained by predictors; the rest is the disturbance.
+- Is `r f2(r2["math"])` meaningful for Math.Sc in education research?
+
+# Example 2
+
+**RQ:** Does Growth.Mind relate to lower Math.Anx *directly* and *through* Stress.Res, and does Math.Anx carry the link to Math.Sc?
+
+## Ex 2: The model
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 16
+#| fig-height: 5.2
+# Indicators left to right: 4 growth mindset, 10 stress, 6 anxiety items, then Math.Sc
+xg <- seq(0, 3); xs <- seq(5, 14); xa <- seq(16.5, 21.5)
+cg <- mean(xg); cs <- mean(xs); ca <- mean(xa); cm <- 25.5
+items <- rbind(data.frame(x = xg, lab = gm_items, f = "g"),
+               data.frame(x = xs, lab = str_items, f = "s"),
+               data.frame(x = xa, lab = anx_items, f = "a"))
+items$y <- -2.6
+items$fx <- c(g = cg, s = cs, a = ca)[items$f]
+lat <- data.frame(x = c(cg, cs, ca), y = 0, lab = c("Growth.Mind", "Stress.Res", "Math.Anx"))
+r <- 1.15
+th <- seq(0, 2 * pi, length.out = 100)
+circ <- do.call(rbind, lapply(1:3, function(i)
+  data.frame(g = i, x = lat$x[i] + r * cos(th), y = lat$y[i] + r * sin(th))))
+ux <- items$x - items$fx; len <- sqrt(ux^2 + 2.6^2)
+ld <- data.frame(x = items$fx + r * ux / len, y = -r * 2.6 / len, xend = items$x, yend = -2.2)
+mk <- data.frame(x = c(xg[1], xs[1], xa[1]) + 0.25, y = -1.5, lab = "1")
+pl <- function(x, y, l) annotate("text", x = x, y = y, label = l, colour = oNG, size = 5, fontface = "italic")
+ggplot() +
+  geom_segment(data = ld, aes(x = x, y = y, xend = xend, yend = yend), colour = dk, arrow = ar) +
+  geom_text(data = mk, aes(x = x, y = y, label = lab), colour = dk, size = 3.6, fontface = "italic") +
+  annotate("segment", x = cg + r + 0.1, xend = cs - r - 0.1, y = 0, yend = 0, colour = oNG, linewidth = 1.2, arrow = ar) +
+  annotate("segment", x = cs + r + 0.1, xend = ca - r - 0.1, y = 0, yend = 0, colour = oNG, linewidth = 1.2, arrow = ar) +
+  annotate("segment", x = ca + r + 0.1, xend = cm - 1.6, y = 0, yend = 0, colour = oNG, linewidth = 1.2, arrow = ar) +
+  annotate("curve", x = cg, xend = ca, y = r + 0.05, yend = r + 0.05, curvature = -0.35,
+           colour = oNG, linewidth = 1.2, arrow = ar) +
+  pl((cg + cs) / 2, 0.5, "g1") + pl((cs + ca) / 2, 0.5, "s") + pl((ca + cm) / 2, 0.5, "b") +
+  pl((cg + ca) / 2, 3.1, "g2") +
+  geom_polygon(data = circ, aes(x = x, y = y, group = g), fill = BLU, colour = BLU) +
+  geom_text(data = lat, aes(x = x, y = y, label = lab), colour = "white", size = 4.2) +
+  geom_label(data = data.frame(x = cm, y = 0, lab = "Math.Sc\n(observed)"), aes(x = x, y = y, label = lab),
+             fill = dk, colour = "white", size = 4.0, label.padding = grid::unit(0.5, "lines")) +
+  geom_segment(data = items, aes(x = x, xend = x), y = -3.45, yend = -3.0, colour = dk, arrow = ar) +
+  geom_point(data = items, aes(x = x), y = -3.85, shape = 21, size = 7.5, fill = "white", colour = dk, stroke = 0.8) +
+  geom_text(data = items, aes(x = x), y = -3.85, label = "ε", colour = dk, size = 3.8, fontface = "italic") +
+  geom_label(data = items, aes(x = x, y = y, label = lab), fill = "#7A7A7A", colour = "white",
+             size = 3.4, label.padding = grid::unit(0.25, "lines")) +
+  coord_equal(clip = "off") + expand_limits(x = c(-0.3, 27.3), y = c(-4.4, 3.7)) + theme_void()
+```
+
+## Ex 2: Measurement model: Specify
+
+Write the `lavaan` syntax for the **measurement model**: which latent variables, which indicators, and how is Math.Sc handled?
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+```r
+meas_model2 <- '
+  gm     =~ gm1 + gm2 + gm3 + gm4
+  stress =~ str1 + str2 + str3 + str4 + str5 + str6 + str7 + str8 + str9 + str10
+  anx    =~ anx1 + anx2 + anx3 + anx4 + anx5 + anx6
+
+  math ~~ gm + stress + anx
+'
+fit_meas2 <- cfa(meas_model2, data = pisa, estimator = "MLR", missing = "fiml")
+```
+:::
+:::
+
+## Ex 2: Measurement model: Identification
+
+Count the **measured variables**, the **information**, the **free parameters (q)** and the **df**.
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+Measured variables: 4 + 10 + 6 + 1 = **21**; information = 21(22)/2 = **231**
+:::
+
+::: {.fragment}
+Loadings 3 + 9 + 5 = 17; residual variances 20; latent variances 3; Math.Sc variance 1; covariances 3 + 3 = 6.
+:::
+
+::: {.fragment}
+q = 47; df = 231 − 47 = **`r 231 - 47`**. 
+:::
+:::
+
+## Ex 2: Measurement model: Global fit
+
+```{r}
+#| echo: false
+knitr::kable(gtab(fit2_0), row.names = FALSE, align = "lr")
+```
+
+## Ex 2: Measurement model: Global fit
+
+Is the global fit acceptable?
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+No: CFI is well below .90 and RMSEA is above .08. Poor.
+:::
+:::
+
+## Ex 2: Modification Indices {.smaller}
+
+```{r}
+#| echo: false
+mi_print(mi_tab("m2_meas0", "~~", 8, c(gm_items, str_items, anx_items)))
+```
+
+Which modification indices would you consider, and are they defensible?
+
+
+## Ex 2: Modify one at a time
+
+- Same procedure as Ex 1: free the largest **defensible** residual covariance, refit, recheck MIs.
+- Step = free the parameter, rerun the model, rerun the fit indices, rerun the MI.
+
+```{r}
+#| echo: false
+st2_fits <- list(fit2_0, get_fit("m2_step1"), get_fit("m2_step2"), fit2_m)
+st2_mis <- c(NA, st_mi("m2_meas0", "anx5", "anx6"), st_mi("m2_step1", "str6", "str9"),
+             st_mi("m2_step2", "str5", "str6"))
+g2 <- sapply(st2_fits, gfit)
+data.frame(Step = 0:3,
+           Freed = c("none", "anx5 ~~ anx6", "str6 ~~ str9", "str5 ~~ str6"),
+           MI = ifelse(is.na(st2_mis), "", formatC(st2_mis, format = "f", digits = 0)),
+           CFI = f3(g2["cfi.robust", ]), RMSEA = f3(g2["rmsea.robust", ]),
+           SRMR = f3(g2["srmr", ])) |>
+  knitr::kable(row.names = FALSE, align = "rlrrrr")
+```
+
+## Ex 2: Measurement model: Modify
+
+```{r}
+#| echo: false
+ctab(list(fit2_0, fit2_m), c("Initial", "+ 3 residual covariances")) |>
+  knitr::kable(row.names = FALSE, align = "lrrrrr")
+```
+
+```{r}
+#| echo: false
+#| warning: false
+# Δχ² for each step (scaled difference test vs. the previous step) and the sign of the freed covariance
+freed2 <- list(c("anx5", "anx6"), c("str6", "str9"), c("str5", "str6"))
+step2 <- do.call(rbind, lapply(1:3, function(i) {
+  lr <- suppressWarnings(lavTestLRT(st2_fits[[i + 1]], st2_fits[[i]], method = "satorra.bentler.2001"))
+  pe <- parameterEstimates(st2_fits[[i + 1]])
+  est <- pe$est[pe$op == "~~" & pe$lhs == freed2[[i]][1] & pe$rhs == freed2[[i]][2]]
+  data.frame(Step = i, Freed = paste(freed2[[i]], collapse = " ~~ "),
+             `Δχ² (1 df)` = f2(lr[2, "Chisq diff"]), p = fmt_p(lr[2, "Pr(>Chisq)"]),
+             Estimate = f2(est), Sign = ifelse(est > 0, "+", "−"), check.names = FALSE)
+}))
+knitr::kable(step2, row.names = FALSE, align = "rlrrrc")
+```
+
+Is the fit now acceptable enough to move on?
+
+
+## Ex 2: Measurement model: Interpret
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 16
+#| fig-height: 4.2
+# Latent variables side by side (stress slightly lower so the Growth.Mind <-> Math.Anx
+# covariance does not run behind it); Math.Sc centred above.
+x_g <- seq(-1, -0.76, length.out = 4); x_s <- seq(-0.55, 0.3, length.out = 10)
+x_a <- seq(0.58, 0.98, length.out = 6)
+lay2 <- rbind(cbind(x_g, -1), cbind(x_s, -1), cbind(x_a, -1),
+              c(-0.05, 2.5), c(mean(x_g), 0.9), c(mean(x_s), 0.2), c(mean(x_a), 0.9))
+pm2 <- semPlotModel(fit2_m)
+man2 <- pm2@Vars$name[pm2@Vars$manifest]
+pm2@Pars <- pm2@Pars[!(pm2@Pars$edge == "<->" & pm2@Pars$lhs %in% man2 &
+                         pm2@Pars$rhs %in% man2 & pm2@Pars$lhs != pm2@Pars$rhs), ]
+sem_plot(pm2, what = "std", layout = lay2, curved = 21:24, bow = 0.7,
+         nodeLabels = c(gm_items, str_items, anx_items, "Math.Sc", "Growth.Mind", "Stress.Res", "Math.Anx"),
+         residuals = FALSE, intercepts = FALSE, exoVar = FALSE, exoCov = TRUE,
+         sizeMan = 3.4, sizeMan2 = 3, sizeLat = 8, sizeLat2 = 8,
+         label.cex = 0.7, label.scale = FALSE, edge.label.cex = 0.55, edge.label.position = 0.85,
+         esize = 1.1, asize = 1.4, edge.color = "#3A3A3A",
+         color = list(lat = "#2C6FB5", man = "#DDDDDD"), label.color = "black",
+         mar = c(4, 3, 4, 3), nCharNodes = 0, fade = FALSE)
+```
+
+- Standardized estimates
+- Residual variances and the three residual covariances are in the model but not drawn.
+
+## Ex 2: Measurement model: Interpret (relationships) {.smaller}
+
+```{r}
+#| echo: false
+cov_tab(fit2_m, c("gm", "stress", "anx", "math")) |>
+  knitr::kable(digits = 3, row.names = FALSE, align = "lrrrrr")
+```
+
+b = covariance; β = standardized covariance (the correlation).
+
+1. Do the signs match theory?
+2. Is there evidence of discriminant validity? Which factor is the weakest measure?
+
+
+## Ex 2: Structural model: Specify {.smaller}
+
+Write the `lavaan` syntax for the **structural model** (keep the measurement part and the residual covariances from above). Name the paths and define the indirect effects of interest.
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+```r
+sem_model2 <- '
+  gm     =~ gm1 + gm2 + gm3 + gm4
+  stress =~ str1 + str2 + str3 + str4 + str5 + str6 + str7 + str8 + str9 + str10
+  anx    =~ anx1 + anx2 + anx3 + anx4 + anx5 + anx6
+
+  anx5 ~~ anx6
+  str6 ~~ str9
+  str5 ~~ str6
+
+  stress ~ g1*gm
+  anx    ~ g2*gm + s*stress
+  math   ~ b*anx
+
+  ind_gm_stress_anx := g1*s
+  ind_gm_anx_math   := (g2 + g1*s)*b
+'
+fit_sem2 <- sem(sem_model2, data = pisa, estimator = "MLR", missing = "fiml")
+```
+:::
+:::
+
+## Ex 2: Structural model: Identification {.smaller}
+
+Starting from the measurement model (q = 50, df = `r gfit(fit2_m)["df.scaled"]`), how does DF change? which parameters are replaced? What are q and df now? 
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+- Remove the 6 covariances (3 among the latents, 3 with Math.Sc); 
+- add 4 paths (gm → stress, gm → anx, stress → anx, anx → math); the variances of stress, anx and Math.Sc become disturbances (same count). 
+- q = 50 − 6 + 4 = **48**; df = 231 − 48 = **`r 231 - 48`**.
+:::
+
+
+## Ex 2: Structural model: Fit
+
+```{r}
+#| echo: false
+ctab(list(fit2_m, fit2_s), c("Measurement (saturated)", "Structural")) |>
+  knitr::kable(row.names = FALSE, align = "lrrrrr")
+```
+
+## Ex 2: Modification Indices
+
+```{r}
+#| echo: false
+#| warning: false
+lrt2 <- suppressWarnings(lavTestLRT(fit2_s, fit2_m, method = "satorra.bentler.2001"))
+```
+
+Scaled Δχ²(`r lrt2[2, "Df diff"]`) = `r f2(lrt2[2, "Chisq diff"])`, *p* `r ifelse(lrt2[2, "Pr(>Chisq)"] < .001, "< .001", paste("=", f3(lrt2[2, "Pr(>Chisq)"])))`
+
+```{r}
+#| echo: false
+mi_print(mi_tab("m2_sem", "~", 6))
+```
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+The Δχ² tests the two omitted paths together. It is significant at .05, but CFI and RMSEA barely change. The largest MI for an omitted path is Growth.Mind ↔ Math.Sc (about 6), small. Is a direct Growth.Mind → Math.Sc path theoretically sensible? Discuss.
+:::
+:::
+
+## Ex 2: Structural model: Interpret
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-width: 16
+#| fig-height: 4.2
+lay2s <- rbind(cbind(x_g, -1), cbind(x_s, -1), cbind(x_a, -1),
+               c(1.35, 0.9), c(mean(x_g), 0.9), c(mean(x_s), 0.2), c(mean(x_a), 0.9))
+pm2s <- semPlotModel(fit2_s)
+man2s <- pm2s@Vars$name[pm2s@Vars$manifest]
+pm2s@Pars <- pm2s@Pars[!(pm2s@Pars$edge == "<->" & pm2s@Pars$lhs %in% man2s &
+                           pm2s@Pars$rhs %in% man2s & pm2s@Pars$lhs != pm2s@Pars$rhs), ]
+sem_plot(pm2s, what = "std", layout = lay2s,
+         nodeLabels = c(gm_items, str_items, anx_items, "Math.Sc", "Growth.Mind", "Stress.Res", "Math.Anx"),
+         residuals = FALSE, intercepts = FALSE, exoVar = FALSE,
+         sizeMan = 3.4, sizeMan2 = 3, sizeLat = 8, sizeLat2 = 8,
+         label.cex = 0.7, label.scale = FALSE, edge.label.cex = 0.6, edge.label.position = 0.85,
+         esize = 1.1, asize = 1.4, edge.color = "#3A3A3A",
+         color = list(lat = "#2C6FB5", man = "#DDDDDD"), label.color = "black",
+         mar = c(4, 3, 4, 3), nCharNodes = 0, fade = FALSE)
+```
+
+Standardized estimates (β).
+
+## Ex 2: Structural model: Interpret {.smaller}
+
+```{r}
+#| echo: false
+pt2 <- path_tab(fit2_s)
+knitr::kable(pt2, digits = 3, row.names = FALSE, align = "lrrrr")
+r2b <- lavInspect(fit2_s, "r2")
+```
+
+R²: Stress.Res = `r f2(r2b["stress"])`, Math.Anx = `r f2(r2b["anx"])`, Math.Sc = `r f2(r2b["math"])`.
+
+1. Interpret each path (direction, size, significance).
+2. Which indirect effects are there, and what is the *total* effect of Growth.Mind on Math.Sc through Math.Anx?
+3. How much variance is explained? Is it meaningful?
+
+::: {.content-visible when-profile="teacher"}
+::: {.fragment}
+- Higher Growth.Mind goes with higher Stress.Res (β = `r f2(pt2$β[1])`) and lower Math.Anx (β = `r f2(pt2$β[2])`); higher Stress.Res goes with lower Math.Anx (β = `r f2(pt2$β[3])`); higher Math.Anx goes with lower Math.Sc (β = `r f2(pt2$β[4])`).
+- GM → stress → anxiety indirect effect β = `r f2(pt2$β[5])`; the effect of Growth.Mind on Math.Sc through Math.Anx (direct + via Stress.Res) is β = `r f2(pt2$β[6])`.
+- R²: Stress.Res is barely explained (`r f2(r2b["stress"])`); Math.Anx `r f2(r2b["anx"])`; Math.Sc `r f2(r2b["math"])`. Associations only: cross-sectional.
+:::
+:::
+
+## Compare the two examples 
+
+| | Example 1 | Example 2 |
+|:--|:-:|:-:|
+| Latent variables | 2 | 3 |
+| Measured variables | 17 | 21 |
+| df (measurement → structural) | `r gfit(fit1_m)["df.scaled"]` → `r gfit(fit1_s)["df.scaled"]` | `r gfit(fit2_m)["df.scaled"]` → `r gfit(fit2_s)["df.scaled"]` |
+
+## Careful: equivalent models
+
+A → B → C and C → B → A have the **same df and same fit**.
+
+- Fit can't tell the direction of the arrows. **Theory does.**
+- Here: could Math.Anx cause Stress.Res? Could Math.Sc lower Math.Anx? Cross-sectional data can't say.
+- That's why a *Specification & theoretical motivation* are paramount.
+
+## Pause & Recap
+
+1. What are the two main steps involved in running an LVPA?
+2. Within each step, what do we need to do? 
+3. What is required to continue to the structure model? 
+
+# Reporting LVPA
+
+## Checklist: build from what we have
+
+[APA JARS](https://apastyle.apa.org/jars/quant-table-7.pdf)
+
+What items from this checklist do we use for an LVPA model? 
+
+## Practice: 
+
+Use the final results for example 2 and write up a report on the model. 
+
+Submit to Lamaku > Assignments > W12
+
+## Example results write-up (Ex 1) {.smaller}
+
+::: {.content-visible when-profile="teacher"}
+We estimated the model with robust maximum likelihood (MLR) and full-information maximum likelihood to handle items missing by design (*N* = `r nrow(pisa)` students from Great Britain). Following a two-step approach, we first fit the measurement model; the initial fit was poor (CFI = `r f3(gfit(fit1_0)["cfi.robust"])`, RMSEA = `r f3(gfit(fit1_0)["rmsea.robust"])`), so we freed three residual covariances (`anx5 ~~ anx6`, `str6 ~~ str9`, `str5 ~~ str6`), after which fit was acceptable but imperfect, χ²(`r gfit(fit1_m)["df.scaled"]`) = `r f2(gfit(fit1_m)["chisq.scaled"])`, CFI = `r f3(gfit(fit1_m)["cfi.robust"])`, RMSEA = `r f3(gfit(fit1_m)["rmsea.robust"])`, 90% CI [`r f3(gfit(fit1_m)["rmsea.ci.lower.robust"])`, `r f3(gfit(fit1_m)["rmsea.ci.upper.robust"])`], SRMR = `r f3(gfit(fit1_m)["srmr"])`. In the structural model, Stress.Res predicted Math.Anx (*b* = `r f2(pt1$b[1])`, β = `r f2(pt1$β[1])`), and Math.Anx predicted Math.Sc (*b* = `r f2(pt1$b[2])`, β = `r f2(pt1$β[2])`). The indirect effect was β = `r f2(pt1$β[3])`. Constraining the direct path Stress.Res → Math.Sc to zero changed χ² by Δχ²(`r lrt1[2, "Df diff"]`) = `r f2(lrt1[2, "Chisq diff"])`, *p* `r ifelse(lrt1[2, "Pr(>Chisq)"] < .001, "< .001", paste("=", f3(lrt1[2, "Pr(>Chisq)"])))`. Limitations: the residual covariances were data-driven, the items were treated as continuous, and school clustering and sampling weights were ignored.
+:::
+
+
+
+# Rlab
+
+LVPA Widget
+
+Github > activities > widget LVPA
+
+# Up Next
+
+- Methods Walk Through: Callum 	Gyan	Louis	Bocar	Mike	Yuna
+- Online (synchronous) classes after Thanksgiving: Dec 3 and Dec 10

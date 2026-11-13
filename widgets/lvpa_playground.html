@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LVPA matrix playground and worksheet</title>
+<style>
+  :root {
+    --free: #1f6fb5; --fixed: #b8b8b8; --ink: #2b2b2b; --bg: #fafafa;
+    --good: #1b7f3b; --bad: #b3261e; --card: #ffffff; --line: #dcdcdc; --beta: #8a4b08;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink);
+         background: var(--bg); margin: 0; padding: 0 16px 48px; line-height: 1.4; }
+  h1 { font-size: 1.4rem; margin: 16px 0 4px; }
+  h2 { font-size: 1.05rem; margin: 0 0 8px; }
+  p.lead { margin: 0 0 12px; max-width: 64rem; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; }
+  .scroll { overflow-x: auto; }
+  #readouts { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: center;
+              background: #fff; border-bottom: 2px solid var(--line); padding: 8px 14px; margin: 0 -16px 14px; }
+  #readouts .stat { display: flex; flex-direction: column; font-size: .75rem; color: #555; }
+  #readouts .stat b { font-size: 1.25rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+  #readouts .spacer { flex: 1; }
+  button { font: inherit; padding: 4px 10px; border: 1px solid #999; background: #fff; border-radius: 5px; cursor: pointer; }
+  button:hover { background: #eef4fb; }
+  /* diagram */
+  svg#diagram { width: 100%; max-width: 1330px; height: auto; display: block; margin: 0 auto; }
+  .path { cursor: pointer; }
+  .path .line { fill: none; stroke-width: 2.2; }
+  .path.free .line { stroke: var(--free); }
+  .path.fixed .line { stroke: var(--fixed); stroke-dasharray: 5 4; stroke-width: 1.2; }
+  .path .hit { fill: none; stroke: transparent; stroke-width: 9; }
+  .path:hover .line { stroke-width: 3.6; }
+  .path.cross.free .line { stroke-width: 1; opacity: .38; }
+  .path.cross.fixed .line { stroke: #e2e2e2; stroke-width: .8; }
+  .path.cross:hover .line { opacity: 1; stroke-width: 2.4; }
+  .path.marker .line { stroke: var(--free); stroke-dasharray: none; stroke-width: 1.6; }
+  .path.marker text { fill: var(--free); font-weight: 700; }
+  .path.beta.free .line { stroke: var(--beta); stroke-width: 3.2; }
+  .path.beta.fixed .line { stroke: var(--fixed); }
+  .path.beta text { fill: var(--beta); font-weight: 700; font-size: 14px; }
+  .path.beta.fixed text { fill: #9a9a9a; }
+  .path text { font-size: 10px; paint-order: stroke; stroke: #fff; stroke-width: 3px; }
+  .path.free text { fill: var(--free); font-weight: 600; }
+  .path.fixed text { fill: #9a9a9a; }
+  .static .line { fill: none; stroke: #555; stroke-width: 1.6; }
+  .node { fill: #fff; stroke: #555; stroke-width: 1.4; }
+  .node.fac { fill: #3a3a3a; stroke: #3a3a3a; }
+  .nodeText { font-size: 11px; text-anchor: middle; dominant-baseline: middle; fill: var(--ink); }
+  .nodeText.fac { fill: #fff; font-weight: 600; }
+  /* matrices */
+  .mats { display: grid; grid-template-columns: auto auto 1fr; gap: 16px 28px; align-items: start; }
+  @media (max-width: 1100px) { .mats { grid-template-columns: 1fr; } }
+  table.m { border-collapse: collapse; font-size: .8rem; }
+  table.m th { font-weight: 600; color: #444; padding: 2px 6px; text-align: center; white-space: nowrap; }
+  table.m th.rowh { text-align: right; }
+  table.m td { border: 1px solid var(--line); padding: 2px 4px; text-align: center; vertical-align: middle; }
+  td.cell { min-width: 78px; }
+  td.cell.fixed { background: #f1f1f1; color: #999; }
+  td.cell.free { background: #eef5fc; }
+  td.cell.main.free { background: #dcebf8; }
+  td.cell.beta.free { background: #fbeedd; }
+  td.cell .sym { display: block; font-size: .74rem; color: #555; white-space: nowrap; }
+  td.cell .est { display: block; font-weight: 700; font-variant-numeric: tabular-nums; min-height: 1em; }
+  td.cell input[type=checkbox] { vertical-align: middle; margin: 0 2px 0 0; }
+  td.blank { border: none !important; }
+  td.fixedval { background: #f1f1f1; color: #666; font-size: .76rem; }
+  td.alwaysfree { background: #f6f6f6; color: #444; font-size: .76rem; }
+  table.theta td.cell { min-width: 52px; padding: 1px 2px; }
+  table.theta td.cell .sym { font-size: .64rem; }
+  table.theta th { font-size: .7rem; padding: 1px 3px; }
+  table.resid td { min-width: 27px; height: 22px; font-size: .62rem; padding: 0; font-variant-numeric: tabular-nums; }
+  table.resid th { font-size: .66rem; padding: 0 3px; }
+  table.resid td.big { outline: 2px solid #b3261e; outline-offset: -2px; font-weight: 700; }
+  table.sigmaeq td { min-width: 112px; max-width: 230px; font-size: .66rem; padding: 3px 4px; vertical-align: top; }
+  table.sigmaeq td .eq { display: block; line-height: 1.5; }
+  table.sigmaeq td .val { display: block; font-weight: 700; font-size: .85rem; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  table.sigmaeq td.zero { background: #f1f1f1; color: #888; }
+  table.sigmaeq th { font-size: .7rem; }
+  .note { font-size: .82rem; color: #555; }
+  sub { font-size: .7em; }
+  .fit { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px 14px; margin: 8px 0; }
+  .fit div { border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font-size: .78rem; color: #555; }
+  .fit div b { display: block; font-size: 1.1rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .fit div.good { border-color: var(--good); background: #e7f5ea; } .fit div.bad { border-color: var(--bad); background: #fbe9e7; }
+  .fit div.good::after { content: "\2713 meets guideline"; color: var(--good); } .fit div.bad::after { content: "\2717 outside guideline"; color: var(--bad); }
+  table.ws td, table.ws th { vertical-align: middle; }
+  table.ws td { min-width: 90px; }
+  table.ws input[type=text] { width: 72px; text-align: center; font: inherit; padding: 2px 4px; border: 2px solid #999; border-radius: 4px; }
+  table.ws input.ok { border-color: var(--good); background: #e7f5ea; }
+  table.ws input.no { border-color: var(--bad); background: #fbe9e7; }
+  table.ws input.wide { width: 190px; text-align: left; }
+  table.ws td.orig { background: #f1f1f1; }
+  td.eqshow { font-size: .8rem; text-align: left; min-width: 200px; }
+  .teacherbanner { background: #fff3cd; border: 1px solid #e0c35a; border-radius: 6px; padding: 6px 12px; margin: 8px 0; font-weight: 600; }
+  #c-ws { break-before: page; }
+  textarea { border: 1px solid #999; border-radius: 4px; padding: 4px; }
+  .printonly { display: none; }
+  .legend span { display: inline-block; margin-right: 14px; font-size: .8rem; }
+  .legend i { display: inline-block; width: 26px; height: 0; border-top: 3px solid; vertical-align: middle; margin-right: 4px; }
+  @page { size: letter landscape; margin: 0.4in; }
+  @media print {
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { background: #fff; padding: 0; font-size: 11px; }
+    .noprint, p.lead { display: none !important; }
+    .printonly { display: block; font-size: 12px; color: #444; margin-bottom: 6px; }
+    #readouts { position: static; border-bottom: 1px solid var(--line); margin: 0 0 8px; padding: 4px 0; }
+    .card { border: none; padding: 4px 0; margin-bottom: 8px; }
+    .card p.note { display: none; }
+    svg#diagram { max-width: 960px; }
+    .scroll { overflow: visible; }
+    tr { break-inside: avoid; }
+    td.cell input[type=checkbox] { display: none; }
+    h2 { margin-bottom: 4px; }
+    .card#c-diagram { break-after: page; }
+  }
+</style>
+</head>
+<body>
+
+<h1>LVPA matrix playground and worksheet</h1>
+
+<div id="printHeader" class="printonly"></div>
+<p class="lead">Our hypothesis: <b>growth mindset</b> (gm) predicts <b>stress resistance</b> (Stress) and <b>math anxiety</b> (Anx); stress resistance predicts math anxiety; and math anxiety predicts the <b>math score</b> (math).
+In lavaan: <code>Stress ~ gm</code>, <code>Anx ~ gm + Stress</code>, <code>math ~ Anx</code>. The data are PISA 2022 (UK): 4 growth mindset items, 10 stress resistance items, 6 math anxiety items, and the average math score (MATH_AVE).
+MATH_AVE is the only indicator of <i>math</i>, so its loading is fixed to 1 and its residual variance to 0. Every other factor is scaled by fixing its first loading to 1 (marker indicator).
+Every possible parameter starts out <b>free</b> (blue). Click a path in the diagram, or a checkbox in a matrix, to fix it to 0.
+The worksheet is at the bottom of this page: <a href="#c-ws">Worksheet</a>.</p>
+
+<div id="readouts">
+  <div class="stat">Information, p(p+1)/2<b id="r-info">231</b></div>
+  <div class="stat">Free parameters<b id="r-free">0</b></div>
+  <div class="stat">&nbsp;&nbsp;&Lambda; / B / &Psi; / &Theta;<b id="r-split" style="font-size:1rem">0 / 0 / 0 / 0</b></div>
+  <div class="stat">Degrees of freedom<b id="r-df">0</b></div>
+  <div class="stat">CFI<b id="r-cfi">&ndash;</b></div>
+  <div class="stat">RMSEA<b id="r-rmsea">&ndash;</b></div>
+  <div class="stat">SRMR<b id="r-srmr">&ndash;</b></div>
+  <div class="spacer"></div>
+  <button id="btn-nocross" class="noprint" title="Fix every cross-loading to 0">Fix all cross-loadings to 0</button>
+  <button id="btn-nocov" class="noprint" title="Fix every residual covariance to 0">Fix all residual covariances to 0</button>
+  <button id="btn-reset" class="noprint">Reset: all free</button>
+  <button id="btn-pdf" class="noprint" title="Opens your browser's print dialog. Choose Save as PDF.">Save as PDF</button>
+</div>
+
+<div class="card" id="c-diagram">
+  <h2>Path diagram</h2>
+  <svg id="diagram" viewBox="0 0 1330 610" role="img" aria-label="Four-factor latent variable path diagram"></svg>
+  <p class="legend noprint"><span><i style="border-color:#8a4b08"></i>structural path (B)</span><span><i style="border-color:#1f6fb5"></i>loading (&Lambda;)</span><span><i style="border-color:#1f6fb5;opacity:.4;border-top-width:1px"></i>cross-loading</span><span><i style="border-color:#b8b8b8;border-top-style:dashed"></i>fixed to 0</span></p>
+  <p class="note">Click any path to switch it. The 210 residual covariances are not drawn (too many arcs); switch them in the &Theta; matrix below.
+  Estimates appear here and in the matrices when your specification matches a model we ran (see the results card).</p>
+</div>
+
+<div class="card">
+  <h2>Parameter matrices</h2>
+  <div class="mats">
+    <div>
+      <b>&Lambda; (p &times; m = 21 &times; 4): loadings of indicators on factors</b>
+      <div class="scroll"><table class="m" id="tbl-lambda"></table></div>
+    </div>
+    <div>
+      <b>B (m &times; m = 4 &times; 4): regressions <u>between factors</u></b>
+      <table class="m" id="tbl-beta"></table>
+      <p class="note" style="max-width:20rem">Row = outcome, column = predictor. B holds the structural paths. These are <b>not</b> covariances.</p>
+      <b>&Psi; (m &times; m = 4 &times; 4): factor variance and disturbance (co)variances</b>
+      <table class="m" id="tbl-psi"></table>
+      <p class="note" style="max-width:20rem">Only gm is exogenous; its variance is &psi;<sub>11</sub>. The other three diagonal cells are the variances of the disturbances (the part of each factor the predictors do not explain). Off-diagonal cells are fixed to 0.</p>
+    </div>
+    <div class="scroll">
+      <b>&Theta; (p &times; p = 21 &times; 21): residual variances and covariances of the indicators</b>
+      <table class="m theta" id="tbl-theta"></table>
+    </div>
+  </div>
+  <p class="note">The model-implied covariance matrix is &Sigma; = &Lambda;(I &minus; B)<sup>&minus;1</sup> &Psi; (I &minus; B)<sup>&minus;1</sup>&prime; &Lambda;&prime; + &Theta;.
+  Here (I &minus; B)<sup>&minus;1</sup> turns the structural paths into total effects.</p>
+</div>
+
+<div class="card" id="c-results">
+  <h2>Results for your current specification</h2>
+  <div id="res-none">
+    <p>No estimates for this specification. A specification is only estimated here when it is identified (df &ge; 0) <i>and</i> matches one of the models we ran:</p>
+    <ul>
+      <li>the <b>hypothesis model</b>: loadings only on their own factor, no residual covariances, all four structural paths free (Q4), or</li>
+      <li>the same model <b>without the gm &rarr; Stress path</b> (Q4, then also Q3).</li>
+    </ul>
+    <p class="note">Estimated with maximum likelihood in lavaan (marker indicators, standardized estimates shown). PISA rotates questionnaire items, so no student answers all 21 variables. The means and covariances come from an EM (FIML-equivalent) estimate using all 11,037 students, and the model was fit to that matrix, so the chi-square and p-values are approximate.</p>
+  </div>
+  <div id="res-yes" style="display:none">
+    <p id="res-title" style="font-weight:600"></p>
+    <div class="fit" id="res-fit"></div>
+    <p class="note">Guidelines used here: CFI and TLI &ge; .95, RMSEA &le; .06, SRMR &le; .08. The chi-square test is nearly always significant with N this large, so it is reported but not used alone.</p>
+    <div class="twocol" style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+      <div>
+        <b>Structural model (standardized)</b>
+        <table class="m" id="res-paths"></table>
+        <p class="note" id="res-cmp"></p>
+      </div>
+      <div class="scroll">
+        <b>Residual correlations (observed &minus; implied), lower triangle</b>
+        <table class="m resid" id="tbl-resid"></table>
+        <p class="note" id="res-resnote"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card" id="c-implied">
+  <h2>Model-implied covariance matrix &Sigma; = &Lambda;(I &minus; B)<sup>&minus;1</sup> &Psi; (I &minus; B)<sup>&minus;1</sup>&prime; &Lambda;&prime; + &Theta;</h2>
+  <p class="note">Each cell shows its path-tracing equation, built from the parameters that are currently free: go from one indicator up through its loading, along the structural paths (&beta;) and the factor or disturbance variances (&psi;), and down to the other indicator, then add the residual covariance (&theta;) if it is free.
+  Loadings fixed to 1 (the markers and MATH_AVE) do not appear in the equations. The matrix is symmetric, so only the lower triangle is shown. Long equations are cut off after 6 terms; hover a cell to see all of it.
+  When your specification matches a model we ran, each cell also shows the value from the standardized estimates (so &Sigma; is a correlation matrix and its diagonal is 1).</p>
+  <div class="scroll"><table class="m sigmaeq" id="tbl-eq"></table></div>
+  <div id="imp-none" class="note" style="margin-top:10px"><b>No estimates for this specification, so there are no numbers to show.</b> Fix the cross-loadings and residual covariances to 0 (Q4) to see them.</div>
+  <div id="imp-yes" style="display:none">
+    <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+      <div><b>(I &minus; B)<sup>&minus;1</sup>: total effects</b><table class="m" id="tbl-total"></table>
+        <p class="note" style="max-width:18rem">Row = outcome, column = predictor. Includes indirect paths, e.g. gm &rarr; Stress &rarr; Anx.</p></div>
+      <div><b>Factor covariance matrix (I &minus; B)<sup>&minus;1</sup>&Psi;(I &minus; B)<sup>&minus;1</sup>&prime;</b><table class="m" id="tbl-phi"></table>
+        <p class="note" style="max-width:18rem">Where the structural model implies factors covary. With gm &rarr; Stress dropped, gm and Stress have 0.</p></div>
+    </div>
+    <div class="scroll" style="margin-top:10px"><b>&Sigma; implied by the model</b><table class="m resid" id="tbl-sigma"></table></div>
+    <div class="scroll" style="margin-top:10px"><b>Observed correlation matrix (N = 11,037 students)</b><table class="m resid" id="tbl-obs"></table></div>
+    <p class="note">Compare the two matrices cell by cell: the difference is the residual matrix. Red = positive, blue = negative.</p>
+  </div>
+</div>
+
+<div class="card" id="c-ws">
+  <h2>Worksheet</h2>
+  <p>For each question, start from the <b>original</b> model (click <b>Reset: all free</b>), make the change in the playground above, and fill in that
+  question's column of the table. Each question starts over from the original model.</p>
+  <ol>
+    <li><b>Q1.</b> Remove all residual covariances.</li>
+    <li><b>Q2.</b> Update the model so that each indicator is predicted only by the latent variable that makes sense for it.</li>
+    <li><b>Q3.</b> Drop the relationship between growth mindset and stress (remove the path from gm to Stress).</li>
+    <li><b>Q4.</b> Create a logically specified model.</li>
+    <li><b>Q5.</b> Explain how we use the information above to determine if our hypothesis about the data is good, both the measurement model and the structural model. Write your answer in the box below the table.</li>
+  </ol>
+  <p class="note">The three zero-count rows count the parameters you fixed to 0 compared with the original model (parameters that are fixed in every version, such as the markers, are not counted).
+  For the last three rows, list every term that is <b>gone</b> compared with the original equation, written like &beta;21&psi;11 or &beta;21^2 (you can type b21 p11, b21^2, psi11; separate terms with commas).
+  Type <b>none</b> if nothing is removed. Boxes turn green when correct and red when not. The table covers Q1&ndash;Q4; Q5 is a written answer and is not checked.</p>
+  <div class="scroll"><table class="m ws" id="tbl-ws"></table></div>
+  <p style="margin-top:10px"><b>Question 5:</b> Explain how we use the information above to determine if our hypothesis about the data is good, both the measurement model and the structural model.</p>
+  <textarea id="ws-q5" rows="12" style="width:100%;font:inherit"></textarea>
+</div>
+
+
+<script>
+(() => {
+  // ---------- data ----------
+  const FIT = {"hyp":{"fit":{"chisq":22521.7751,"df":186,"pvalue":0,"cfi":0.8268,"tli":0.8044,"rmsea":0.1043,"rmsea.ci.lower":0.1032,"rmsea.ci.upper":0.1055,"srmr":0.0655,"aic":552593.6317,"bic":552922.5371,"npar":45},"lambda":[[0.5093,null,null,null],[0.9132,null,null,null],[0.8912,null,null,null],[0.4126,null,null,null],[null,0.7976,null,null],[null,-0.4483,null,null],[null,0.755,null,null],[null,0.8654,null,null],[null,-0.4978,null,null],[null,-0.6745,null,null],[null,0.5764,null,null],[null,-0.5527,null,null],[null,-0.685,null,null],[null,0.6489,null,null],[null,null,0.8248,null],[null,null,0.8205,null],[null,null,0.8661,null],[null,null,0.8293,null],[null,null,0.7684,null],[null,null,0.7396,null],[null,null,null,1]],"beta":[[null,null,null,null],[0.1681,null,null,null],[-0.1544,-0.3976,null,null],[null,null,0.3286,null]],"psi":[1,0.9718,0.7974,0.892],"theta":[0.7406,0.1661,0.2058,0.8297,0.3638,0.799,0.43,0.2511,0.7522,0.5451,0.6677,0.6946,0.5308,0.5789,0.3197,0.3268,0.2499,0.3122,0.4095,0.453,0],"paths":[{"lhs":"stress","rhs":"gm","est.std":0.1681,"pvalue":0},{"lhs":"anx","rhs":"gm","est.std":-0.1544,"pvalue":0},{"lhs":"anx","rhs":"stress","est.std":-0.3976,"pvalue":0},{"lhs":"math","rhs":"anx","est.std":0.3286,"pvalue":0}],"r2":{"stress":0.0282,"anx":0.2026,"math":0.108},"resid":[[0,-0.004,-0.018,0.182,0.018,0.047,-0.019,0.021,-0.1,-0.039,0.003,-0.015,-0.028,0.033,-0.024,-0.057,-0.049,-0.061,0.003,-0.002,-0.209],[-0.004,0,0.003,-0.032,-0.008,0.069,-0.01,0.014,-0.053,-0.017,-0.019,-0.003,-0.022,0.016,-0.019,-0.028,-0.012,-0.072,0.013,0.002,-0.145],[-0.018,0.003,0,0.012,-0.02,0.057,-0.021,-0.003,-0.037,0.008,-0.043,0.015,-0.007,0.005,0.05,0.033,0.048,-0.003,0.071,0.052,-0.085],[0.182,-0.032,0.012,0,0.008,0.034,0.018,0.019,-0.014,-0.006,0.003,0.006,-0.011,0.037,0.021,0.008,0.013,-0.009,0.024,0.018,-0.014],[0.018,-0.008,-0.02,0.008,0,-0.004,0.083,0.051,0.082,0.11,0.022,0.084,0.087,0.042,0.032,0.067,0.038,0.085,-0.014,-0.054,0.092],[0.047,0.069,0.057,0.034,-0.004,0,0.036,0.035,0.067,0.113,0.071,0.084,0.052,0.05,-0.041,-0.043,-0.043,-0.045,0.007,0.001,-0.096],[-0.019,-0.01,-0.021,0.018,0.083,0.036,0,0.064,0.154,0.144,0.063,0.092,0.098,0.045,-0.008,0.042,0.026,0.065,-0.051,-0.092,0.123],[0.021,0.014,-0.003,0.019,0.051,0.035,0.064,0,0.062,0.03,0,0.068,0.06,0.007,0.022,0.03,0.007,0.046,-0.03,-0.069,0.026],[-0.1,-0.053,-0.037,-0.014,0.082,0.067,0.154,0.062,0,0.276,0.087,0.18,0.204,0.074,0.03,0.061,0.067,0.056,0.025,0.043,0.187],[-0.039,-0.017,0.008,-0.006,0.11,0.113,0.144,0.03,0.276,0,0.076,0.161,0.282,0.07,-0.014,-0.004,-0.001,-0.016,0.014,0.033,0.042],[0.003,-0.019,-0.043,0.003,0.022,0.071,0.063,0,0.087,0.076,0,0.047,0.032,0.074,-0.069,-0.025,-0.042,0.019,-0.139,-0.172,0.051],[-0.015,-0.003,0.015,0.006,0.084,0.084,0.092,0.068,0.18,0.161,0.047,0,0.195,0.013,0.016,0.028,0.032,0.027,0.032,0.055,0.057],[-0.028,-0.022,-0.007,-0.011,0.087,0.052,0.098,0.06,0.204,0.282,0.032,0.195,0,0.072,-0.004,0.019,0.011,-0.011,0.025,0.057,0.031],[0.033,0.016,0.005,0.037,0.042,0.05,0.045,0.007,0.074,0.07,0.074,0.013,0.072,0,-0.009,0.005,-0.015,0.019,-0.031,-0.06,0.017],[-0.024,-0.019,0.05,0.021,0.032,-0.041,-0.008,0.022,0.03,-0.014,-0.069,0.016,-0.004,-0.009,0,0.002,-0.015,-0.02,0.04,0.022,-0.008],[-0.057,-0.028,0.033,0.008,0.067,-0.043,0.042,0.03,0.061,-0.004,-0.025,0.028,0.019,0.005,0.002,0,0.049,0.03,-0.073,-0.064,-0.001],[-0.049,-0.012,0.048,0.013,0.038,-0.043,0.026,0.007,0.067,-0.001,-0.042,0.032,0.011,-0.015,-0.015,0.049,0,0.042,-0.057,-0.059,0.035],[-0.061,-0.072,-0.003,-0.009,0.085,-0.045,0.065,0.046,0.056,-0.016,0.019,0.027,-0.011,0.019,-0.02,0.03,0.042,0,-0.038,-0.06,0.04],[0.003,0.013,0.071,0.024,-0.014,0.007,-0.051,-0.03,0.025,0.014,-0.139,0.032,0.025,-0.031,0.04,-0.073,-0.057,-0.038,0,0.24,-0.07],[-0.002,0.002,0.052,0.018,-0.054,0.001,-0.092,-0.069,0.043,0.033,-0.172,0.055,0.057,-0.06,0.022,-0.064,-0.059,-0.06,0.24,0,-0.05],[-0.209,-0.145,-0.085,-0.014,0.092,-0.096,0.123,0.026,0.187,0.042,0.051,0.057,0.031,0.017,-0.008,-0.001,0.035,0.04,-0.07,-0.05,0]]},"noGS":{"fit":{"chisq":22780.6464,"df":187,"pvalue":0,"cfi":0.8248,"tli":0.8032,"rmsea":0.1046,"rmsea.ci.lower":0.1035,"rmsea.ci.upper":0.1058,"srmr":0.0759,"aic":552850.5031,"bic":553172.0994,"npar":44},"lambda":[[0.5088,null,null,null],[0.9111,null,null,null],[0.8934,null,null,null],[0.413,null,null,null],[null,0.7981,null,null],[null,-0.4494,null,null],[null,0.7555,null,null],[null,0.8652,null,null],[null,-0.4966,null,null],[null,-0.674,null,null],[null,0.577,null,null],[null,-0.5525,null,null],[null,-0.6844,null,null],[null,0.6487,null,null],[null,null,0.8224,null],[null,null,0.8181,null],[null,null,0.8642,null],[null,null,0.827,null],[null,null,0.7656,null],[null,null,0.7366,null],[null,null,null,1]],"beta":[[null,null,null,null],[null,null,null,null],[-0.1608,-0.4029,null,null],[null,null,0.326,null]],"psi":[1,1,0.8118,0.8937],"theta":[0.7411,0.17,0.2018,0.8294,0.3631,0.798,0.4293,0.2514,0.7534,0.5457,0.667,0.6947,0.5316,0.5792,0.3236,0.3307,0.2532,0.3161,0.4138,0.4574,0],"paths":[{"lhs":"anx","rhs":"gm","est.std":-0.1608,"pvalue":0},{"lhs":"anx","rhs":"stress","est.std":-0.4029,"pvalue":0},{"lhs":"math","rhs":"anx","est.std":0.326,"pvalue":0}],"r2":{"1":null,"anx":0.1882,"math":0.1063},"resid":[[0,-0.003,-0.019,0.182,0.086,0.008,0.045,0.095,-0.142,-0.096,0.053,-0.063,-0.087,0.089,-0.049,-0.083,-0.076,-0.086,-0.021,-0.025,-0.219],[-0.003,0,0.003,-0.031,0.115,0,0.106,0.147,-0.13,-0.12,0.07,-0.088,-0.127,0.116,-0.065,-0.074,-0.061,-0.119,-0.03,-0.039,-0.164],[-0.019,0.003,0,0.01,0.099,-0.01,0.092,0.127,-0.112,-0.093,0.043,-0.067,-0.109,0.102,0.006,-0.011,0.002,-0.047,0.029,0.012,-0.103],[0.182,-0.031,0.01,0,0.064,0.003,0.07,0.079,-0.048,-0.052,0.043,-0.033,-0.059,0.082,0.001,-0.013,-0.009,-0.03,0.005,-0.001,-0.023],[0.086,0.115,0.099,0.064,0,-0.002,0.082,0.051,0.081,0.11,0.021,0.084,0.087,0.042,0.017,0.053,0.023,0.071,-0.028,-0.067,0.086],[0.008,0,-0.01,0.003,-0.002,0,0.037,0.036,0.067,0.112,0.072,0.084,0.051,0.051,-0.033,-0.036,-0.035,-0.038,0.015,0.008,-0.093],[0.045,0.106,0.092,0.07,0.082,0.037,0,0.063,0.153,0.144,0.063,0.093,0.098,0.045,-0.021,0.028,0.012,0.051,-0.063,-0.105,0.117],[0.095,0.147,0.127,0.079,0.051,0.036,0.063,0,0.061,0.029,-0.001,0.067,0.059,0.007,0.006,0.015,-0.01,0.03,-0.045,-0.084,0.019],[-0.142,-0.13,-0.112,-0.048,0.081,0.067,0.153,0.061,0,0.277,0.087,0.181,0.205,0.073,0.039,0.07,0.077,0.066,0.034,0.052,0.191],[-0.096,-0.12,-0.093,-0.052,0.11,0.112,0.144,0.029,0.277,0,0.077,0.161,0.283,0.069,-0.002,0.009,0.012,-0.003,0.026,0.044,0.048],[0.053,0.07,0.043,0.043,0.021,0.072,0.063,-0.001,0.087,0.077,0,0.047,0.032,0.074,-0.08,-0.035,-0.053,0.009,-0.149,-0.182,0.047],[-0.063,-0.088,-0.067,-0.033,0.084,0.084,0.093,0.067,0.181,0.161,0.047,0,0.195,0.012,0.026,0.038,0.042,0.037,0.042,0.064,0.061],[-0.087,-0.127,-0.109,-0.059,0.087,0.051,0.098,0.059,0.205,0.283,0.032,0.195,0,0.071,0.009,0.032,0.024,0.002,0.037,0.069,0.036],[0.089,0.116,0.102,0.082,0.042,0.051,0.045,0.007,0.073,0.069,0.074,0.012,0.071,0,-0.021,-0.007,-0.028,0.007,-0.042,-0.071,0.012],[-0.049,-0.065,0.006,0.001,0.017,-0.033,-0.021,0.006,0.039,-0.002,-0.08,0.026,0.009,-0.021,0,0.005,-0.011,-0.016,0.044,0.026,-0.005],[-0.083,-0.074,-0.011,-0.013,0.053,-0.036,0.028,0.015,0.07,0.009,-0.035,0.038,0.032,-0.007,0.005,0,0.052,0.034,-0.069,-0.059,0.002],[-0.076,-0.061,0.002,-0.009,0.023,-0.035,0.012,-0.01,0.077,0.012,-0.053,0.042,0.024,-0.028,-0.011,0.052,0,0.045,-0.053,-0.055,0.038],[-0.086,-0.119,-0.047,-0.03,0.071,-0.038,0.051,0.03,0.066,-0.003,0.009,0.037,0.002,0.007,-0.016,0.034,0.045,0,-0.034,-0.056,0.043],[-0.021,-0.03,0.029,0.005,-0.028,0.015,-0.063,-0.045,0.034,0.026,-0.149,0.042,0.037,-0.042,0.044,-0.069,-0.053,-0.034,0,0.244,-0.067],[-0.025,-0.039,0.012,-0.001,-0.067,0.008,-0.105,-0.084,0.052,0.044,-0.182,0.064,0.069,-0.071,0.026,-0.059,-0.055,-0.056,0.244,0,-0.047],[-0.219,-0.164,-0.103,-0.023,0.086,-0.093,0.117,0.019,0.191,0.048,0.047,0.061,0.036,0.012,-0.005,0.002,0.038,0.043,-0.067,-0.047,0]]},"lrt":{"chisq":258.8713,"df":1,"p":3.0237e-58},"n":11037};
+  const HASHES = {"1|df": 781411699, "1|l0": 3995590876, "1|b0": 526998386, "1|t0": 3231937859, "1|c12": 345640730, "1|c13": 312232587, "1|c23": 1516088834, "2|df": 3760600868, "2|l0": 3650042801, "2|b0": 1563114025, "2|t0": 3875092991, "2|c12": 2011633657, "2|c13": 1910820848, "2|c23": 3833634917, "3|df": 659210604, "3|l0": 3559914870, "3|b0": 1506769483, "3|t0": 1863761262, "3|c12": 2175530677, "3|c13": 2377182013, "3|c23": 3807599118, "4|df": 3830382302, "4|l0": 1190949223, "4|b0": 2668750447, "4|t0": 3074038274, "4|c12": 3236214603, "4|c13": 3269622746, "4|c23": 2050097859};
+  const ORIGEQ = {"c12": "Cov(gm, Stress) = &beta;<sub>21</sub>&psi;<sub>11</sub>", "c13": "Cov(gm, Anx) = &beta;<sub>21</sub>&beta;<sub>32</sub>&psi;<sub>11</sub> + &beta;<sub>31</sub>&psi;<sub>11</sub>", "c23": "Cov(Stress, Anx) = &beta;<sub>21</sub><sup>2</sup>&beta;<sub>32</sub>&psi;<sub>11</sub> + &beta;<sub>21</sub>&beta;<sub>31</sub>&psi;<sub>11</sub> + &beta;<sub>32</sub>&psi;<sub>22</sub>"};
+  const ITEMS = ["ST263Q02JA", "ST263Q04JA", "ST263Q06JA", "ST263Q08JA",
+    "ST345Q01JA", "ST345Q02JA", "ST345Q03JA", "ST345Q04JA", "ST345Q05JA", "ST345Q06JA", "ST345Q07JA", "ST345Q08JA", "ST345Q09JA", "ST345Q10JA",
+    "ST292Q01JA", "ST292Q02JA", "ST292Q03JA", "ST292Q04JA", "ST292Q05JA", "ST292Q06JA", "MATH_AVE"];
+  const SHORT = ["gm1", "gm2", "gm3", "gm4", "st1", "st2", "st3", "st4", "st5", "st6", "st7", "st8", "st9", "st10", "an1", "an2", "an3", "an4", "an5", "an6", "math"];
+  const FAC = ["gm", "Stress", "Anx", "math"];
+  const FACLONG = ["Growth mindset", "Stress resistance", "Math anxiety", "Math score"];
+  const P = 21, K = 4, INFO = P * (P + 1) / 2;
+  const own = i => (i <= 4 ? 1 : i <= 14 ? 2 : i <= 20 ? 3 : 4);       // 1-based indicator -> its factor
+  const isMarker = i => i === 1 || i === 5 || i === 15 || i === 21;
+  const BPATHS = [[2, 1], [3, 1], [3, 2], [4, 3]];                      // [outcome, predictor]
+  const lk = (i, f) => `l_${i}_${f}`, bk = (r, c) => `b_${r}_${c}`, tk = (i, j) => `t_${i}_${j}`;
+
+  // toggleable parameters: free[key] = true/false
+  const lamKeys = [], crossKeys = [], mainKeys = [], bKeys = [], thKeys = [];
+  for (let i = 1; i <= 20; i++) for (let f = 1; f <= 3; f++) {
+    if (f === own(i)) { if (!isMarker(i)) { lamKeys.push(lk(i, f)); mainKeys.push(lk(i, f)); } }
+    else { lamKeys.push(lk(i, f)); crossKeys.push(lk(i, f)); }
+  }
+  for (const [r, c] of BPATHS) bKeys.push(bk(r, c));
+  for (let i = 2; i <= 21; i++) for (let j = 1; j < i; j++) thKeys.push(tk(i, j));
+  const keys = [...lamKeys, ...bKeys, ...thKeys];
+  const free = {};
+  const setAllFree = () => keys.forEach(k => { free[k] = true; });
+  setAllFree();
+
+  // ---------- helpers ----------
+  const NS = "http://www.w3.org/2000/svg";
+  const h = (tag, attrs = {}, html = "") => {
+    const e = document.createElement(tag);
+    for (const [a, v] of Object.entries(attrs)) e.setAttribute(a, v);
+    e.innerHTML = html; return e;
+  };
+  const s = (tag, attrs = {}, text = null) => {
+    const e = document.createElementNS(NS, tag);
+    for (const [a, v] of Object.entries(attrs)) e.setAttribute(a, v);
+    if (text !== null) e.textContent = text;
+    return e;
+  };
+  const f2 = x => (x === null || x === undefined ? "" : (Math.abs(x) < 0.005 ? "0.00" : x.toFixed(2)));
+  const f3 = x => (Math.abs(x) < 0.0005 ? "0.000" : x.toFixed(3));
+  const symL = (i, f) => `&lambda;<sub>${i},${f}</sub>`;
+  const symB = (r, c) => `&beta;<sub>${r}${c}</sub>`;
+  const symT = (i, j) => `&theta;<sub>${i},${j}</sub>`;
+  const symP = k => `&psi;<sub>${k}${k}</sub>`;
+  const lab = (kind, a, b) => kind === "l" ? `λ${a},${b}` : kind === "b" ? `β${a}${b}` : `θ${a},${b}`;
+
+  // ---------- diagram ----------
+  const svg = document.getElementById("diagram");
+  const X = i => 40 + (i - 1) * 61;                     // indicator centre x (i = 1..21)
+  const grpCentre = f => { const idx = { 1: [1, 4], 2: [5, 14], 3: [15, 20], 4: [21, 21] }[f]; return (X(idx[0]) + X(idx[1])) / 2; };
+  const FX = [0, grpCentre(1), grpCentre(2), grpCentre(3), grpCentre(4)];
+  const FY = 175, FR = 40, IY = 470, BW = 54, BH = 40, RY = 552, RR = 11;
+  const pathEls = {};
+
+  const mkPath = (k, d, lx, ly, cls, tip, noClick) => {
+    const g = s("g", { class: `path ${cls}`, "data-k": k });
+    g.appendChild(s("title", {}, tip));
+    g.appendChild(s("path", { class: "hit", d }));
+    g.appendChild(s("path", { class: "line", d }));
+    const t = s("text", { x: lx, y: ly, "text-anchor": "middle" }, "");
+    g.appendChild(t);
+    if (!noClick) g.addEventListener("click", () => toggle(k));
+    pathEls[k] = { g, t };
+    return g;
+  };
+  const arrowHead = (x1, y1, ang, a = 9) =>
+    `M${x1},${y1} L${x1 - a * Math.cos(ang - 0.4)},${y1 - a * Math.sin(ang - 0.4)} M${x1},${y1} L${x1 - a * Math.cos(ang + 0.4)},${y1 - a * Math.sin(ang + 0.4)}`;
+
+  const layer = { cross: s("g"), loads: s("g"), beta: s("g"), resid: s("g"), nodes: s("g") };
+  // cross-loadings first (underneath), then main loadings
+  for (const [pass, wantCross] of [[layer.cross, true], [layer.loads, false]]) {
+    for (let i = 1; i <= 21; i++) for (let f = 1; f <= 4; f++) {
+      const isOwn = f === own(i);
+      if (isOwn === wantCross) continue;
+      if (!isOwn && (f === 4 || i === 21)) continue;
+      const fx = FX[f], dx = X(i) - fx, dy = (IY - BH / 2) - FY, len = Math.hypot(dx, dy);
+      const x0 = fx + FR * dx / len, y0 = FY + FR * dy / len, x1 = X(i), y1 = IY - BH / 2 - 2;
+      const t = isOwn ? 0.8 : 0.5;
+      const lx = x0 + t * (x1 - x0), ly = y0 + t * (y1 - y0);
+      const marker = isOwn && isMarker(i);
+      const k = lk(i, f);
+      const cls = marker ? "fixed load main marker" : isOwn ? "free load main" : "free load cross";
+      const tip = marker ? `${ITEMS[i - 1]} on ${FAC[f - 1]}: loading fixed to 1 (marker)` : isOwn ? `Loading of ${ITEMS[i - 1]} on ${FAC[f - 1]}` : `Cross-loading of ${ITEMS[i - 1]} on ${FAC[f - 1]}`;
+      const g = mkPath(k, `M${x0},${y0} L${x1},${y1}`, lx, ly, cls, tip, marker);
+      g.insertBefore(s("path", { class: "line", d: arrowHead(x1, y1, Math.atan2(y1 - y0, x1 - x0), isOwn ? 8 : 5) }), g.querySelector("text"));
+      if (marker) { g.style.cursor = "default"; pathEls[k].t.textContent = "1"; }
+      pass.appendChild(g);
+    }
+  }
+  // structural paths (B)
+  {
+    const R = FR + 2;
+    const addBeta = (r, c, d, lx, ly, hx, hy, ang) => {
+      const g = mkPath(bk(r, c), d, lx, ly, "free beta", `Structural path from ${FACLONG[c - 1]} to ${FACLONG[r - 1]}`);
+      g.insertBefore(s("path", { class: "line", d: arrowHead(hx, hy, ang, 12) }), g.querySelector("text"));
+      layer.beta.appendChild(g);
+    };
+    addBeta(2, 1, `M${FX[1] + R},${FY} L${FX[2] - R},${FY}`, (FX[1] + FX[2]) / 2, FY - 10, FX[2] - R, FY, 0);
+    addBeta(3, 2, `M${FX[2] + R},${FY} L${FX[3] - R},${FY}`, (FX[2] + FX[3]) / 2, FY - 10, FX[3] - R, FY, 0);
+    addBeta(4, 3, `M${FX[3] + R},${FY} L${FX[4] - R},${FY}`, (FX[3] + FX[4]) / 2, FY - 10, FX[4] - R, FY, 0);
+    const a0 = [FX[1] + 14, FY - FR + 2], a1 = [FX[3] - 14, FY - FR + 2], cx = (a0[0] + a1[0]) / 2, cy = FY - 235;
+    addBeta(3, 1, `M${a0[0]},${a0[1]} Q${cx},${cy} ${a1[0]},${a1[1]}`, cx, 26, a1[0], a1[1], Math.atan2(a1[1] - cy, a1[0] - cx));
+  }
+  // residual variance nodes (always free) and disturbances
+  for (let i = 1; i <= 21; i++) {
+    const x = X(i);
+    const g = s("g", { class: "static" });
+    g.appendChild(s("path", { class: "line", d: `M${x},${RY - RR} L${x},${IY + BH / 2 + 2} M${x},${IY + BH / 2 + 2} l-4,8 M${x},${IY + BH / 2 + 2} l4,8` }));
+    layer.resid.appendChild(g);
+  }
+  // nodes
+  for (let f = 1; f <= 4; f++) {
+    layer.nodes.appendChild(s("circle", { class: "node fac", cx: FX[f], cy: FY, r: FR }));
+    layer.nodes.appendChild(s("text", { class: "nodeText fac", x: FX[f], y: FY - 6, style: "font-size:13px" }, FAC[f - 1]));
+    layer.nodes.appendChild(s("text", { class: "nodeText fac", x: FX[f], y: FY + 11, style: "font-size:10px;font-weight:400" }, `var = ψ${f}${f}`));
+    layer.nodes.appendChild(s("text", { class: "nodeText", x: FX[f], y: FY + FR + 14, style: "font-size:11px;fill:#444;paint-order:stroke;stroke:#fff;stroke-width:4px" }, FACLONG[f - 1]));
+  }
+  for (let i = 1; i <= 21; i++) {
+    layer.nodes.appendChild(s("rect", { class: "node", x: X(i) - BW / 2, y: IY - BH / 2, width: BW, height: BH, rx: 3 }));
+    layer.nodes.appendChild(s("text", { class: "nodeText", x: X(i), y: IY - 7, style: "font-size:11px;font-weight:600" }, SHORT[i - 1]));
+    layer.nodes.appendChild(s("text", { class: "nodeText", x: X(i), y: IY + 8, style: "font-size:7px;fill:#666" }, ITEMS[i - 1].replace("JA", "")));
+    layer.nodes.appendChild(s("circle", { class: "node", cx: X(i), cy: RY, r: RR }));
+    layer.nodes.appendChild(s("text", { class: "nodeText", x: X(i), y: RY, style: "font-size:8px" }, i === 21 ? "0" : `ε${i}`));
+  }
+  svg.append(layer.cross, layer.loads, layer.beta, layer.resid, layer.nodes);
+
+  // ---------- parameter matrices ----------
+  const cells = {};   // key -> { td, chk, est }
+  const mkCell = (k, symHtml, cls) => {
+    const td = h("td", { class: `cell free ${cls || ""}`, "data-k": k });
+    const chk = h("input", { type: "checkbox", checked: "", "aria-label": k });
+    const label = h("span", { class: "sym" }, `${symHtml}`);
+    label.prepend(chk);
+    const est = h("span", { class: "est" });
+    td.append(label, est);
+    chk.addEventListener("change", () => toggle(k, chk.checked));
+    cells[k] = { td, chk, est };
+    return td;
+  };
+  const fixedCell = (txt, extra = "") => { const td = h("td", { class: "cell fixed" }, txt); td.dataset.extra = extra; return td; };
+  const estSpans = {};   // fixed/always-free cells that can show an estimate: id -> element
+
+  {
+    const t = document.getElementById("tbl-lambda");
+    const head = h("tr"); head.append(h("th"));
+    FAC.forEach(f => head.append(h("th", {}, f))); t.append(head);
+    for (let i = 1; i <= P; i++) {
+      const tr = h("tr");
+      tr.append(h("th", { class: "rowh" }, `${i} ${SHORT[i - 1]} <span style="font-weight:400;color:#888">${ITEMS[i - 1].replace("JA", "")}</span>`));
+      for (let f = 1; f <= K; f++) {
+        if (i === 21 || f === 4) {
+          const own4 = i === 21 && f === 4;
+          const td = h("td", { class: "cell fixed" }, own4 ? `1 <span class="note">(fixed)</span><span class="est" id="e-l-${i}-${f}"></span>` : `0 <span class="note">(fixed)</span>`);
+          tr.append(td);
+        } else if (f === own(i) && isMarker(i)) {
+          tr.append(h("td", { class: "cell fixed main" }, `1 <span class="note">(fixed, marker)</span><span class="est" id="e-l-${i}-${f}"></span>`));
+        } else {
+          tr.append(mkCell(lk(i, f), symL(i, f), f === own(i) ? "main" : "cross"));
+        }
+      }
+      t.append(tr);
+    }
+  }
+  {
+    const t = document.getElementById("tbl-beta");
+    const head = h("tr"); head.append(h("th", {}, "outcome &darr; / predictor &rarr;"));
+    FAC.forEach(f => head.append(h("th", {}, f))); t.append(head);
+    for (let r = 1; r <= 4; r++) {
+      const tr = h("tr");
+      tr.append(h("th", { class: "rowh" }, FAC[r - 1]));
+      for (let c = 1; c <= 4; c++) {
+        if (bKeys.includes(bk(r, c))) tr.append(mkCell(bk(r, c), symB(r, c), "beta"));
+        else tr.append(h("td", { class: "cell fixed" }, "0"));
+      }
+      t.append(tr);
+    }
+  }
+  {
+    const t = document.getElementById("tbl-psi");
+    const head = h("tr"); head.append(h("th"));
+    FAC.forEach(f => head.append(h("th", {}, f))); t.append(head);
+    for (let r = 1; r <= 4; r++) {
+      const tr = h("tr");
+      tr.append(h("th", { class: "rowh" }, FAC[r - 1]));
+      for (let c = 1; c <= 4; c++) {
+        if (r === c) tr.append(h("td", { class: "alwaysfree" }, `${symP(r)}<br><span class="note">free</span><span class="est" id="e-p-${r}" style="display:block;font-weight:700"></span>`));
+        else tr.append(h("td", { class: "cell fixed" }, "0"));
+      }
+      t.append(tr);
+    }
+  }
+  {
+    const t = document.getElementById("tbl-theta");
+    const head = h("tr"); head.append(h("th"));
+    for (let j = 1; j <= 20; j++) head.append(h("th", {}, `${j}`));
+    head.append(h("th", {}, "21")); t.append(head);
+    for (let i = 1; i <= P; i++) {
+      const tr = h("tr");
+      tr.append(h("th", { class: "rowh" }, `${i} ${SHORT[i - 1]}`));
+      for (let j = 1; j <= P; j++) {
+        if (j > i) tr.append(h("td", { class: "blank" }));
+        else if (i === j) tr.append(i === 21 ? h("td", { class: "cell fixed" }, `0<br><span class="note">fixed</span>`)
+          : h("td", { class: "alwaysfree" }, `${symT(i, i)}<span class="est" id="e-t-${i}" style="display:block;font-weight:700"></span>`));
+        else tr.append(mkCell(tk(i, j), symT(i, j)));
+      }
+      t.append(tr);
+    }
+  }
+
+  // ---------- state changes ----------
+  function toggle(k, force) {
+    free[k] = (typeof force === "boolean") ? force : !free[k];
+    update();
+  }
+  const setGroup = (ks, v) => { ks.forEach(k => { free[k] = v; }); update(); };
+
+  const specKey = () => {
+    if (crossKeys.some(k => free[k]) || thKeys.some(k => free[k]) || mainKeys.some(k => !free[k])) return null;
+    const on = bKeys.map(k => free[k]);
+    if (on.every(Boolean)) return "hyp";
+    if (!free[bk(2, 1)] && on.filter(Boolean).length === 3) return "noGS";
+    return null;
+  };
+
+  const $ = id => document.getElementById(id);
+  function update() {
+    // matrices and diagram
+    for (const k of keys) {
+      const { td, chk } = cells[k];
+      chk.checked = !!free[k];
+      td.classList.toggle("free", !!free[k]); td.classList.toggle("fixed", !free[k]);
+      if (!pathEls[k]) continue;
+      const { g } = pathEls[k];
+      g.setAttribute("class", g.getAttribute("class").replace(/\b(free|fixed)\b/, free[k] ? "free" : "fixed"));
+    }
+    // counts
+    const nL = lamKeys.filter(k => free[k]).length, nB = bKeys.filter(k => free[k]).length;
+    const nT = 20 + thKeys.filter(k => free[k]).length, nP = 4;
+    const nFree = nL + nB + nP + nT;
+    $("r-free").textContent = nFree;
+    $("r-split").textContent = `${nL} / ${nB} / ${nP} / ${nT}`;
+    $("r-df").textContent = INFO - nFree;
+    showResults(specKey());
+  }
+
+  function showResults(key) {
+    const R = key ? FIT[key] : null;
+    $("res-none").style.display = R ? "none" : "";
+    $("res-yes").style.display = R ? "" : "none";
+    // clear estimate text
+    for (const k of keys) { cells[k].est.textContent = ""; if (pathEls[k]) pathEls[k].t.textContent = ""; }
+    document.querySelectorAll("[id^='e-']").forEach(e => { e.textContent = ""; });
+    for (const [r, c] of BPATHS) pathEls[bk(r, c)].t.textContent = lab("b", r, c);
+    ["cfi", "rmsea", "srmr"].forEach(m => { $("r-" + m).innerHTML = "&ndash;"; });
+    $("imp-none").style.display = R ? "none" : ""; $("imp-yes").style.display = R ? "" : "none";
+    if (!R) { SG = null; renderTracing(); return; }
+    const fit = R.fit;
+    $("r-cfi").textContent = f3(fit.cfi); $("r-rmsea").textContent = f3(fit.rmsea); $("r-srmr").textContent = f3(fit.srmr);
+    // estimates in matrices and diagram (standardized)
+    for (let i = 1; i <= P; i++) for (let f = 1; f <= 3; f++) {
+      const v = R.lambda[i - 1][f - 1]; if (v === null) continue;
+      const k = lk(i, f);
+      if (cells[k]) { cells[k].est.textContent = f2(v); }
+      else { const e = $(`e-l-${i}-${f}`); if (e) e.textContent = `std ${f2(v)}`; }
+      if (pathEls[k] && f === own(i) && !isMarker(i)) pathEls[k].t.textContent = f2(v);
+    }
+    { const e = $("e-l-21-4"); if (e) e.textContent = `std ${f2(R.lambda[20][3])}`; }
+    for (const [r, c] of BPATHS) { const v = R.beta[r - 1][c - 1]; if (v !== null) { cells[bk(r, c)].est.textContent = f2(v); pathEls[bk(r, c)].t.textContent = f2(v); } }
+    R.psi.forEach((v, i) => { const e = $(`e-p-${i + 1}`); if (e) e.textContent = f2(v); });
+    R.theta.forEach((v, i) => { const e = $(`e-t-${i + 1}`); if (e) e.textContent = f2(v); });
+    // fit table
+    const guide = { cfi: v => v >= .95, tli: v => v >= .95, rmsea: v => v <= .06, srmr: v => v <= .08 };
+    const box = (name, val, cls) => `<div class="${cls || ""}">${name}<b>${val}</b></div>`;
+    const pTxt = fit.pvalue < .001 ? "&lt; .001" : f3(fit.pvalue);
+    $("res-title").textContent = key === "hyp" ? "Hypothesis model (Q4): all four structural paths" : "Hypothesis model without the gm → Stress path (Q4 + Q3)";
+    $("res-fit").innerHTML =
+      box("&chi;&sup2; (df)", `${Math.round(fit.chisq).toLocaleString()} (${fit.df})`) +
+      box("p-value", pTxt) +
+      box("CFI", f3(fit.cfi), guide.cfi(fit.cfi) ? "good" : "bad") +
+      box("TLI", f3(fit.tli), guide.tli(fit.tli) ? "good" : "bad") +
+      box("RMSEA [90% CI]", `${f3(fit.rmsea)} [${f3(fit["rmsea.ci.lower"])}, ${f3(fit["rmsea.ci.upper"])}]`, guide.rmsea(fit.rmsea) ? "good" : "bad") +
+      box("SRMR", f3(fit.srmr), guide.srmr(fit.srmr) ? "good" : "bad") +
+      box("AIC", Math.round(fit.aic).toLocaleString()) + box("BIC", Math.round(fit.bic).toLocaleString());
+    // structural table
+    const pt = $("res-paths"); pt.innerHTML = "";
+    pt.append(h("tr", {}, "<th>Path</th><th>&beta; (std)</th><th></th><th>Factor</th><th>R&sup2;</th>"));
+    const rows = BPATHS.filter(([r, c]) => R.beta[r - 1][c - 1] !== null);
+    const r2 = [null, R.r2.stress, R.r2.anx, R.r2.math];
+    const outs = [2, 3, 4], np = Math.max(rows.length, 3);
+    for (let n = 0; n < np; n++) {
+      const tr = h("tr");
+      if (rows[n]) { const [r, c] = rows[n]; tr.append(h("td", {}, `${FAC[c - 1]} &rarr; ${FAC[r - 1]}`), h("td", {}, `<b>${f2(R.beta[r - 1][c - 1])}</b>`)); }
+      else tr.append(h("td"), h("td"));
+      tr.append(h("td"));
+      if (n < 3) tr.append(h("td", {}, FAC[outs[n] - 1]), h("td", {}, `<b>${f2(r2[outs[n] - 1])}</b>`)); else tr.append(h("td"), h("td"));
+      pt.append(tr);
+    }
+    $("res-cmp").innerHTML = key === "noGS"
+      ? `Compared with the hypothesis model (same indicators, one more free parameter): &Delta;&chi;&sup2;(${FIT.lrt.df}) = ${FIT.lrt.chisq.toFixed(1)}, p &lt; .001; AIC changes by +${Math.round(fit.aic - FIT.hyp.fit.aic)}; &Delta;CFI = ${(fit.cfi - FIT.hyp.fit.cfi).toFixed(3)}.`
+      : "Switch off gm &rarr; Stress (and keep Q4) to compare this model with one that drops the path.";
+    // residual correlations
+    const rt = $("tbl-resid"); rt.innerHTML = "";
+    const hd = h("tr"); hd.append(h("th"));
+    for (let j = 1; j <= P; j++) hd.append(h("th", {}, SHORT[j - 1])); rt.append(hd);
+    let big = 0;
+    for (let i = 1; i <= P; i++) {
+      const tr = h("tr"); tr.append(h("th", { class: "rowh" }, SHORT[i - 1]));
+      for (let j = 1; j <= P; j++) {
+        if (j > i) { tr.append(h("td", { class: "blank" })); continue; }
+        const v = R.resid[i - 1][j - 1], a = Math.min(.75, Math.abs(v) * 2.2);
+        const isBig = i !== j && Math.abs(v) > .10; if (isBig) big++;
+        const td = h("td", { class: isBig ? "big" : "", title: `${SHORT[i - 1]} with ${SHORT[j - 1]}: ${v.toFixed(3)}` }, i === j ? "" : v.toFixed(2).replace(/^(-?)0\./, "$1."));
+        td.style.background = v >= 0 ? `rgba(179,38,30,${a})` : `rgba(31,111,181,${a})`;
+        tr.append(td);
+      }
+      rt.append(tr);
+    }
+    showImplied(R); renderTracing();
+    $("res-resnote").textContent = `Red = observed correlation larger than the model implies, blue = smaller. Outlined cells have |residual| > .10: ${big} of 210 pairs.`;
+  }
+
+  // ---------- model-implied matrix ----------
+  const inv = M => {
+    const n = M.length, A = M.map((r, i) => [...r, ...Array.from({ length: n }, (_, j) => +(i === j))]);
+    for (let c = 0; c < n; c++) {
+      let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+      [A[c], A[p]] = [A[p], A[c]];
+      const d = A[c][c]; for (let j = 0; j < 2 * n; j++) A[c][j] /= d;
+      for (let r = 0; r < n; r++) if (r !== c) { const f = A[r][c]; for (let j = 0; j < 2 * n; j++) A[r][j] -= f * A[c][j]; }
+    }
+    return A.map(r => r.slice(n));
+  };
+  const mul = (A, B) => A.map(r => B[0].map((_, j) => r.reduce((t, v, k) => t + v * B[k][j], 0)));
+  const tr = A => A[0].map((_, j) => A.map(r => r[j]));
+  const tableFor = (id, M, labels, lower, heat) => {
+    const t = $(id); t.innerHTML = "";
+    const hd = h("tr"); hd.append(h("th")); labels.forEach(l => hd.append(h("th", {}, l))); t.append(hd);
+    M.forEach((row, i) => {
+      const trw = h("tr"); trw.append(h("th", { class: "rowh" }, labels[i]));
+      row.forEach((v, j) => {
+        if (lower && j > i) { trw.append(h("td", { class: "blank" })); return; }
+        const td = h("td", { title: `${labels[i]} with ${labels[j]}: ${v.toFixed(3)}` }, heat ? (i === j ? v.toFixed(2).replace(/^(-?)0\./, "$1.") : v.toFixed(2).replace(/^(-?)0\./, "$1.")) : v.toFixed(2));
+        if (heat) { const a = Math.min(.8, Math.abs(v) * 1.1); td.style.background = v >= 0 ? `rgba(179,38,30,${a})` : `rgba(31,111,181,${a})`; }
+        trw.append(td);
+      });
+      t.append(trw);
+    });
+  };
+  function showImplied(R) {
+    const L = R.lambda.map(r => r.map(v => v ?? 0)), B = R.beta.map(r => r.map(v => v ?? 0));
+    const Psi = R.psi.map((v, i) => R.psi.map((_, j) => (i === j ? v : 0)));
+    const T = inv(B.map((r, i) => r.map((v, j) => (i === j ? 1 : 0) - v)));
+    const Phi = mul(mul(T, Psi), tr(T));
+    const Sg = mul(mul(L, Phi), tr(L)).map((r, i) => r.map((v, j) => v + (i === j ? R.theta[i] : 0)));
+    tableFor("tbl-total", T, FAC, false, false);
+    tableFor("tbl-phi", Phi, FAC, false, false);
+    tableFor("tbl-sigma", Sg, SHORT, true, true);
+    tableFor("tbl-obs", Sg.map((r, i) => r.map((v, j) => v + R.resid[i][j])), SHORT, true, true);
+    window.__sigma = Sg; SG = Sg;
+  }
+
+  // ---------- path tracing: symbolic implied covariance cells ----------
+  let SG = null;
+  const tokHtml = t => {
+    const [kind, a, b] = t.split("_");
+    return kind === "l" ? symL(a, b) : kind === "b" ? symB(a, b) : kind === "p" ? symP(a) : symT(a, b);
+  };
+  const tokOrder = t => ({ l: 0, b: 1, p: 2, t: 3 }[t[0]]);
+  // factor covariance terms: Phi[k][l] = sum_x psi_xx * (paths x->k) * (paths x->l); each term is an array of tokens
+  const pathsTo = (x, a) => {
+    if (x === a) return [[]];
+    const out = [];
+    for (const [r, c] of BPATHS) if (r === a && free[bk(r, c)]) for (const p of pathsTo(x, c)) out.push([...p, bk(r, c)]);
+    return out;
+  };
+  const loadTok = (i, f) => {      // null = fixed 0, "" = fixed 1 (no token), else the parameter key
+    if (i === 21) return f === 4 ? "" : null;
+    if (f === 4) return null;
+    if (f === own(i)) return isMarker(i) ? "" : (free[lk(i, f)] ? lk(i, f) : null);
+    return free[lk(i, f)] ? lk(i, f) : null;
+  };
+  const termHtml = (coef, toks) => {
+    const cnt = {}; toks.forEach(t => { cnt[t] = (cnt[t] || 0) + 1; });
+    const parts = Object.keys(cnt).sort((a, b) => tokOrder(a) - tokOrder(b) || (a < b ? -1 : 1))
+      .map(t => tokHtml(t) + (cnt[t] > 1 ? `<sup>${cnt[t]}</sup>` : "")).join("");
+    return (coef > 1 ? coef : "") + (parts || "1");
+  };
+  function renderTracing() {
+    const Phi = [];
+    for (let k = 1; k <= 4; k++) { Phi[k] = []; for (let l = 1; l <= 4; l++) {
+      const ts = [];
+      for (let x = 1; x <= 4; x++) for (const pa of pathsTo(x, k)) for (const pc of pathsTo(x, l)) ts.push([...pa, ...pc, `p_${x}_${x}`]);
+      Phi[k][l] = ts;
+    } }
+    const t = $("tbl-eq"); t.innerHTML = "";
+    const hd = h("tr"); hd.append(h("th"));
+    for (let j = 1; j <= P; j++) hd.append(h("th", {}, `${j} ${SHORT[j - 1]}`)); t.append(hd);
+    for (let i = 1; i <= P; i++) {
+      const tr = h("tr"); tr.append(h("th", { class: "rowh" }, `${i} ${SHORT[i - 1]}`));
+      for (let j = 1; j <= P; j++) {
+        if (j > i) { tr.append(h("td", { class: "blank" })); continue; }
+        const grp = new Map();
+        for (let k = 1; k <= 4; k++) for (let l = 1; l <= 4; l++) {
+          const a = loadTok(i, k), b = loadTok(j, l); if (a === null || b === null) continue;
+          for (const term of Phi[k][l]) {
+            const toks = [...(a ? [a] : []), ...(b ? [b] : []), ...term];
+            const key = [...toks].sort().join(" ");
+            if (grp.has(key)) grp.get(key).n++; else grp.set(key, { n: 1, toks });
+          }
+        }
+        if (i === j) { if (i !== 21) { const k = "t_" + i + "_" + i; grp.set(k, { n: 1, toks: [k] }); } }
+        else if (free[tk(i, j)]) { const k = tk(i, j); grp.set(k, { n: 1, toks: [k] }); }
+        const terms = [...grp.values()].map(g => termHtml(g.n, g.toks));
+        const full = terms.length ? terms.join(" + ") : "0";
+        const shown = terms.length > 6 ? terms.slice(0, 6).join(" + ") + ` + <i>${terms.length - 6} more&hellip;</i>` : full;
+        const td = h("td", { class: terms.length ? "" : "zero", title: full.replace(/<[^>]+>/g, "").replace(/&[a-z]+;/g, m => ({ "&lambda;": "λ", "&beta;": "β", "&psi;": "ψ", "&theta;": "θ" }[m] || m)) },
+          `<span class="eq">${shown}</span>` + (SG ? `<span class="val">${SG[i - 1][j - 1].toFixed(2)}</span>` : ""));
+        tr.append(td);
+      }
+      t.append(tr);
+    }
+  }
+
+  // ---------- worksheet ----------
+  const fnv = str => { let x = 0x811c9dc5; for (let i = 0; i < str.length; i++) { x ^= str.charCodeAt(i); x = Math.imul(x, 0x01000193) >>> 0; } return x >>> 0; };
+  const hashOf = (q, row, v) => fnv(`lvpa12|${q}|${row}|${v}`);
+  // one term typed by a student -> canonical "b21 b21 b32 p11" (sorted tokens, squares expanded, coefficient ignored); null if unreadable
+  const canonTerm = raw => {
+    let t = raw.toLowerCase().replace(/[\s*·×_{}]/g, "").replace(/beta|β/g, "b").replace(/psi|ψ/g, "p").replace(/²/g, "^2");
+    t = t.replace(/^2(?=[bp])/, "");
+    const toks = []; const re = /([bp]\d\d)(\^2)?/g; let m, used = "";
+    while ((m = re.exec(t)) !== null) { used += m[0]; toks.push(m[1]); if (m[2]) toks.push(m[1]); }
+    if (!toks.length || used !== t) return null;
+    return toks.sort().join(" ");
+  };
+  const canonSet = raw => {
+    const txt = raw.trim().toLowerCase();
+    if (/^(none|nothing|0|-|—)$/.test(txt)) return "";
+    const parts = raw.split(/[,;\n+]/).map(x => x.trim()).filter(Boolean).map(canonTerm);
+    if (!parts.length || parts.includes(null)) return null;
+    return [...new Set(parts)].sort().join("|");
+  };
+  const WS_ROWS = [
+    { id: "df", label: "Degrees of freedom", orig: "&minus;64" },
+    { id: "l0", label: "Number of 0s in &Lambda; (parameters fixed to 0)", orig: "0" },
+    { id: "b0", label: "Number of 0s in B (paths fixed to 0)", orig: "0" },
+    { id: "t0", label: "Number of 0s in &Theta; (residual covariances fixed to 0)", orig: "0" },
+    { id: "c12", label: "Terms removed from Cov(gm, Stress) compared with the original", eq: ORIGEQ.c12, paths: true },
+    { id: "c13", label: "Terms removed from Cov(gm, Anx) compared with the original", eq: ORIGEQ.c13, paths: true },
+    { id: "c23", label: "Terms removed from Cov(Stress, Anx) compared with the original", eq: ORIGEQ.c23, paths: true }
+  ];
+  {
+    const t = $("tbl-ws");
+    const head = h("tr"); head.append(h("th"), h("th", {}, "Original"));
+    for (let q = 1; q <= 4; q++) head.append(h("th", {}, `Q${q}`));
+    t.append(head);
+    for (const r of WS_ROWS) {
+      const tr = h("tr");
+      tr.append(h("th", { class: "rowh" }, r.label));
+      tr.append(h("td", { class: "orig" + (r.eq ? " eqshow" : "") }, r.eq || r.orig));
+      for (let q = 1; q <= 4; q++) {
+        const inp = h("input", { type: "text", autocomplete: "off", spellcheck: "false", class: r.paths ? "wide" : "", "aria-label": `Q${q}: ${r.label}` });
+        const check = () => {
+          inp.classList.remove("ok", "no");
+          const txt = inp.value.trim().replace(/−/g, "-");
+          if (txt === "") return;
+          let v;
+          if (r.paths) v = canonSet(inp.value); else { const n = Number(txt); v = isNaN(n) ? null : String(n); }
+          if (v === null) { if (r.paths) inp.classList.add("no"); return; }
+          inp.classList.add(hashOf(q, r.id, v) === HASHES[`${q}|${r.id}`] ? "ok" : "no");
+        };
+        inp.addEventListener(r.paths ? "change" : "input", check);
+        const td = h("td"); td.append(inp); tr.append(td);
+      }
+      t.append(tr);
+    }
+  }
+
+  // ---------- controls ----------
+  $("btn-reset").addEventListener("click", () => { setAllFree(); update(); });
+  $("btn-nocross").addEventListener("click", () => setGroup(crossKeys, false));
+  $("btn-nocov").addEventListener("click", () => setGroup(thKeys, false));
+
+  // ---------- save as PDF (print dialog) ----------
+  const printHeader = $("printHeader");
+  const stamp = () => {
+    if (document.activeElement) document.activeElement.blur();
+    printHeader.textContent = new Date().toLocaleString();
+  };
+  window.addEventListener("beforeprint", stamp);
+  $("btn-pdf").addEventListener("click", () => { stamp(); window.print(); });
+
+  // teacher shortcut: ?preset=hyp starts from the logically specified hypothesis model
+  if (new URLSearchParams(location.search).get("preset") === "hyp") { crossKeys.forEach(k => { free[k] = false; }); thKeys.forEach(k => { free[k] = false; }); }
+  update();
+})();
+</script>
+</body>
+</html>
