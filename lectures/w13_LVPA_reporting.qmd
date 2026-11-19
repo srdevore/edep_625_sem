@@ -45,15 +45,28 @@ lrt1 <- suppressWarnings(lavTestLRT(fit1_s, fit1_m, method = "satorra.bentler.20
 
 # Methods Walk Through
 
-Callum, Gyan, Louis, Mike, Yuna
+Presenters: Callum, Gyan, Louis, Mike, Yuna
 
-# Reporting LVPA
+- Lamaku > quize Methods Walkthrough LVPA 1-5
+- answer the two questions for each presentation  
 
-## Checklist: build from what we have
+# Reporting LVPA 
+
+## Checklist: bu ild from what we have
 
 [APA JARS](https://apastyle.apa.org/jars/quant-table-7.pdf)
 
-What items from this checklist do we use for an LVPA model? 
+Review the checklist. 
+
+- What items from this checklist do we use for an LVPA model? 
+
+## Review an article
+
+Website > activity > W13 PDF
+
+- go through paper & identify on the checklist what the authors included & anything they missed. 
+- work in groups
+- work in 
 
 ## Practice: 
 
