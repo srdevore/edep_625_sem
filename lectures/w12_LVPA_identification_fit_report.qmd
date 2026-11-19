@@ -1,5 +1,5 @@
 ---
-title: "Week 12: LVPA Identification, Fit & Reporting"
+title: "Week 12: LVPA Identification & Fit"
 date: today
 description: '<a href="lectures/w12_LVPA_identification_fit_report.pdf" download="w12_LVPA_identification_fit_report.pdf">Download PDF</a>'
 format:
@@ -8,7 +8,7 @@ format:
     slide-number: true
     embed-resources: true
     self-contained-math: true
-release: week 12
+
 ---
 
 ```{r}
@@ -124,8 +124,6 @@ sem_plot <- function(object, layout, curved = NULL, bow = 1.2, edge.label.positi
 - Assumptions
 - The 2-step workflow
 - Examples
-- Reporting LVPA
-- Reporting workshop
 - Rlab
 
 ## Review
@@ -1024,6 +1022,7 @@ Starting from the measurement model (q = 50, df = `r gfit(fit2_m)["df.scaled"]`)
 - add 4 paths (gm → stress, gm → anx, stress → anx, anx → math); the variances of stress, anx and Math.Sc become disturbances (same count). 
 - q = 50 − 6 + 4 = **48**; df = 231 − 48 = **`r 231 - 48`**.
 :::
+:::
 
 
 ## Ex 2: Structural model: Fit
@@ -1124,28 +1123,6 @@ A → B → C and C → B → A have the **same df and same fit**.
 1. What are the two main steps involved in running an LVPA?
 2. Within each step, what do we need to do? 
 3. What is required to continue to the structure model? 
-
-# Reporting LVPA
-
-## Checklist: build from what we have
-
-[APA JARS](https://apastyle.apa.org/jars/quant-table-7.pdf)
-
-What items from this checklist do we use for an LVPA model? 
-
-## Practice: 
-
-Use the final results for example 2 and write up a report on the model. 
-
-Submit to Lamaku > Assignments > W12
-
-## Example results write-up (Ex 1) {.smaller}
-
-::: {.content-visible when-profile="teacher"}
-We estimated the model with robust maximum likelihood (MLR) and full-information maximum likelihood to handle items missing by design (*N* = `r nrow(pisa)` students from Great Britain). Following a two-step approach, we first fit the measurement model; the initial fit was poor (CFI = `r f3(gfit(fit1_0)["cfi.robust"])`, RMSEA = `r f3(gfit(fit1_0)["rmsea.robust"])`), so we freed three residual covariances (`anx5 ~~ anx6`, `str6 ~~ str9`, `str5 ~~ str6`), after which fit was acceptable but imperfect, χ²(`r gfit(fit1_m)["df.scaled"]`) = `r f2(gfit(fit1_m)["chisq.scaled"])`, CFI = `r f3(gfit(fit1_m)["cfi.robust"])`, RMSEA = `r f3(gfit(fit1_m)["rmsea.robust"])`, 90% CI [`r f3(gfit(fit1_m)["rmsea.ci.lower.robust"])`, `r f3(gfit(fit1_m)["rmsea.ci.upper.robust"])`], SRMR = `r f3(gfit(fit1_m)["srmr"])`. In the structural model, Stress.Res predicted Math.Anx (*b* = `r f2(pt1$b[1])`, β = `r f2(pt1$β[1])`), and Math.Anx predicted Math.Sc (*b* = `r f2(pt1$b[2])`, β = `r f2(pt1$β[2])`). The indirect effect was β = `r f2(pt1$β[3])`. Constraining the direct path Stress.Res → Math.Sc to zero changed χ² by Δχ²(`r lrt1[2, "Df diff"]`) = `r f2(lrt1[2, "Chisq diff"])`, *p* `r ifelse(lrt1[2, "Pr(>Chisq)"] < .001, "< .001", paste("=", f3(lrt1[2, "Pr(>Chisq)"])))`. Limitations: the residual covariances were data-driven, the items were treated as continuous, and school clustering and sampling weights were ignored.
-:::
-
-
 
 # Rlab
 

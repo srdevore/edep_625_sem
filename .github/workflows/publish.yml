@@ -40,6 +40,14 @@ jobs:
           # incompatible library that install.packages() then skips.
           key: ${{ runner.os }}-${{ env.ImageOS }}-r43-${{ hashFiles('.github/workflows/publish.yml') }}
 
+      - name: Cache lavaan fits
+        uses: actions/cache@v4
+        with:
+          path: lectures/w12_cache
+          # Fits are keyed by name inside w12_models.R, so key the cache on that
+          # file: editing the models/data invalidates it and forces a refit.
+          key: lavaan-fits-${{ hashFiles('lectures/w12_models.R') }}
+
       - name: Install system libraries
         # semPlot -> igraph needs GLPK (libglpk.so.40) at load time.
         run: sudo apt-get update && sudo apt-get install -y libglpk40

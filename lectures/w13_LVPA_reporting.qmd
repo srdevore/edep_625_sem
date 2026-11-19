@@ -1,0 +1,76 @@
+---
+title: "Week 13: Methods Walk Through & Reporting LVPA"
+date: today
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+    embed-resources: true
+    self-contained-math: true
+
+description: '<a href="lectures/w13_LVPA_reporting.pdf" download="w13_LVPA_reporting.pdf">Download PDF</a>'
+---
+
+```{r}
+#| include: false
+# Reuses the cached fits from w12 (see w12_models.R / w12_cache/).
+source("w12_models.R")
+library(lavaan)
+
+f3 <- function(x) formatC(x, digits = 3, format = "f")
+f2 <- function(x) formatC(x, digits = 2, format = "f")
+fmt_p <- function(p) ifelse(p < .001, "< .001", f3(p))
+
+fit1_0 <- get_fit("m1_meas0"); fit1_m <- get_fit("m1_meas"); fit1_s <- get_fit("m1_sem")
+gfit <- function(fit) cached_fm(attr(fit, "nm"))
+
+vlab <- c(stress = "Stress.Res", anx = "Math.Anx", math = "Math.Sc", gm = "Growth.Mind")
+lab <- function(x) ifelse(x %in% names(vlab), vlab[x], x)
+path_tab <- function(fit) {
+  pe <- parameterEstimates(fit); ss <- standardizedSolution(fit)
+  k <- pe$op %in% c("~", ":=")
+  data.frame(Effect = ifelse(pe$op[k] == "~", paste(lab(pe$rhs[k]), "→", lab(pe$lhs[k])), lab(pe$lhs[k])),
+             b = pe$est[k], SE = pe$se[k], p = fmt_p(pe$pvalue[k]),
+             `β` = ss$est.std[k], check.names = FALSE)
+}
+pt1 <- path_tab(fit1_s)
+lrt1 <- suppressWarnings(lavTestLRT(fit1_s, fit1_m, method = "satorra.bentler.2001"))
+```
+
+# Agenda
+
+- Methods walk through
+- Reporting LVPA
+- Reporting workshop
+
+# Methods Walk Through
+
+Callum, Gyan, Louis, Mike, Yuna
+
+# Reporting LVPA
+
+## Checklist: build from what we have
+
+[APA JARS](https://apastyle.apa.org/jars/quant-table-7.pdf)
+
+What items from this checklist do we use for an LVPA model? 
+
+## Practice: 
+
+Use the final results for example 2 and write up a report on the model. 
+
+Submit to Lamaku > Assignments > W12
+
+## Example results write-up (Ex 1) {.smaller}
+
+::: {.content-visible when-profile="teacher"}
+We estimated the model with robust maximum likelihood (MLR) and full-information maximum likelihood to handle items missing by design (*N* = `r nrow(pisa)` students from Great Britain). Following a two-step approach, we first fit the measurement model; the initial fit was poor (CFI = `r f3(gfit(fit1_0)["cfi.robust"])`, RMSEA = `r f3(gfit(fit1_0)["rmsea.robust"])`), so we freed three residual covariances (`anx5 ~~ anx6`, `str6 ~~ str9`, `str5 ~~ str6`), after which fit was acceptable but imperfect, χ²(`r gfit(fit1_m)["df.scaled"]`) = `r f2(gfit(fit1_m)["chisq.scaled"])`, CFI = `r f3(gfit(fit1_m)["cfi.robust"])`, RMSEA = `r f3(gfit(fit1_m)["rmsea.robust"])`, 90% CI [`r f3(gfit(fit1_m)["rmsea.ci.lower.robust"])`, `r f3(gfit(fit1_m)["rmsea.ci.upper.robust"])`], SRMR = `r f3(gfit(fit1_m)["srmr"])`. In the structural model, Stress.Res predicted Math.Anx (*b* = `r f2(pt1$b[1])`, β = `r f2(pt1$β[1])`), and Math.Anx predicted Math.Sc (*b* = `r f2(pt1$b[2])`, β = `r f2(pt1$β[2])`). The indirect effect was β = `r f2(pt1$β[3])`. Constraining the direct path Stress.Res → Math.Sc to zero changed χ² by Δχ²(`r lrt1[2, "Df diff"]`) = `r f2(lrt1[2, "Chisq diff"])`, *p* `r ifelse(lrt1[2, "Pr(>Chisq)"] < .001, "< .001", paste("=", f3(lrt1[2, "Pr(>Chisq)"])))`. Limitations: the residual covariances were data-driven, the items were treated as continuous, and school clustering and sampling weights were ignored.
+:::
+
+## Up Next
+
+- Nov 26: Thanksgiving, no class
+- Dec 3 & 10: Online class
+  - lamaku > announcements > Zoom Invite
+
+
