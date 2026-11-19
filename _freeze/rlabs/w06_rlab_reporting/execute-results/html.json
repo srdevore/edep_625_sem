@@ -1,0 +1,15 @@
+{
+  "hash": "05761cce14fcfc79a1ed811cf12cd109",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"W05 Lab: Working with Lavaan\"\ndate: today\ndescription: '<a href=\"rlab-downloads/w05_interpretation.qmd\" download=\"w05_interpretation.qmd\">Download .qmd</a>'\ndata: '<a href=\"rlab-downloads/w04_data_pisa22_USA_cln.csv\" download=\"w04_data_pisa22_USA_cln.csv\">w04_data_pisa22_USA_cln.csv</a>'\nformat: html\nrelease: week 17\ndraft: true\n---\n\n# Modification Inidices\n\n## Datamining \n\nUse with caution\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlavaanPlot(model = fit0, coefs = TRUE, stand = TRUE, stars = \"regress\")\n```\n:::\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlavaanPlot(model = fit1, coefs = TRUE, stand = TRUE, stars = \"regress\")\n```\n:::\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlavaanPlot(model = fit2, coefs = TRUE, stand = TRUE, stars = \"regress\")\n```\n:::\n\n\n\nLavaan practice \n\nseries of var-covar matrics where we need to adjust settings: \n\nordered\n\nsample_cov\n\nconstraints\n\nse = bootstrapping\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

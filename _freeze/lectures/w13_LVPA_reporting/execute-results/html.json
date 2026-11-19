@@ -1,0 +1,15 @@
+{
+  "hash": "762a40065ff45916319286d2b2d69a61",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Week 13: Methods Walk Through & Reporting LVPA\"\ndate: today\nformat:\n  revealjs:\n    theme: simple\n    slide-number: true\n    embed-resources: true\n    self-contained-math: true\n\ndescription: '<a href=\"lectures/w13_LVPA_reporting.pdf\" download=\"w13_LVPA_reporting.pdf\">Download PDF</a>'\n---\n\n\n\n# Agenda\n\n- Methods walk through\n- Reporting LVPA\n- Reporting workshop\n\n# Methods Walk Through\n\nPresenters: Callum, Gyan, Louis, Mike, Yuna\n\n- Lamaku > quize Methods Walkthrough LVPA 1-5\n- answer the two questions for each presentation  \n\n# Reporting LVPA \n\n## Checklist: bu ild from what we have\n\n[APA JARS](https://apastyle.apa.org/jars/quant-table-7.pdf)\n\nReview the checklist. \n\n- What items from this checklist do we use for an LVPA model? \n\n## Review an article\n\nWebsite > activity > W13 PDF\n\n- go through paper & identify on the checklist what the authors included & anything they missed. \n- work in groups\n- work in \n\n## Practice: \n\nUse the final results for example 2 and write up a report on the model. \n\nSubmit to Lamaku > Assignments > W12\n\n## Example results write-up (Ex 1) {.smaller}\n\n::: {.content-visible when-profile=\"teacher\"}\nWe estimated the model with robust maximum likelihood (MLR) and full-information maximum likelihood to handle items missing by design (*N* = 1000 students from Great Britain). Following a two-step approach, we first fit the measurement model; the initial fit was poor (CFI = 0.854, RMSEA = 0.109), so we freed three residual covariances (`anx5 ~~ anx6`, `str6 ~~ str9`, `str5 ~~ str6`), after which fit was acceptable but imperfect, χ²(114) = 347.96, CFI = 0.927, RMSEA = 0.078, 90% CI [0.065, 0.091], SRMR = 0.069. In the structural model, Stress.Res predicted Math.Anx (*b* = -0.32, β = -0.42), and Math.Anx predicted Math.Sc (*b* = -0.45, β = -0.36). The indirect effect was β = 0.15. Constraining the direct path Stress.Res → Math.Sc to zero changed χ² by Δχ²(1) = 1.05, *p* = 0.306. Limitations: the residual covariances were data-driven, the items were treated as continuous, and school clustering and sampling weights were ignored.\n:::\n\n## Up Next\n\n- Nov 26: Thanksgiving, no class\n- Dec 3 & 10: Online class\n  - lamaku > announcements > Zoom Invite\n\n\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
