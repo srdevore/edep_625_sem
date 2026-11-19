@@ -14,6 +14,12 @@ project:
     - "!rlabs/w03_sem.qmd"  # WIP draft -- excluded from render for now
     - "!lectures/w05_interpretation.qmd"  # WIP draft -- excluded from render for now
 
+# Re-execute a deck only when its own source changes. Caveat: freeze does not
+# notice edits to files a deck source()s (e.g. lectures/w12_models.R); delete
+# _freeze/lectures/w12_* and _freeze/lectures/w13_* after changing it.
+execute:
+  freeze: auto
+
 profile:
   default: student
 
