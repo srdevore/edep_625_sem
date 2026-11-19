@@ -14,3 +14,7 @@ Interactive pages and in-class activities for exploring SEM concepts. Each one i
 ## Templates
 
 - [Review quiz template (.qmd)](template-downloads/review_quiz.qmd){download="review_quiz.qmd"} -- download, then follow the instructions at the top of the file to write your group's quiz.
+
+## Week 13
+
+- [Article (PDF)](lectures/153-Article%20Text-1038-1-10-20191126.pdf){download="153-Article Text-1038-1-10-20191126.pdf"}

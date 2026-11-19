@@ -6,6 +6,7 @@ project:
   # Standalone interactive pages (not .qmd) that Quarto must copy to _site.
   resources:
     - "widgets/*.html"
+    - "lectures/153-Article Text-1038-1-10-20191126.pdf"
   # Every course page is a .qmd. Listing them explicitly keeps maintainer
   # notes like commands.md off the student site -- Quarto auto-ignores
   # README.md and anything starting with "_", but not other .md files.

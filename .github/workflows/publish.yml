@@ -38,7 +38,20 @@ jobs:
           # against one image's system libs (ICU, GLPK) are never restored onto
           # another. No restore-keys: a partial match would revive a stale,
           # incompatible library that install.packages() then skips.
-          key: ${{ runner.os }}-${{ env.ImageOS }}-r43-${{ hashFiles('.github/workflows/publish.yml') }}
+          key: ${{ runner.os }}-${{ env.ImageOS }}-r43-${{ hashFiles('.github/r-packages.txt') }}
+
+      - name: Cache Quarto freeze
+        uses: actions/cache@v4
+        with:
+          path: _freeze
+          # Quarto's `freeze: auto` re-executes only pages whose own source
+          # changed. It does NOT notice edits to sourced R files or data, so
+          # the key hashes those: change one and the restore prefix no longer
+          # matches, forcing a full re-execute. The sha suffix makes every run
+          # save a fresh copy; restore-keys picks up the latest one.
+          key: freeze-${{ hashFiles('lectures/*.R', 'R/**', 'data/**') }}-${{ github.sha }}
+          restore-keys: |
+            freeze-${{ hashFiles('lectures/*.R', 'R/**', 'data/**') }}-
 
       - name: Cache lavaan fits
         uses: actions/cache@v4
@@ -53,7 +66,9 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libglpk40
 
       - name: Install R packages
-        run: Rscript -e 'install.packages(c("rmarkdown", "knitr", "yaml", "tidyverse", "lavaan", "lavaanPlot", "psych", "semPlot"))'
+        # Only installs what is missing, so a warm package cache means no network.
+        run: |
+          Rscript -e 'pkgs <- readLines(".github/r-packages.txt"); missing <- setdiff(pkgs, rownames(installed.packages())); if (length(missing)) install.packages(missing)'
 
       - name: Render site
         uses: quarto-dev/quarto-actions/render@v2
@@ -63,21 +78,51 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Cache deck PDFs
+        uses: actions/cache@v4
+        with:
+          path: .deck-pdf-cache
+          key: deck-pdf-${{ github.sha }}
+          restore-keys: |
+            deck-pdf-
+
       - name: Install Decktape
         run: npm install -g decktape
 
       - name: Convert lecture decks to PDF
         run: |
           shopt -s nullglob
+          mkdir -p .deck-pdf-cache
+          # Shared inputs every deck may depend on (sourced R, data).
+          shared=$(cat lectures/*.R 2>/dev/null | sha256sum | cut -c1-12)
+          used=()
           for html in _site/lectures/*.html; do
             # Only reveal.js decks can be converted by decktape; skip plain HTML docs.
             if ! grep -q 'class="reveal"' "$html"; then
               echo "Skipping $html (not a reveal.js deck)"
               continue
             fi
+            slug=$(basename "$html" .html)
             pdf="${html%.html}.pdf"
-            echo "Converting $html -> $pdf"
-            decktape reveal --chrome-arg=--no-sandbox "$html" "$pdf"
+            # Key on the deck's own source, not the rendered HTML (which can
+            # embed `date: today` and so changes every day).
+            src_hash=$(cat "lectures/$slug.qmd" | sha256sum | cut -c1-12)
+            cached=".deck-pdf-cache/$slug-$src_hash-$shared.pdf"
+            used+=("$cached")
+            if [ -f "$cached" ]; then
+              echo "Cached PDF for $slug"
+              cp "$cached" "$pdf"
+            else
+              echo "Converting $html -> $pdf"
+              decktape reveal --chrome-arg=--no-sandbox "$html" "$pdf"
+              cp "$pdf" "$cached"
+            fi
+          done
+          # Drop cache entries for decks that changed or were removed.
+          for f in .deck-pdf-cache/*.pdf; do
+            keep=false
+            for u in "${used[@]}"; do [ "$f" = "$u" ] && keep=true; done
+            $keep || rm -f "$f"
           done
 
       - name: Setup Pages

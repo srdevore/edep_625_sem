@@ -1,0 +1,8 @@
+rmarkdown
+knitr
+yaml
+tidyverse
+lavaan
+lavaanPlot
+psych
+semPlot
