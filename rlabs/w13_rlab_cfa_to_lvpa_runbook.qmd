@@ -1,0 +1,464 @@
+---
+title: "W13 Lab: Start-to-finish LVPA runbook (Holzinger & Swineford)"
+date: today
+description: '<a href="rlab-downloads/w13_rlab_cfa_to_lvpa_runbook.qmd" download="w13_rlab_cfa_to_lvpa_runbook.qmd">Download .qmd</a>'
+data: 'Built into lavaan: <code>HolzingerSwineford1939</code>'
+format: html
+---
+
+## Purpose
+
+Run a complete latent variable path analysis (LVPA) the way you would for a real project:
+
+1. Understand the study and the data.
+2. Fit and evaluate the **measurement model** (CFA).
+3. Decide whether to modify it, and whether to move on with the structural model.
+4. Fit and evaluate the **structural model**.
+5. Answer the research question.
+
+**What is given:** the code structure (fitting, fit indices, output tables, diagrams).
+
+**What you do:**
+
+- write every model yourself (lavaan syntax),
+- decide whether the model fit is acceptable and say why,
+- decide whether to change the model based on modification indices,
+- decide whether to proceed from the measurement to the structural model,
+- read the structural output and respond to the research question, based on the outputs.
+
+
+## How this file works
+
+Only edit the three chunks marked `# YOUR TURN`: `model_cfa`, `model_cfa2`, and `model_sem`. Everything else is already correct.
+
+Each of those chunks starts with a **placeholder model** (every variable just gets a residual variance). The placeholder is meaningless, but it is valid, so the whole file runs from top to bottom before you write anything. The results only mean something once you replace the placeholder with your own model. Type your decisions and reasoning in the **Your response** spaces.
+
+---
+
+# The study
+
+**Source.** Holzinger and Swineford (1939), *A study in factor analysis: The stability of a bifactor solution*, Supplementary Educational Monographs, No. 48, University of Chicago. The authors gave a battery of mental ability tests to 7th- and 8th-grade children in two Chicago-area schools. 
+
+**The sample.** 301 students: 156 from Pasteur School and 145 from Grant-White School; ages roughly 11 to 16. We use all 301 together and ignore school (comparing schools would be a multi-group analysis, which comes later).
+
+**The measures.**  nine, intended to measure three abilities: Visual (spatial), Textual (verbal), and Speed.
+
+| Variable | Test | Intended ability |
+|----------|------|------------------|
+| `x1` | Visual perception | Visual (spatial) |
+| `x2` | Cubes | Visual (spatial) |
+| `x3` | Lozenges | Visual (spatial) |
+| `x4` | Paragraph comprehension | Textual (verbal) |
+| `x5` | Sentence completion | Textual (verbal) |
+| `x6` | Word meaning | Textual (verbal) |
+| `x7` | Speeded addition | Speed |
+| `x8` | Speeded counting of dots | Speed |
+| `x9` | Speeded discrimination of straight and curved capitals | Speed |
+
+Other fields in the data: `id` (student ID), `sex` (1 = male, 2 = female), `ageyr` and `agemo` (age in years and months), `school` (Pasteur or Grant-White), `grade` (7 or 8).
+
+**Research question** (for this lab).
+
+> Among 7th and 8th graders, does **visual (spatial) ability** predict **textual (verbal) ability** and **processing speed**?
+
+Spatial reasoning is often thought to support general problem solving, so the working hypothesis is that students with higher visual ability also tend to score higher on both verbal tests and speeded tasks. This is a teaching question. The data are observational, so we will talk about *prediction*, not cause.
+
+---
+
+# Setup
+
+```{r}
+#| message: false
+#| code-fold: false
+library(lavaan)
+library(semPlot)
+
+hs <- HolzingerSwineford1939
+
+```
+
+```{r}
+#| include: false
+fmt <- function(x, d = 2) formatC(x, format = "f", digits = d)
+```
+
+# Step 1: Look at the data
+
+```{r}
+#| code-fold: false
+str(hs[, c("sex", "ageyr", "school", "grade", paste0("x", 1:9))])
+summary(hs[, paste0("x", 1:9)])
+```
+
+```{r}
+#| code-fold: false
+round(cor(hs[, paste0("x", 1:9)]), 2)
+```
+
+What do you take away from the correlations? Anything surprising or potentially problematic? 
+
+---
+
+# Step 2: Measurement model (CFA)
+
+## 2a. Write the model
+
+Three latent variables, each measured by its three tests. Remember that with `lavaan()` you must write out:
+
+- the loadings (fix the first loading of each factor to 1 to set its scale),
+- the **variance** of each latent variable,
+- the **covariances** among the latent variables,
+- the **residual variance** of every indicator.
+
+```{r}
+#| code-fold: false
+# YOUR TURN
+model_cfa <- "
+  # PLACEHOLDER (meaningless): delete these lines and write your measurement model
+  x1 ~~ x1
+  x2 ~~ x2
+  x3 ~~ x3
+  x4 ~~ x4
+  x5 ~~ x5
+  x6 ~~ x6
+  x7 ~~ x7
+  x8 ~~ x8
+  x9 ~~ x9
+  x1 ~~ x2   # (gives the diagram something to draw)
+"
+```
+
+## 2b. Fit it and draw it
+
+```{r}
+#| code-fold: false
+fit_cfa <- lavaan(model_cfa, data = hs)
+
+# Did it converge? Any warnings above?
+lavInspect(fit_cfa, "converged")
+
+semPaths(fit_cfa, what = "std", style = "lisrel", layout = "tree",
+         rotation = 2, residuals = TRUE, nCharNodes = 0,
+         sizeMan = 8, sizeMan2 = 4, edge.label.cex = 0.9)
+```
+
+
+## 2c. Model fit
+
+```{r}
+#| code-fold: false
+fitMeasures(fit_cfa, c("chisq", "df", "pvalue",
+                       "cfi",
+                       "rmsea", "rmsea.ci.lower", "rmsea.ci.upper",
+                       "srmr"))
+```
+
+Is the fit acceptable? State the criteria you are using (and where they come from), compare each index to them, and give your overall judgment. Indices can disagree: say how you weighed them.
+
+
+## 2d. Parameter estimates
+
+```{r}
+#| code-fold: false
+# Standardized loadings
+std <- standardizedSolution(fit_cfa)
+std[std$op == "=~", c("lhs", "rhs", "est.std", "se", "pvalue")]
+
+# Latent variable correlations
+lv <- c("visual", "textual", "speed")
+std[std$op == "~~" & std$lhs != std$rhs & std$lhs %in% lv,
+    c("lhs", "rhs", "est.std", "se", "pvalue")]
+
+# Variance explained in each indicator
+lavInspect(fit_cfa, "rsquare")
+```
+
+What does this say about convergent and divergent validity?
+
+
+---
+
+# Step 3: Modification indices (optional model change)
+
+```{r}
+#| code-fold: false
+modindices(fit_cfa, sort. = TRUE, maximum.number = 10)
+```
+
+Would you change the model? Look at the largest indices and decide:
+
+- Does the change make **theoretical** sense (not just statistical sense)? 
+- Is it a measurement change (a cross-loading or residual covariance)? 
+- If you decide **no change**, explain why. If **yes**, say exactly what you will add and why.
+
+If you make a change, write the revised model below (copy `model_cfa` and add your change). If you make no changes, leave the placeholder as is (it copies `model_cfa`).
+
+```{r}
+#| code-fold: false
+# YOUR TURN (skip if you made no changes)
+# If you make a change: replace the next line with a copy of model_cfa named model_cfa2
+# plus your change.
+model_cfa2 <- model_cfa
+```
+
+```{r}
+#| code-fold: false
+fit_cfa2 <- lavaan(model_cfa2, data = hs)
+
+fitMeasures(fit_cfa2, c("chisq", "df", "pvalue", "cfi", "tli",
+                        "rmsea", "srmr"))
+
+# Is the revised model a significant improvement? (Models must be nested.)
+anova(fit_cfa2, fit_cfa)
+```
+
+ Did the fit improve? Did the loadings change? Is the change worth keeping? Did you introduce anything strange (a negative variance, a loading that flipped sign)?
+
+---
+
+# Step 4: Proceed to the structural model?
+
+Decision point. Decide which measurement model you are carrying forward (original or revised), and say whether you will proceed. A structural model can only be as good as the measurement model under it. If the measurement model were unacceptable, what would you do instead?
+
+---
+
+# Step 5: Structural model (LVPA)
+
+## 5a. Write the model
+
+Use the measurement model you decided on in Step 4 and add the structural paths that answer the research question.
+
+```{r}
+#| code-fold: false
+# YOUR TURN
+model_sem <- "
+  # PLACEHOLDER (meaningless): delete these lines and write measurement model + structural paths
+  x1 ~~ x1
+  x2 ~~ x2
+  x3 ~~ x3
+  x4 ~~ x4
+  x5 ~~ x5
+  x6 ~~ x6
+  x7 ~~ x7
+  x8 ~~ x8
+  x9 ~~ x9
+  x1 ~~ x2   # (gives the diagram something to draw)
+"
+```
+
+## 5b. Fit it and draw it
+
+```{r}
+#| code-fold: false
+fit_sem <- lavaan(model_sem, data = hs)
+lavInspect(fit_sem, "converged")
+
+semPaths(fit_sem, what = "std", style = "lisrel", layout = "tree",
+         rotation = 2, residuals = TRUE, nCharNodes = 0,
+         sizeMan = 8, sizeMan2 = 4, edge.label.cex = 0.9)
+```
+
+## 5c. Model fit
+
+```{r}
+#| code-fold: false
+fitMeasures(fit_sem, c("chisq", "df", "pvalue", "cfi", "tli",
+                       "rmsea", "rmsea.ci.lower", "rmsea.ci.upper", "srmr"))
+
+# Compare to the measurement model you carried forward.
+# (Use fit_cfa2 here instead if you revised the measurement model.)
+anova(fit_sem, fit_cfa)
+```
+
+Is the structural model's fit acceptable? How does it compare with the measurement model's fit? Did the structural paths you added make the fit worse, and if so, by how much? 
+
+## 5d. Structural estimates
+
+```{r}
+#| code-fold: false
+# Structural paths only: unstandardized and standardized
+est <- parameterEstimates(fit_sem, standardized = TRUE)
+est[est$op == "~", c("lhs", "op", "rhs", "est", "se", "z", "pvalue",
+                     "ci.lower", "ci.upper", "std.all")]
+
+# Variance explained in the latent variables
+lavInspect(fit_sem, "rsquare")[c("textual", "speed")]
+```
+
+Also check that the measurement part did not change meaningfully now that the structural paths are included.
+
+```{r}
+#| code-fold: false
+std_sem <- standardizedSolution(fit_sem)
+std_sem[std_sem$op == "=~", c("lhs", "rhs", "est.std", "pvalue")]
+```
+
+**Your response.** For each structural path, report the direction, size (standardized), and whether it is statistically distinguishable from zero. Interpret the variance explained.
+
+
+---
+
+# Step 6: Answer the research question
+
+Briefly, answer the following based on the results:
+
+Among 7th and 8th graders, does visual ability predict textual ability and processing speed?
+
+Include:
+
+- the evidence (standardized paths, uncertainty, variance explained),
+- how confident you are, given the model fit,
+- at least **two limitations** (think about the design, the sample, the measures, and the model decisions you made).
+
+---
+
+::: {.content-visible when-profile="teacher"}
+# Teacher answer key
+
+*Stripped from the student download. Each answer is in its own collapsible box.*
+
+```{r}
+#| include: false
+# Fit every answer model once, up front; the boxes below just display results.
+ans_cfa <- "
+  visual  =~ 1*x1 + x2 + x3
+  textual =~ 1*x4 + x5 + x6
+  speed   =~ 1*x7 + x8 + x9
+
+  visual  ~~ visual
+  textual ~~ textual
+  speed   ~~ speed
+  visual  ~~ textual
+  visual  ~~ speed
+  textual ~~ speed
+
+  x1 ~~ x1
+  x2 ~~ x2
+  x3 ~~ x3
+  x4 ~~ x4
+  x5 ~~ x5
+  x6 ~~ x6
+  x7 ~~ x7
+  x8 ~~ x8
+  x9 ~~ x9
+"
+ans_cfa2 <- paste(ans_cfa, "\n  x7 ~~ x8\n")
+ans_sem <- "
+  visual  =~ 1*x1 + x2 + x3
+  textual =~ 1*x4 + x5 + x6
+  speed   =~ 1*x7 + x8 + x9
+
+  textual ~ visual
+  speed   ~ visual
+
+  visual  ~~ visual
+  textual ~~ textual
+  speed   ~~ speed
+  textual ~~ speed
+
+  x1 ~~ x1
+  x2 ~~ x2
+  x3 ~~ x3
+  x4 ~~ x4
+  x5 ~~ x5
+  x6 ~~ x6
+  x7 ~~ x7
+  x8 ~~ x8
+  x9 ~~ x9
+  x7 ~~ x8
+"
+fit_a  <- lavaan(ans_cfa,  data = hs)
+fit_a2 <- lavaan(ans_cfa2, data = hs)
+fit_s  <- lavaan(ans_sem,  data = hs)
+fm_names <- c("chisq", "df", "cfi", "tli", "rmsea", "srmr")
+fm_a  <- fitMeasures(fit_a,  fm_names)
+fm_a2 <- fitMeasures(fit_a2, fm_names)
+fm_s  <- fitMeasures(fit_s,  fm_names)
+est_s <- parameterEstimates(fit_s, standardized = TRUE)
+b_tex <- est_s$std.all[est_s$lhs == "textual" & est_s$op == "~"]
+b_spd <- est_s$std.all[est_s$lhs == "speed" & est_s$op == "~"]
+r2_s  <- lavInspect(fit_s, "rsquare")
+```
+
+::: {.callout-tip collapse="true" title="Step 2a: measurement model (teacher)"}
+```{r}
+#| echo: false
+cat("model_cfa <- \"", ans_cfa, "\"", sep = "")
+```
+:::
+
+::: {.callout-tip collapse="true" title="Step 2c: fit interpretation (teacher)"}
+```{r}
+#| echo: false
+round(fm_a, 3)
+```
+
+df = 24 (45 observed moments minus 21 free parameters: 6 free loadings + 3 factor variances + 3 factor covariances + 9 residual variances). Chi-square = `r fmt(fm_a[["chisq"]], 1)` on `r fm_a[["df"]]` df, significant (n = 301 makes the test sensitive). CFI = `r fmt(fm_a[["cfi"]], 3)` and TLI = `r fmt(fm_a[["tli"]], 3)` are below the common .95 cutoff (CFI is near the looser .90 line); RMSEA = `r fmt(fm_a[["rmsea"]], 3)` exceeds .08 (poor/marginal); SRMR = `r fmt(fm_a[["srmr"]], 3)` is under .08. Verdict: mediocre, not clearly acceptable. Accept any defensible, criteria-based judgment.
+:::
+
+::: {.callout-tip collapse="true" title="Step 2d: parameter estimates (teacher)"}
+Loadings are mostly strong (standardized roughly .4-.9; x1-x3 and x7-x9 are lower than the textual items). The factors correlate moderately (roughly .3 to .5), so they are distinct.
+:::
+
+::: {.callout-tip collapse="true" title="Step 3: modification indices (teacher)"}
+```{r}
+#| echo: false
+modindices(fit_a, sort. = TRUE, maximum.number = 6)[, 1:5]
+```
+
+Two large, interpretable options:
+
+- `x7 ~~ x8` (residual covariance, MI about 34): both are *speeded, paper-and-pencil arithmetic-like tasks*, so a shared method/format effect beyond the speed factor is plausible. This is the most conservative option.
+- `visual =~ x9` (cross-loading, MI about 36): x9 (discrimination of letter shapes) arguably draws on visual perception. Plausible, but it changes what the factors mean and is a bigger move.
+
+A strong answer picks one (or none) and justifies it substantively; weaker answers just cite the largest MI. Here we add the residual covariance.
+:::
+
+::: {.callout-tip collapse="true" title="Step 3: revised model and result (teacher)"}
+```{r}
+#| echo: false
+cat("model_cfa2 <- paste(model_cfa, \"\\n  x7 ~~ x8\\n\")  # i.e. model_cfa plus:\n  x7 ~~ x8")
+round(fm_a2, 3)
+anova(fit_a2, fit_a)
+```
+
+The revised model improves fit (CFI = `r fmt(fm_a2[["cfi"]], 3)`, RMSEA = `r fmt(fm_a2[["rmsea"]], 3)`, SRMR = `r fmt(fm_a2[["srmr"]], 3)`) and the chi-square difference is significant. Remind students that the change is data-driven and should be reported as post hoc.
+:::
+
+::: {.callout-tip collapse="true" title="Step 4: proceed? (teacher)"}
+Proceed with the revised model (or the original, if justified): all loadings are significant and substantial and the factors are distinct, so the latent variables are measured well enough to relate to each other. If a factor were poorly measured, or fit were unacceptable and not fixable on theoretical grounds, stop and revisit measurement rather than interpreting structural paths.
+:::
+
+::: {.callout-tip collapse="true" title="Step 5a: structural model (teacher)"}
+```{r}
+#| echo: false
+cat("model_sem <- \"", ans_sem, "\"", sep = "")
+```
+:::
+
+::: {.callout-tip collapse="true" title="Step 5c: fit, and the saturation point (teacher)"}
+```{r}
+#| echo: false
+round(fm_s, 3)
+anova(fit_s, fit_a2)
+```
+
+With the residual covariance `textual ~~ speed` **included**, the structural part is *saturated*: the two paths plus the residual covariance reproduce all three latent covariances, so the structural model has the **same df and exactly the same fit** as the measurement model (the `anova()` shows a chi-square difference of 0 on 0 df). Fit therefore says nothing about the paths; it only confirms the measurement model.
+
+If students **omit** the residual covariance, df rises by 1 and the model asserts that, after accounting for visual ability, textual and speed are uncorrelated. That is a testable claim; have them check the chi-square difference. Either choice is acceptable if justified and the df are explained.
+:::
+
+::: {.callout-tip collapse="true" title="Step 5d: structural estimates (teacher)"}
+```{r}
+#| echo: false
+est_s[est_s$op == "~", c("lhs", "rhs", "est", "se", "pvalue", "std.all")]
+r2_s[c("textual", "speed")]
+```
+
+Visual ability predicts both outcomes. Standardized paths are about `r fmt(b_tex, 2)` (textual) and `r fmt(b_spd, 2)` (speed); both significant (p < .001). Visual ability explains roughly `r fmt(r2_s[["textual"]] * 100, 0)`% of the variance in textual ability and `r fmt(r2_s[["speed"]] * 100, 0)`% in speed, a moderate amount, leaving most variance unexplained.
+:::
+
+::: {.callout-tip collapse="true" title="Step 6: sample write-up (teacher)"}
+Yes, with caveats. Students with higher visual ability tended to have higher textual ability and faster processing speed (standardized paths about .5 each, both significant), and visual ability accounts for roughly 20-30% of the variance in each outcome. The measurement model fit was only marginal before one theoretically motivated modification, and the structural model inherits that. Limitations: (1) cross-sectional observational data, so these are associations rather than effects; (2) two schools pooled, ignoring school-level differences and clustering; (3) only three indicators per factor; (4) the residual covariance was added after looking at the data, so it should be replicated; (5) a single historical sample of 7th and 8th graders may not generalize.
+:::
+:::
