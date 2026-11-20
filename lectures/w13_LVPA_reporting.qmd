@@ -1,5 +1,5 @@
 ---
-title: "Week 13: Methods Walk Through & Reporting LVPA"
+title: "Week 13: LVPA Methods Walk Through & Reporting "
 date: today
 format:
   revealjs:
@@ -41,19 +41,19 @@ lrt1 <- suppressWarnings(lavTestLRT(fit1_s, fit1_m, method = "satorra.bentler.20
 
 - Methods walk through
 - Reporting 
-- Rlab: run an LVPA & report on it. 
+- Rlab: run an LVPA, interpret, & report findings. 
 
 
 # Methods Walk Through
 
 Presenters: Callum, Gyan, Louis, Mike, Yuna
 
-- Lamaku > quize Methods Walkthrough LVPA 1-5
+- Lamaku > quiz > Methods Walkthrough LVPA 1-5
 - answer the two questions for each presentation  
 
 # Reporting LVPA 
 
-## Checklist: bu ild from what we have
+## Checklist:
 
 [APA JARS](https://apastyle.apa.org/jars/quant-table-7.pdf)
 
@@ -65,21 +65,12 @@ Review the checklist.
 
 Website > activity > W13 PDF
 
-- go through paper & identify on the checklist what the authors included & anything they missed. 
+- go through paper & identify on the checklist items specifc to LVPA what the authors included & anything they missed. 
 - work in groups
-- work in 
 
-## Practice: 
+# Rlab
 
-Use the final results for example 2 and write up a report on the model. 
-
-Submit to Lamaku > Assignments > W12
-
-## Example results write-up (Ex 1) {.smaller}
-
-::: {.content-visible when-profile="teacher"}
-We estimated the model with robust maximum likelihood (MLR) and full-information maximum likelihood to handle items missing by design (*N* = `r nrow(pisa)` students from Great Britain). Following a two-step approach, we first fit the measurement model; the initial fit was poor (CFI = `r f3(gfit(fit1_0)["cfi.robust"])`, RMSEA = `r f3(gfit(fit1_0)["rmsea.robust"])`), so we freed three residual covariances (`anx5 ~~ anx6`, `str6 ~~ str9`, `str5 ~~ str6`), after which fit was acceptable but imperfect, χ²(`r gfit(fit1_m)["df.scaled"]`) = `r f2(gfit(fit1_m)["chisq.scaled"])`, CFI = `r f3(gfit(fit1_m)["cfi.robust"])`, RMSEA = `r f3(gfit(fit1_m)["rmsea.robust"])`, 90% CI [`r f3(gfit(fit1_m)["rmsea.ci.lower.robust"])`, `r f3(gfit(fit1_m)["rmsea.ci.upper.robust"])`], SRMR = `r f3(gfit(fit1_m)["srmr"])`. In the structural model, Stress.Res predicted Math.Anx (*b* = `r f2(pt1$b[1])`, β = `r f2(pt1$β[1])`), and Math.Anx predicted Math.Sc (*b* = `r f2(pt1$b[2])`, β = `r f2(pt1$β[2])`). The indirect effect was β = `r f2(pt1$β[3])`. Constraining the direct path Stress.Res → Math.Sc to zero changed χ² by Δχ²(`r lrt1[2, "Df diff"]`) = `r f2(lrt1[2, "Chisq diff"])`, *p* `r ifelse(lrt1[2, "Pr(>Chisq)"] < .001, "< .001", paste("=", f3(lrt1[2, "Pr(>Chisq)"])))`. Limitations: the residual covariances were data-driven, the items were treated as continuous, and school clustering and sampling weights were ignored.
-:::
+In this rlab, you'll run a full LVPA, interpret the results and write your response to the RQ. 
 
 ## Up Next
 
