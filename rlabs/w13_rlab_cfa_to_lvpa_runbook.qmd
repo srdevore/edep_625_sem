@@ -27,9 +27,13 @@ Run a complete latent variable path analysis (LVPA) the way you would for a real
 - read the structural output and respond to the research question, based on the outputs.
 
 
+## About the standard errors
+
+Standard errors, p-values and confidence intervals here come from the **bootstrap** (1,000 resamples of the students), not from the default formulas. Bootstrapping does not assume the data are normal. The confidence intervals are **percentile** intervals. Fitting takes a little longer (about 20 seconds per model). The fit indices (chi-square, CFI, RMSEA, SRMR) are unaffected by this choice.
+
 ## How this file works
 
-Only edit the three chunks marked `# YOUR TURN`: `model_cfa`, `model_cfa2`, and `model_sem`. Everything else is already correct.
+Only edit the three chunks marked `# YOUR TURN`.
 
 Each of those chunks starts with a **placeholder model** (every variable just gets a residual variance). The placeholder is meaningless, but it is valid, so the whole file runs from top to bottom before you write anything. The results only mean something once you replace the placeholder with your own model. Type your decisions and reasoning in the **Your response** spaces.
 
@@ -74,6 +78,11 @@ library(lavaan)
 library(semPlot)
 
 hs <- HolzingerSwineford1939
+
+# Standard errors in this lab are bootstrapped (resampling the 301 students).
+# The seed makes your results reproducible; n_boot is the number of resamples.
+set.seed(625)
+n_boot <- 1000
 
 ```
 
@@ -132,7 +141,8 @@ model_cfa <- "
 
 ```{r}
 #| code-fold: false
-fit_cfa <- lavaan(model_cfa, data = hs)
+fit_cfa <- lavaan(model_cfa, data = hs,
+                  se = "bootstrap", bootstrap = n_boot)
 
 # Did it converge? Any warnings above?
 lavInspect(fit_cfa, "converged")
@@ -161,7 +171,7 @@ Is the fit acceptable? State the criteria you are using (and where they come fro
 ```{r}
 #| code-fold: false
 # Standardized loadings
-std <- standardizedSolution(fit_cfa)
+std <- standardizedSolution(fit_cfa, boot.ci.type = "perc")
 std[std$op == "=~", c("lhs", "rhs", "est.std", "se", "pvalue")]
 
 # Latent variable correlations
@@ -203,7 +213,8 @@ model_cfa2 <- model_cfa
 
 ```{r}
 #| code-fold: false
-fit_cfa2 <- lavaan(model_cfa2, data = hs)
+fit_cfa2 <- lavaan(model_cfa2, data = hs,
+                   se = "bootstrap", bootstrap = n_boot)
 
 fitMeasures(fit_cfa2, c("chisq", "df", "pvalue", "cfi", "tli",
                         "rmsea", "srmr"))
@@ -250,7 +261,8 @@ model_sem <- "
 
 ```{r}
 #| code-fold: false
-fit_sem <- lavaan(model_sem, data = hs)
+fit_sem <- lavaan(model_sem, data = hs,
+                  se = "bootstrap", bootstrap = n_boot)
 lavInspect(fit_sem, "converged")
 
 semPaths(fit_sem, what = "std", style = "lisrel", layout = "tree",
@@ -277,7 +289,8 @@ Is the structural model's fit acceptable? How does it compare with the measureme
 ```{r}
 #| code-fold: false
 # Structural paths only: unstandardized and standardized
-est <- parameterEstimates(fit_sem, standardized = TRUE)
+est <- parameterEstimates(fit_sem, boot.ci.type = "perc",
+                         standardized = TRUE)
 est[est$op == "~", c("lhs", "op", "rhs", "est", "se", "z", "pvalue",
                      "ci.lower", "ci.upper", "std.all")]
 
@@ -289,7 +302,7 @@ Also check that the measurement part did not change meaningfully now that the st
 
 ```{r}
 #| code-fold: false
-std_sem <- standardizedSolution(fit_sem)
+std_sem <- standardizedSolution(fit_sem, boot.ci.type = "perc")
 std_sem[std_sem$op == "=~", c("lhs", "rhs", "est.std", "pvalue")]
 ```
 
@@ -367,14 +380,17 @@ ans_sem <- "
   x9 ~~ x9
   x7 ~~ x8
 "
-fit_a  <- lavaan(ans_cfa,  data = hs)
-fit_a2 <- lavaan(ans_cfa2, data = hs)
-fit_s  <- lavaan(ans_sem,  data = hs)
+fit_a  <- lavaan(ans_cfa,  data = hs,
+                 se = "bootstrap", bootstrap = n_boot)
+fit_a2 <- lavaan(ans_cfa2, data = hs,
+                 se = "bootstrap", bootstrap = n_boot)
+fit_s  <- lavaan(ans_sem,  data = hs,
+                 se = "bootstrap", bootstrap = n_boot)
 fm_names <- c("chisq", "df", "cfi", "tli", "rmsea", "srmr")
 fm_a  <- fitMeasures(fit_a,  fm_names)
 fm_a2 <- fitMeasures(fit_a2, fm_names)
 fm_s  <- fitMeasures(fit_s,  fm_names)
-est_s <- parameterEstimates(fit_s, standardized = TRUE)
+est_s <- parameterEstimates(fit_s, boot.ci.type = "perc", standardized = TRUE)
 b_tex <- est_s$std.all[est_s$lhs == "textual" & est_s$op == "~"]
 b_spd <- est_s$std.all[est_s$lhs == "speed" & est_s$op == "~"]
 r2_s  <- lavInspect(fit_s, "rsquare")
