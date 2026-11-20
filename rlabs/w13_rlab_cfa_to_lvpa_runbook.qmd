@@ -212,7 +212,7 @@ model_cfa2 <- model_cfa
 fit_cfa2 <- lavaan(model_cfa2, data = hs,
                    se = "bootstrap", bootstrap = n_boot)
 
-fitMeasures(fit_cfa2, c("chisq", "df", "pvalue", "cfi", "tli",
+fitMeasures(fit_cfa2, c("chisq", "df", "pvalue", "cfi",
                         "rmsea", "srmr"))
 
 # Is the revised model a significant improvement? (Models must be nested.)
@@ -270,7 +270,7 @@ semPaths(fit_sem, what = "std", style = "lisrel", layout = "tree",
 
 ```{r}
 #| code-fold: false
-fitMeasures(fit_sem, c("chisq", "df", "pvalue", "cfi", "tli",
+fitMeasures(fit_sem, c("chisq", "df", "pvalue", "cfi",
                        "rmsea", "rmsea.ci.lower", "rmsea.ci.upper", "srmr"))
 
 # Compare to the measurement model you carried forward.
@@ -374,7 +374,7 @@ fit_a2 <- lavaan(ans_cfa2, data = hs,
                  se = "bootstrap", bootstrap = n_boot)
 fit_s  <- lavaan(ans_sem,  data = hs,
                  se = "bootstrap", bootstrap = n_boot)
-fm_names <- c("chisq", "df", "cfi", "tli", "rmsea", "srmr")
+fm_names <- c("chisq", "df", "cfi", "rmsea", "srmr")
 fm_a  <- fitMeasures(fit_a,  fm_names)
 fm_a2 <- fitMeasures(fit_a2, fm_names)
 fm_s  <- fitMeasures(fit_s,  fm_names)
@@ -389,6 +389,15 @@ r2_s  <- lavInspect(fit_s, "rsquare")
 #| echo: false
 cat("model_cfa <- \"", ans_cfa, "\"", sep = "")
 ```
+
+```{r}
+#| echo: false
+semPaths(fit_a, what = "std", style = "lisrel", layout = "tree",
+         rotation = 2, residuals = TRUE, nCharNodes = 0,
+         sizeMan = 8, sizeMan2 = 4, edge.label.cex = 0.9)
+```
+
+Diagram: three correlated factors, three indicators each.
 :::
 
 ::: {.callout-tip collapse="true" title="Step 2c: fit interpretation (teacher)"}
@@ -397,7 +406,7 @@ cat("model_cfa <- \"", ans_cfa, "\"", sep = "")
 round(fm_a, 3)
 ```
 
-df = 24 (45 observed moments minus 21 free parameters: 6 free loadings + 3 factor variances + 3 factor covariances + 9 residual variances). Chi-square = `r fmt(fm_a[["chisq"]], 1)` on `r fm_a[["df"]]` df, significant (n = 301 makes the test sensitive). CFI = `r fmt(fm_a[["cfi"]], 3)` and TLI = `r fmt(fm_a[["tli"]], 3)` are below the common .95 cutoff (CFI is near the looser .90 line); RMSEA = `r fmt(fm_a[["rmsea"]], 3)` exceeds .08 (poor/marginal); SRMR = `r fmt(fm_a[["srmr"]], 3)` is under .08. Verdict: mediocre, not clearly acceptable. Accept any defensible, criteria-based judgment.
+df = 24 (45 observed moments minus 21 free parameters: 6 free loadings + 3 factor variances + 3 factor covariances + 9 residual variances). Chi-square = `r fmt(fm_a[["chisq"]], 1)` on `r fm_a[["df"]]` df, significant (n = 301 makes the test sensitive). CFI = `r fmt(fm_a[["cfi"]], 3)` is below the common .95 cutoff (near the looser .90 line); RMSEA = `r fmt(fm_a[["rmsea"]], 3)` exceeds .08 (poor/marginal); SRMR = `r fmt(fm_a[["srmr"]], 3)` is under .08. Verdict: mediocre, not clearly acceptable. Accept any defensible, criteria-based judgment.
 :::
 
 ::: {.callout-tip collapse="true" title="Step 2d: parameter estimates (teacher)"}
@@ -426,6 +435,13 @@ round(fm_a2, 3)
 anova(fit_a2, fit_a)
 ```
 
+```{r}
+#| echo: false
+semPaths(fit_a2, what = "std", style = "lisrel", layout = "tree",
+         rotation = 2, residuals = TRUE, nCharNodes = 0,
+         sizeMan = 8, sizeMan2 = 4, edge.label.cex = 0.9)
+```
+
 The revised model improves fit (CFI = `r fmt(fm_a2[["cfi"]], 3)`, RMSEA = `r fmt(fm_a2[["rmsea"]], 3)`, SRMR = `r fmt(fm_a2[["srmr"]], 3)`) and the chi-square difference is significant. Remind students that the change is data-driven and should be reported as post hoc.
 :::
 
@@ -438,6 +454,15 @@ Proceed with the revised model (or the original, if justified): all loadings are
 #| echo: false
 cat("model_sem <- \"", ans_sem, "\"", sep = "")
 ```
+
+```{r}
+#| echo: false
+semPaths(fit_s, what = "std", style = "lisrel", layout = "tree",
+         rotation = 2, residuals = TRUE, nCharNodes = 0,
+         sizeMan = 8, sizeMan2 = 4, edge.label.cex = 0.9)
+```
+
+Diagram: visual predicts textual and speed; textual and speed have a residual covariance; x7 and x8 have a residual covariance.
 :::
 
 ::: {.callout-tip collapse="true" title="Step 5c: fit, and the saturation point (teacher)"}
