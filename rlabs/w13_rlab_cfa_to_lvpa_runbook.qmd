@@ -27,21 +27,17 @@ Run a complete latent variable path analysis (LVPA) the way you would for a real
 - read the structural output and respond to the research question, based on the outputs.
 
 
-## About the standard errors
-
-Standard errors, p-values and confidence intervals here come from the **bootstrap** (1,000 resamples of the students), not from the default formulas. Bootstrapping does not assume the data are normal. The confidence intervals are **percentile** intervals. Fitting takes a little longer (about 20 seconds per model). The fit indices (chi-square, CFI, RMSEA, SRMR) are unaffected by this choice.
-
 ## How this file works
 
 Only edit the three chunks marked `# YOUR TURN`.
 
-Each of those chunks starts with a **placeholder model** (every variable just gets a residual variance). The placeholder is meaningless, but it is valid, so the whole file runs from top to bottom before you write anything. The results only mean something once you replace the placeholder with your own model. Type your decisions and reasoning in the **Your response** spaces.
+Each of those chunks starts with a **placeholder model** (every variable just gets a residual variance). The placeholder is meaningless, but it is valid code to ensure the file runs.
 
 ---
 
 # The study
 
-**Source.** Holzinger and Swineford (1939), *A study in factor analysis: The stability of a bifactor solution*, Supplementary Educational Monographs, No. 48, University of Chicago. The authors gave a battery of mental ability tests to 7th- and 8th-grade children in two Chicago-area schools. 
+**Source.** Holzinger and Swineford (1939)
 
 **The sample.** 301 students: 156 from Pasteur School and 145 from Grant-White School; ages roughly 11 to 16. We use all 301 together and ignore school (comparing schools would be a multi-group analysis, which comes later).
 
@@ -313,15 +309,7 @@ std_sem[std_sem$op == "=~", c("lhs", "rhs", "est.std", "pvalue")]
 
 # Step 6: Answer the research question
 
-Briefly, answer the following based on the results:
-
-Among 7th and 8th graders, does visual ability predict textual ability and processing speed?
-
-Include:
-
-- the evidence (standardized paths, uncertainty, variance explained),
-- how confident you are, given the model fit,
-- at least **two limitations** (think about the design, the sample, the measures, and the model decisions you made).
+Answer the RQ, using the results above to support your answer.
 
 ---
 
