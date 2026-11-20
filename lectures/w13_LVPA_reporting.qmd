@@ -40,8 +40,9 @@ lrt1 <- suppressWarnings(lavTestLRT(fit1_s, fit1_m, method = "satorra.bentler.20
 # Agenda
 
 - Methods walk through
-- Reporting LVPA
-- Reporting workshop
+- Reporting 
+- Rlab: run an LVPA & report on it. 
+
 
 # Methods Walk Through
 
